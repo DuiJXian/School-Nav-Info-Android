@@ -45,7 +45,7 @@ fun PoiSearch(
     mapViewModel: MapViewModel = hiltViewModel(),
     onTextChange: (text: String) -> Unit,
     onClose: () -> Unit,
-    onClickItem: (uid: String) -> Unit
+    onClickItem: (poiInfo: PoiInfo) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -139,7 +139,7 @@ fun SearchTextField(
 @Composable
 fun SearchResult(
     poiData: List<PoiInfo>,
-    onClickItem: (uid: String) -> Unit
+    onClickItem: (poiInfo: PoiInfo) -> Unit
 ) {
     var appColors = AppColors.current
     val focusManager = LocalFocusManager.current
@@ -156,7 +156,7 @@ fun SearchResult(
                     modifier = Modifier
                         .height(36.dp)
                         .clickable {
-                            onClickItem(item.uid)
+                            onClickItem(item)
                             focusManager.clearFocus()
                         }
                 ) {

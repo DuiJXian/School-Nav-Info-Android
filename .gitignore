@@ -17,7 +17,6 @@
 *.apks
 
 # gradle files
-.gradle
 /build/
 
 # Log files

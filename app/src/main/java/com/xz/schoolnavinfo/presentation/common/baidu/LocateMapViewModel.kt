@@ -64,12 +64,16 @@ class LocationMapViewModel @Inject constructor(application: Application) :
 
     fun uiEvent(event: MapUiEvent) {
         when (event) {
-            is MapUiEvent.MapMove -> {
+            is MapUiEvent.MoveNowLocation -> {
                 viewModelScope.launch {
                     _moveMap.emit(_deviceState.value.locationPoint)
                 }
             }
-
+            is MapUiEvent.MoveToLocation -> {
+                viewModelScope.launch {
+                    _moveMap.emit(event.latLng)
+                }
+            }
             is MapUiEvent.ShowSnackBar -> {
 
             }
@@ -141,13 +145,9 @@ class LocationMapViewModel @Inject constructor(application: Application) :
 
             val azimuth = Math.toDegrees(orientationVals[0].toDouble()).toFloat() // 0 - 360°
 
-            viewModelScope.launch {
-                _deviceState.emit(
-                    deviceState.value.copy(
-                        direction = (azimuth + 360) % 360
-                    )
-                )
-            }
+            _deviceState.value = deviceState.value.copy(
+                direction = (azimuth + 360) % 360
+            )
         }
     }
 
@@ -164,5 +164,6 @@ class LocationMapViewModel @Inject constructor(application: Application) :
 sealed class MapUiEvent {
     data class ShowSnackBar(val message: String) : MapUiEvent()
     data object ShowOpenGpsDialog : MapUiEvent()
-    data object MapMove : MapUiEvent()
+    data object MoveNowLocation : MapUiEvent()
+    data class MoveToLocation(val latLng: LatLng) : MapUiEvent()
 }

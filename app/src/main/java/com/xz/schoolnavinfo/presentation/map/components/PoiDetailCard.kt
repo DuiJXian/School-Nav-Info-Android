@@ -1,36 +1,31 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
 import AppColors
-import android.os.Build
-import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -51,16 +46,16 @@ fun PoiDetailCard(
     modifier: Modifier = Modifier,
     poiDetailInfo: PoiDetailInfo,
     onCancel: () -> Unit,
-    onGo: () -> Unit
+    onCall: (tel: String) -> Unit,
+    onRoute: (poiDetailInfo: PoiDetailInfo) -> Unit
 ) {
     val appColors = AppColors.current
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         color = appColors.bgPrimary,
-        shadowElevation = 5.dp
+        shadowElevation = 10.dp
     ) {
-
         Column(
             modifier = Modifier
                 .padding(20.dp),
@@ -77,41 +72,63 @@ fun PoiDetailCard(
                     Modifier
                         .padding(start = 10.dp)
                 ) {
-                    Text(
-                        text = "${poiDetailInfo.name}",
-                        style = TextStyle(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = appColors.fontPrimary
+                    Row(
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = "${poiDetailInfo.name}",
+                            style = TextStyle(
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = appColors.fontPrimary
+                            )
                         )
-                    )
+                        Spacer(Modifier.width(3.dp))
+                        Icon(
+                            modifier = Modifier.size(22.dp),
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "收藏",
+                            tint = appColors.unSelect
+                        )
+                    }
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        StarRatingCanvas(rating = poiDetailInfo.overallRating, starSize = 18.dp)
-                        Text(
-                            text = buildAnnotatedString {
+                        if (poiDetailInfo.overallRating > 0) {
+                            StarRatingCanvas(rating = poiDetailInfo.overallRating, starSize = 18.dp)
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            color = appColors.fontAccent,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    ) {
+                                        append(" ${poiDetailInfo.overallRating}分")
+                                    }
+                                }
+                            )
+                        }
+
+                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            if (poiDetailInfo.price != 0.0) {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = appColors.fontSecondary
+                                    )
+                                ) {
+                                    append("人均: ")
+                                }
                                 withStyle(
                                     style = SpanStyle(
                                         color = appColors.fontAccent,
                                         fontWeight = FontWeight.Bold
                                     )
                                 ) {
-                                    append(" ${poiDetailInfo.overallRating}分")
-                                }
-                            }
-                        )
-                    }
-                    Text(
-                        text = buildAnnotatedString {
-                            if(!poiDetailInfo.brand.isNullOrBlank()){
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = appColors.fontSecondary, fontWeight = FontWeight.Bold
-                                    )
-                                ) {
-                                    append("${poiDetailInfo.brand} ")
+                                    append("${poiDetailInfo.price}￥ ")
                                 }
                             }
                             withStyle(style = SpanStyle(color = appColors.fontSecondary)) {
@@ -173,7 +190,6 @@ fun PoiDetailCard(
                             ) {
                                 append(" ${poiDetailInfo.address}")
                             }
-
                         },
                         modifier = Modifier.width(250.dp)
                     )
@@ -184,29 +200,7 @@ fun PoiDetailCard(
                 horizontalArrangement = Arrangement.Center,
             ) {
 
-                if (!poiDetailInfo.telephone.isNullOrEmpty()) {
-                    Button(
-                        modifier = Modifier
-                            .padding(end = 10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = appColors.primary
-                        ),
-                        onClick = {
-                            onCancel()
-                        }
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(18.dp),
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = "电话"
-                            )
-                            Text("电话")
-                        }
-                    }
-                }
+
                 Button(
                     modifier = Modifier
                         .padding(end = 10.dp),
@@ -223,11 +217,35 @@ fun PoiDetailCard(
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = Icons.Default.Close,
-                            contentDescription = "电话"
+                            contentDescription = "取消"
                         )
                         Text("取消")
                     }
 
+                }
+
+                if (!poiDetailInfo.telephone.isNullOrEmpty()) {
+                    Button(
+                        modifier = Modifier
+                            .padding(end = 10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = appColors.primary
+                        ),
+                        onClick = {
+                            onCall(poiDetailInfo.telephone)
+                        }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(18.dp),
+                                imageVector = Icons.Default.Phone,
+                                contentDescription = "电话"
+                            )
+                            Text("电话")
+                        }
+                    }
                 }
 
                 Button(
@@ -235,7 +253,7 @@ fun PoiDetailCard(
                         containerColor = appColors.primary
                     ),
                     onClick = {
-                        onGo()
+                        onRoute(poiDetailInfo)
                     }
                 ) {
                     Row(
@@ -243,10 +261,10 @@ fun PoiDetailCard(
                     ) {
                         Icon(
                             modifier = Modifier.size(18.dp),
-                            imageVector = Icons.Default.Place,
-                            contentDescription = "电话"
+                            imageVector = Icons.Default.Build,
+                            contentDescription = "路线"
                         )
-                        Text("导航")
+                        Text("路线")
                     }
                 }
             }
@@ -271,9 +289,11 @@ fun PrePoiDetailCard() {
             brand = "蜜雪冰城"
             overallRating = 4.2
             shopHours = "09:45-22:30"
+            telephone = "18274340988"
             tag = "休闲娱乐;度假村"
+            price = 9.2
         }
-        PoiDetailCard(poiDetailInfo = poiDetailInfo, onGo = {}, onCancel = {})
+        PoiDetailCard(poiDetailInfo = poiDetailInfo, onRoute = {}, onCancel = {}, onCall = {})
     }
 }
 

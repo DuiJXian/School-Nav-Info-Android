@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -26,18 +25,19 @@ fun LocateNow(
     var appColors = AppColors.current
     Box(
         modifier = modifier
-            .size(36.dp)
             .shadow(5.dp, shape = CircleShape)
-            .background(appColors.bgSecondary, shape = CircleShape)
+            .size(36.dp)
+            .background(appColors.bgPrimary, shape = CircleShape),
+        contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(R.drawable.position),
             contentDescription = "移动到当前位置",
-            colorFilter = ColorFilter.tint(color = Color.Black),
+            colorFilter = ColorFilter.tint(color = appColors.fontSecondary),
             modifier = Modifier
                 .align(Alignment.Center)
-                .width(30.dp)
-                .height(30.dp)
+                .width(25.dp)
+                .height(25.dp)
         )
     }
 }
