@@ -1,0 +1,61 @@
+# Kotlin/Android specific
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/.idea/httpRequests
+/.idea/codeStyles/
+
+# Built application files
+*.apk
+*.aab
+*.apks
+
+# gradle files
+.gradle
+/build/
+
+# Log files
+*.log
+
+# Android Studio
+captures/
+.externalNativeBuild
+.cxx
+
+# IntelliJ
+*.iws
+*.ipr
+
+# Keystore files (if any)
+*.jks
+*.keystore
+
+# Jetpack Compose related
+compose-build/
+*/build/
+*/out/
+
+# Generated files
+*.hprof
+
+# Misc
+*.DS_Store
+*.class
+*.jar
+*.war
+*.ear
+*.pyc
+*.pyo
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
