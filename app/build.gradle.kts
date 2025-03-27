@@ -74,6 +74,11 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
 
     implementation("androidx.datastore:datastore-preferences:1.1.2")
+
+    val roomVersion = "2.6.1" // 使用最新版本
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    kapt("androidx.room:room-compiler:$roomVersion")
 }
 
 kapt {

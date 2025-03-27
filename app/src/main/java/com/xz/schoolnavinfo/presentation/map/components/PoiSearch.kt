@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -38,11 +39,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.baidu.mapapi.search.core.PoiInfo
 import com.xz.schoolnavinfo.presentation.common.utils.LocateUtils
+import com.xz.schoolnavinfo.presentation.map.PoiEvent
 import com.xz.schoolnavinfo.presentation.map.MapViewModel
 
 @Composable
 fun PoiSearch(
-    mapViewModel: MapViewModel = hiltViewModel(),
     onTextChange: (text: String) -> Unit,
     onClose: () -> Unit,
     onClickItem: (poiInfo: PoiInfo) -> Unit
@@ -52,13 +53,11 @@ fun PoiSearch(
             .padding(top = 46.dp, start = 20.dp, end = 20.dp)
             .shadow(20.dp)
     ) {
-        val mapState by mapViewModel.searchTextFiledState.collectAsState()
         SearchTextField(
             onTextChange = onTextChange,
             onClose = onClose,
         )
         SearchResult(
-            poiData = mapState.poiInfoList,
             onClickItem = onClickItem
         )
     }
@@ -74,14 +73,17 @@ fun SearchTextField(
     var customColors = AppColors.current
     val focusManager = LocalFocusManager.current
 
-    val mapState by mapViewModel.searchTextFiledState.collectAsState()
+    val poiState by mapViewModel.poiState.collectAsState()
 
 
     TextField(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp),
-        value = mapState.searchText,
+            .height(56.dp)
+            .onFocusChanged {
+                mapViewModel.onPoiEvent(PoiEvent.FocusedChange(it.isFocused))
+            },
+        value = poiState.searchText,
         textStyle = TextStyle(
             fontSize = 16.sp,
             color = customColors.fontSecondary
@@ -112,7 +114,7 @@ fun SearchTextField(
             )
         },
         trailingIcon = {
-            if (mapState.searchText.isNotEmpty()) {
+            if (poiState.searchText.isNotEmpty()) {
                 IconButton(onClick = onClose) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
@@ -138,19 +140,20 @@ fun SearchTextField(
 //搜索结果
 @Composable
 fun SearchResult(
-    poiData: List<PoiInfo>,
-    onClickItem: (poiInfo: PoiInfo) -> Unit
+    onClickItem: (poiInfo: PoiInfo) -> Unit,
+    mapViewModel: MapViewModel = hiltViewModel()
 ) {
     var appColors = AppColors.current
+    val poiState by mapViewModel.poiState.collectAsState()
     val focusManager = LocalFocusManager.current
-    if (poiData.isNotEmpty()) {
+    if (poiState.poiInfoList.isNotEmpty() && poiState.isFocused) {
         LazyColumn(
             modifier = Modifier
                 .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
                 .background(appColors.bgSecondary)
                 .heightIn(max = 182.dp)
         ) {
-            items(poiData) { item ->
+            items(poiState.poiInfoList) { item ->
                 Row(
                     verticalAlignment = CenterVertically,
                     modifier = Modifier
@@ -172,7 +175,7 @@ fun SearchResult(
                         style = TextStyle(color = appColors.fontSecondary)
                     )
                 }
-                if (item != poiData.last()) {
+                if (item != poiState.poiInfoList.last()) {
                     Spacer(
                         modifier = Modifier
                             .fillMaxWidth()

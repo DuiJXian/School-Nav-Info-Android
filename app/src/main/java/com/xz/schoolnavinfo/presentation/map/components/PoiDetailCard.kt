@@ -3,6 +3,7 @@ package com.xz.schoolnavinfo.presentation.map.components
 import AppColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,20 +37,26 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.baidu.mapapi.search.core.PoiDetailInfo
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.presentation.common.utils.LocateUtils
 import com.xz.schoolnavinfo.presentation.common.utils.TimeUtils
+import com.xz.schoolnavinfo.presentation.map.MapViewModel
 
 @Composable
 fun PoiDetailCard(
     modifier: Modifier = Modifier,
+    mapViewModel: MapViewModel = hiltViewModel(),
     poiDetailInfo: PoiDetailInfo,
     onCancel: () -> Unit,
     onCall: (tel: String) -> Unit,
+    onFavorite: () -> Unit,
     onRoute: (poiDetailInfo: PoiDetailInfo) -> Unit
 ) {
     val appColors = AppColors.current
+    val isFavorite = mapViewModel.isFavoritePoi
+
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
@@ -84,11 +91,20 @@ fun PoiDetailCard(
                             )
                         )
                         Spacer(Modifier.width(3.dp))
+
                         Icon(
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clickable {
+                                    onFavorite()
+                                },
                             imageVector = Icons.Default.Favorite,
                             contentDescription = "收藏",
-                            tint = appColors.unSelect
+                            tint = if (isFavorite.value) {
+                                Color(0xFFFFA000)
+                            } else {
+                                appColors.unSelect
+                            }
                         )
                     }
 
@@ -101,7 +117,7 @@ fun PoiDetailCard(
                                 text = buildAnnotatedString {
                                     withStyle(
                                         style = SpanStyle(
-                                            color = appColors.fontAccent,
+                                            color = appColors.fontErr,
                                             fontWeight = FontWeight.Bold
                                         )
                                     ) {
@@ -124,7 +140,7 @@ fun PoiDetailCard(
                                 }
                                 withStyle(
                                     style = SpanStyle(
-                                        color = appColors.fontAccent,
+                                        color = appColors.fontErr,
                                         fontWeight = FontWeight.Bold
                                     )
                                 ) {
@@ -138,9 +154,9 @@ fun PoiDetailCard(
                     )
 
                     if (!poiDetailInfo.shopHours.isNullOrBlank()) {
-                        var businessColor = appColors.fontPrimary
+                        var businessColor = appColors.unSelect
                         if (TimeUtils.isTimeInRange(poiDetailInfo.shopHours)) {
-                            businessColor = Color(0xFF54C459)
+                            businessColor = appColors.fontInfo
                         }
                         Text(
                             text = buildAnnotatedString {
@@ -217,9 +233,9 @@ fun PoiDetailCard(
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = Icons.Default.Close,
-                            contentDescription = "取消"
+                            contentDescription = "关闭"
                         )
-                        Text("取消")
+                        Text("关闭")
                     }
 
                 }
@@ -293,7 +309,12 @@ fun PrePoiDetailCard() {
             tag = "休闲娱乐;度假村"
             price = 9.2
         }
-        PoiDetailCard(poiDetailInfo = poiDetailInfo, onRoute = {}, onCancel = {}, onCall = {})
+        PoiDetailCard(
+            poiDetailInfo = poiDetailInfo,
+            onRoute = {},
+            onCancel = {},
+            onCall = {},
+            onFavorite = {})
     }
 }
 

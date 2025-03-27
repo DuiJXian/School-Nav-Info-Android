@@ -1,5 +1,6 @@
 package com.xz.schoolnavinfo.presentation.map
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.baidu.mapapi.search.core.PoiInfo
@@ -12,21 +13,39 @@ import com.baidu.mapapi.search.poi.PoiNearbySearchOption
 import com.baidu.mapapi.search.poi.PoiResult
 import com.baidu.mapapi.search.poi.PoiSearch
 import com.baidu.mapapi.utils.DistanceUtil
+import com.xz.schoolnavinfo.domain.model.MPoiInfo
+import com.xz.schoolnavinfo.domain.use_case.MPoiInfoUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MapViewModel @Inject constructor() : ViewModel() {
-    private val _searchTextFiledState = MutableStateFlow(SearchTextFieldState())
-    val searchTextFiledState: StateFlow<SearchTextFieldState> = _searchTextFiledState
+class MapViewModel @Inject constructor(
+    private val mPoiInfoUseCases: MPoiInfoUseCases
+) : ViewModel() {
+    private val _poiState = MutableStateFlow(PoiState())
+    val poiState: StateFlow<PoiState> = _poiState
+
+    private val _routeState = mutableStateOf(RouteState())
+    val routeState = _routeState
+
+    private var getMPoiInfoJob: Job? = null
+    private val _mPoiInfos = MutableStateFlow<List<MPoiInfo>>(emptyList())
+    val mPoiInfos: StateFlow<List<MPoiInfo>> = _mPoiInfos
+
+    private val _isFavoritePoi = mutableStateOf(false)
+    var isFavoritePoi = _isFavoritePoi
 
     init {
+        getMPoiInfos()
         viewModelScope.launch {
-            _searchTextFiledState.collectLatest {
+            _poiState.collectLatest {
                 if (it.searchText.isBlank()) {
                     clearPoiInfoList()
                 }
@@ -34,37 +53,102 @@ class MapViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun onEvent(event: MapEvent) {
+    private fun getMPoiInfos() {
+        getMPoiInfoJob?.cancel()
+        getMPoiInfoJob = mPoiInfoUseCases.getMPoiInfos()
+            .onEach { mPoiInfos ->
+                _mPoiInfos.value = mPoiInfos
+            }.launchIn(viewModelScope)
+    }
+
+    fun onMPoiInfoEvent(event: MPoiInfoEvent) {
         when (event) {
-            is MapEvent.SearchTextChange -> {
-                _searchTextFiledState.value = searchTextFiledState.value.copy(
-                    searchText = event.text,
-                    centerPoint = event.centerPoint
+            is MPoiInfoEvent.DeleteMPoiInfo -> {
+                viewModelScope.launch {
+                    mPoiInfoUseCases.deleteMPoiInfo(event.mPoiInfo)
+                }
+            }
+
+            is MPoiInfoEvent.InsertMPoiInfo -> {
+                viewModelScope.launch {
+                    mPoiInfoUseCases.insertMPoiInfo(event.mPoiInfo)
+                    _isFavoritePoi.value = true
+                }
+            }
+
+            is MPoiInfoEvent.GetMPoiInfoByUid -> {
+                _isFavoritePoi.value = _mPoiInfos.value.any {
+                    it.uid == event.uid
+                }
+            }
+        }
+    }
+
+    fun onPoiEvent(event: PoiEvent) {
+        when (event) {
+            is PoiEvent.SearchTextChange -> {
+                _poiState.value = poiState.value.copy(
+                    searchText = event.text
                 )
                 getPoiInfoList(event.text)
             }
 
-            is MapEvent.ClearSearchText -> {
-                _searchTextFiledState.value = searchTextFiledState.value.copy(
-                    searchText = "",
+            is PoiEvent.ClearSearchText -> {
+                _poiState.value = poiState.value.copy(
+                    searchText = ""
                 )
             }
 
-            is MapEvent.ClearInfoList -> {
+            is PoiEvent.ClearInfoList -> {
                 clearPoiInfoList()
             }
 
-            is MapEvent.DestroyPoiSearch -> {
+            is PoiEvent.DestroyPoiSearch -> {
                 poiSearch.destroy()
             }
 
-            is MapEvent.GetPoiDetailInfo -> {
+            is PoiEvent.GetPoiDetailInfo -> {
                 getPoiDetail(event.poiUid)
             }
 
-            is MapEvent.CloseDetailCard -> {
-                _searchTextFiledState.value = searchTextFiledState.value.copy(
-                    isShowDetailCard = false,
+            is PoiEvent.CloseDetailCard -> {
+                _poiState.value = poiState.value.copy(
+                    isShowDetailCard = false
+                )
+            }
+
+            is PoiEvent.CenterPointChange -> {
+                _poiState.value = poiState.value.copy(
+                    centerPoint = event.centerPoint
+                )
+            }
+
+            is PoiEvent.FocusedChange -> {
+                _poiState.value = poiState.value.copy(
+                    isFocused = event.isFocused
+                )
+            }
+
+            is PoiEvent.IsShowSearchPoi -> {
+                _poiState.value = poiState.value.copy(
+                    isShowSearch = event.isShow
+                )
+            }
+        }
+    }
+
+    fun onRouteEvent(event: RouteEvent) {
+        when (event) {
+            is RouteEvent.DisAndDurChange -> {
+                _routeState.value = routeState.value.copy(
+                    routeDistance = event.distance,
+                    routeDuration = event.duration
+                )
+            }
+
+            is RouteEvent.IsShowChange -> {
+                _routeState.value = routeState.value.copy(
+                    isShowRoutePlan = event.isShow
                 )
             }
         }
@@ -76,11 +160,11 @@ class MapViewModel @Inject constructor() : ViewModel() {
             if (result?.allPoi != null) {
                 for (poi in result.allPoi) {
                     poi.distance = DistanceUtil
-                        .getDistance(_searchTextFiledState.value.centerPoint, poi.location)
+                        .getDistance(_poiState.value.centerPoint, poi.location)
                         .toInt()
                     poiList.add(poi)
                 }
-                _searchTextFiledState.value = searchTextFiledState.value.copy(
+                _poiState.value = poiState.value.copy(
                     poiInfoList = poiList
                 )
             }
@@ -90,9 +174,9 @@ class MapViewModel @Inject constructor() : ViewModel() {
         override fun onGetPoiDetailResult(result: PoiDetailSearchResult) {
             for (item in result.poiDetailInfoList) {
                 item.distance = DistanceUtil
-                    .getDistance(_searchTextFiledState.value.centerPoint, item.location)
+                    .getDistance(_poiState.value.centerPoint, item.location)
                     .toInt()
-                _searchTextFiledState.value = searchTextFiledState.value.copy(
+                _poiState.value = poiState.value.copy(
                     poiDetailInfo = item,
                     isShowDetailCard = true
                 )
@@ -107,7 +191,7 @@ class MapViewModel @Inject constructor() : ViewModel() {
 
     private fun getPoiInfoList(keyword: String) {
         poiSearch.searchNearby(
-            PoiNearbySearchOption().location(_searchTextFiledState.value.centerPoint).radius(15000)
+            PoiNearbySearchOption().location(_poiState.value.centerPoint).radius(15000)
                 .keyword(keyword)
         )
     }
@@ -117,7 +201,7 @@ class MapViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun clearPoiInfoList() {
-        _searchTextFiledState.value = searchTextFiledState.value.copy(
+        _poiState.value = poiState.value.copy(
             poiInfoList = emptyList()
         )
     }
