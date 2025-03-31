@@ -22,4 +22,8 @@ class MPoiInfoUseCases(
     suspend fun deleteMPoiInfo(mPoiInfo: MPoiInfo) {
         return mPoiInfoRepository.deleteMPoiInfo(mPoiInfo)
     }
+
+    suspend fun updateMPoiInfo(mPoiInfo: MPoiInfo){
+        return mPoiInfoRepository.updateMPoiInfo(mPoiInfo)
+    }
 }

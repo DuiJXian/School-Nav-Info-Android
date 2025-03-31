@@ -34,8 +34,8 @@ object BDMapSetting {
     private var overlayManager: OverlayManager? = null
     private var routePlanListener: OnGetRoutePlanResultListener? = null
     var myLocation: LatLng = LatLng(39.5427, 116.2317)
-    private var startNode:PlanNode ? =null
-    private var endNode:PlanNode ? =null
+    private var startNode: PlanNode? = null
+    private var endNode: PlanNode? = null
 
     fun setConfig(mapView: MapView) {
         if (isFinishSetConfig) return

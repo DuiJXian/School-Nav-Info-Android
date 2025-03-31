@@ -9,7 +9,7 @@ data class PoiState(
     val isFocused: Boolean = false,
     val poiInfoList: List<PoiInfo> = emptyList(),
     val centerPoint: LatLng = LatLng(39.5427, 116.2317),
-    val poiDetailInfo: PoiDetailInfo? = null,
+    val poiDetailInfo: PoiDetailInfo = PoiDetailInfo(),
     val isShowDetailCard: Boolean = false,
     val isShowSearch: Boolean = true
 )

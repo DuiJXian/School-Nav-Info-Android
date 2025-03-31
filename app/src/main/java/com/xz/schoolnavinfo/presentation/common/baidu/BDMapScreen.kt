@@ -20,14 +20,13 @@ import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
 import com.xz.schoolnavinfo.presentation.common.utils.DataStoreUtils
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 val TAG = "BDMapScreen"
 
 @Composable
 fun BDMapScreen(
     modifier: Modifier = Modifier,
-    viewModel: LocationMapViewModel = hiltViewModel(),
+    viewModel: LocateViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val deviceState by viewModel.deviceState.collectAsState()
@@ -67,29 +66,14 @@ fun BDMapScreen(
 }
 
 @Composable
-private fun MapLifeCycle(
-    locationMapViewModel: LocationMapViewModel = hiltViewModel()
-) {
-    val scope = rememberCoroutineScope()
+private fun MapLifeCycle() {
+    rememberCoroutineScope()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val deviceState by locationMapViewModel.deviceState.collectAsState()
     DisposableEffect(lifecycleOwner, context) {
         val lifecycleObserver = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    scope.launch {
-                        DataStoreUtils.saveData(
-                            context,
-                            DataStoreUtils.Keys.LONGITUDE,
-                            deviceState.locationPoint.longitude
-                        )
-                        DataStoreUtils.saveData(
-                            context,
-                            DataStoreUtils.Keys.LATITUDE,
-                            deviceState.locationPoint.latitude
-                        )
-                    }
                     BDMapSetting.onResume()
                 }
 

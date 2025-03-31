@@ -6,4 +6,5 @@ sealed class MPoiInfoEvent {
     data class DeleteMPoiInfo(val mPoiInfo: MPoiInfo): MPoiInfoEvent()
     data class InsertMPoiInfo(val mPoiInfo: MPoiInfo): MPoiInfoEvent()
     data class GetMPoiInfoByUid(val uid: String): MPoiInfoEvent()
+    data class UpdateMPoiInfo(val mPoiInfo: MPoiInfo): MPoiInfoEvent()
 }

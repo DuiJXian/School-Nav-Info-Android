@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
 import AppColors
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.rememberSplineBasedDecay
@@ -8,8 +9,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -44,6 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.domain.model.MPoiInfo
 import kotlinx.coroutines.launch
@@ -63,14 +70,15 @@ fun TPreview() {
             telephone = "18274340988"
         )
     )
-    QuickViaItem(mPoiInfos = mPoiInfos, onClickItem = {})
+    QuickViaItem(mPoiInfos = mPoiInfos, onClickItem = {}, onLongClickItem = {})
 }
 
 @Composable
 fun QuickViaItem(
     modifier: Modifier = Modifier,
     mPoiInfos: List<MPoiInfo>,
-    onClickItem: (mPoiInfo: MPoiInfo) -> Unit
+    onClickItem: (mPoiInfo: MPoiInfo) -> Unit,
+    onLongClickItem: (mPoiInfo: MPoiInfo) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val bottomBoxHeightDp = 86.dp
@@ -151,7 +159,8 @@ fun QuickViaItem(
         ) {
             BottomMenu(
                 mPoiInfos = mPoiInfos,
-                onClickItem = onClickItem
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem
             )
         }
     }
@@ -161,7 +170,8 @@ fun QuickViaItem(
 fun BottomMenu(
     modifier: Modifier = Modifier,
     mPoiInfos: List<MPoiInfo>,
-    onClickItem: (mPoiInfo: MPoiInfo) -> Unit
+    onClickItem: (mPoiInfo: MPoiInfo) -> Unit,
+    onLongClickItem: (mPoiInfo: MPoiInfo) -> Unit,
 ) {
     val appColors = AppColors.current
     Row(
@@ -176,7 +186,16 @@ fun BottomMenu(
             Column(
                 modifier = Modifier
                     .size(66.dp)
-                    .clickable { onClickItem(info) },
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                onClickItem(info)
+                            },
+                            onLongPress = {
+                                onLongClickItem(info)
+                            }
+                        )
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Bottom
             ) {
@@ -187,13 +206,25 @@ fun BottomMenu(
                     shape = CircleShape,
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
-                    Image(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape),
-                        painter = painterResource(R.drawable.home),
-                        contentDescription = null,
-                    )
+                    if(info.iconPic.isNotBlank()){
+                        Image(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                            painter = rememberAsyncImagePainter(info.iconPic),
+                            contentDescription = null,
+                        )
+                    }else{
+                        Image(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape),
+                            painter = painterResource(R.drawable.home),
+                            contentDescription = null,
+                        )
+                    }
+
                 }
                 Text(
                     text = info.name,

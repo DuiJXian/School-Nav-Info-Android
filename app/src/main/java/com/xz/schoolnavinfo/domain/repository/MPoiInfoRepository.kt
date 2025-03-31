@@ -11,4 +11,6 @@ interface MPoiInfoRepository {
     suspend fun insertMPoiInfo(mPoiInfo: MPoiInfo)
 
     suspend fun deleteMPoiInfo(mPoiInfo: MPoiInfo)
+
+    suspend fun updateMPoiInfo(mPoiInfo: MPoiInfo)
 }

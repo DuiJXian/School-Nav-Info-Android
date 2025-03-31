@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.xz.schoolnavinfo.domain.model.MPoiInfo
 import kotlinx.coroutines.flow.Flow
 
@@ -21,4 +22,7 @@ interface MPoiInfoDao {
 
     @Delete
     suspend fun deleteMPoiInfo(mPoiInfo: MPoiInfo)
+
+    @Update
+    suspend fun updateMPoiInfo(mPoiInfo: MPoiInfo)
 }

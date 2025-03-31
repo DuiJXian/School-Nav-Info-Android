@@ -22,4 +22,8 @@ class MPoiInfoRespImp(private val dao: MPoiInfoDao) : MPoiInfoRepository {
     override suspend fun deleteMPoiInfo(mPoiInfo: MPoiInfo) {
         return dao.deleteMPoiInfo(mPoiInfo)
     }
+
+    override suspend fun updateMPoiInfo(mPoiInfo: MPoiInfo) {
+        return dao.updateMPoiInfo(mPoiInfo)
+    }
 }

@@ -103,7 +103,7 @@ fun RoutePlan(
             Text(
                 text = "全程${distance}千米 约${duration}",
                 style = TextStyle(
-                    color = appColors.fontInfo,
+                    color = appColors.info,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -127,7 +127,7 @@ fun RoutePlan(
                         onCancel()
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = appColors.primary
+                        containerColor = appColors.warn
                     ),
                     shape = RoundedCornerShape(topStart = 30.dp, bottomStart = 30.dp)
                 ) {

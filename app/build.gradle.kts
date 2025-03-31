@@ -16,6 +16,13 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        multiDexEnabled = true
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments["includeCompileClasspath"] = "true"
+            }
+        }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -51,7 +58,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
-    implementation(files("libs\\BaiduLBS_Android.jar"))
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
@@ -63,6 +69,18 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(files("libs/onsdk_all.aar"))
+    implementation(files("libs/NaviTts.aar"))
+    implementation(files("libs/BaiduLBS_Android.aar"))
+
+    implementation("androidx.legacy:legacy-support-v4:1.0.0")
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("com.airbnb.android:lottie:3.6.0")
+    implementation("com.github.bumptech.glide:glide:4.12.0")
+    implementation("org.apache.httpcomponents:httpclient-android:4.3.5.1")
 
     implementation("com.google.accompanist:accompanist-permissions:0.37.0")
 
@@ -79,6 +97,12 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation ("com.airbnb.android:lottie:5.2.0")
+
+
 }
 
 kapt {

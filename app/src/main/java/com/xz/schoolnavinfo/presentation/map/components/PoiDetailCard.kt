@@ -27,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -37,25 +39,23 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.baidu.mapapi.search.core.PoiDetailInfo
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.presentation.common.utils.LocateUtils
 import com.xz.schoolnavinfo.presentation.common.utils.TimeUtils
-import com.xz.schoolnavinfo.presentation.map.MapViewModel
 
 @Composable
 fun PoiDetailCard(
     modifier: Modifier = Modifier,
-    mapViewModel: MapViewModel = hiltViewModel(),
+    isFavorite: Boolean,
     poiDetailInfo: PoiDetailInfo,
     onCancel: () -> Unit,
     onCall: (tel: String) -> Unit,
     onFavorite: () -> Unit,
-    onRoute: (poiDetailInfo: PoiDetailInfo) -> Unit
+    onRoute: () -> Unit
 ) {
     val appColors = AppColors.current
-    val isFavorite = mapViewModel.isFavoritePoi
 
     Surface(
         modifier = modifier,
@@ -69,15 +69,32 @@ fun PoiDetailCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Image(
-                    painter = painterResource(R.drawable.home),
-                    contentDescription = null
-                )
+
+                if(!poiDetailInfo.image.isNullOrBlank()){
+                    Image(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .size(128.dp),
+                        contentScale = ContentScale.Crop,
+                        painter = rememberAsyncImagePainter(poiDetailInfo.image),
+                        contentDescription = null,
+                    )
+                }else{
+                    Image(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .size(128.dp),
+                        painter = painterResource(R.drawable.home),
+                        contentDescription = null
+                    )
+                }
+
                 Column(
                     Modifier
-                        .padding(start = 10.dp)
+                        .padding(start = 10.dp),
+                    verticalArrangement = Arrangement.Top
                 ) {
                     Row(
                         verticalAlignment = Alignment.Bottom
@@ -100,7 +117,7 @@ fun PoiDetailCard(
                                 },
                             imageVector = Icons.Default.Favorite,
                             contentDescription = "收藏",
-                            tint = if (isFavorite.value) {
+                            tint = if (isFavorite) {
                                 Color(0xFFFFA000)
                             } else {
                                 appColors.unSelect
@@ -117,7 +134,7 @@ fun PoiDetailCard(
                                 text = buildAnnotatedString {
                                     withStyle(
                                         style = SpanStyle(
-                                            color = appColors.fontErr,
+                                            color = appColors.err,
                                             fontWeight = FontWeight.Bold
                                         )
                                     ) {
@@ -140,7 +157,7 @@ fun PoiDetailCard(
                                 }
                                 withStyle(
                                     style = SpanStyle(
-                                        color = appColors.fontErr,
+                                        color = appColors.err,
                                         fontWeight = FontWeight.Bold
                                     )
                                 ) {
@@ -156,7 +173,7 @@ fun PoiDetailCard(
                     if (!poiDetailInfo.shopHours.isNullOrBlank()) {
                         var businessColor = appColors.unSelect
                         if (TimeUtils.isTimeInRange(poiDetailInfo.shopHours)) {
-                            businessColor = appColors.fontInfo
+                            businessColor = appColors.info
                         }
                         Text(
                             text = buildAnnotatedString {
@@ -218,10 +235,10 @@ fun PoiDetailCard(
 
 
                 Button(
-                    modifier = Modifier
-                        .padding(end = 10.dp),
+                    modifier = Modifier,
+                    shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = appColors.primary
+                        containerColor = appColors.warn
                     ),
                     onClick = {
                         onCancel()
@@ -233,19 +250,18 @@ fun PoiDetailCard(
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = Icons.Default.Close,
-                            contentDescription = "关闭"
+                            contentDescription = "取消"
                         )
-                        Text("关闭")
+                        Text("取消")
                     }
 
                 }
 
                 if (!poiDetailInfo.telephone.isNullOrEmpty()) {
                     Button(
-                        modifier = Modifier
-                            .padding(end = 10.dp),
+                        shape = RoundedCornerShape(0.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = appColors.primary
+                            containerColor = appColors.info
                         ),
                         onClick = {
                             onCall(poiDetailInfo.telephone)
@@ -268,15 +284,16 @@ fun PoiDetailCard(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = appColors.primary
                     ),
+                    shape = RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp),
                     onClick = {
-                        onRoute(poiDetailInfo)
+                        onRoute()
                     }
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(18.dp).padding(end = 3.dp),
                             imageVector = Icons.Default.Build,
                             contentDescription = "路线"
                         )
@@ -303,14 +320,15 @@ fun PrePoiDetailCard() {
             distance = 1200
             address = "湖南省邵阳市隆回县羊古坳乡罗英村"
             brand = "蜜雪冰城"
-            overallRating = 4.2
-            shopHours = "09:45-22:30"
+            //overallRating = 4.2
+           // shopHours = "09:45-22:30"
             telephone = "18274340988"
             tag = "休闲娱乐;度假村"
             price = 9.2
         }
         PoiDetailCard(
             poiDetailInfo = poiDetailInfo,
+            isFavorite = false,
             onRoute = {},
             onCancel = {},
             onCall = {},

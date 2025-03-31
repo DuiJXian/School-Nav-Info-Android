@@ -1,13 +1,19 @@
 package com.xz.schoolnavinfo.presentation.map
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -40,57 +46,103 @@ import com.baidu.mapapi.search.route.MassTransitRouteResult
 import com.baidu.mapapi.search.route.OnGetRoutePlanResultListener
 import com.baidu.mapapi.search.route.TransitRouteResult
 import com.baidu.mapapi.search.route.WalkingRouteResult
+import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
 import com.xz.schoolnavinfo.domain.model.MPoiInfo
 import com.xz.schoolnavinfo.presentation.common.baidu.BDMapScreen
 import com.xz.schoolnavinfo.presentation.common.baidu.BDMapSetting
 import com.xz.schoolnavinfo.presentation.common.baidu.LocateEvent
-import com.xz.schoolnavinfo.presentation.common.baidu.LocationMapViewModel
-import com.xz.schoolnavinfo.presentation.common.baidu.MapUiEvent
+import com.xz.schoolnavinfo.presentation.common.baidu.LocateViewModel
 import com.xz.schoolnavinfo.presentation.common.baidu.RoutePlanType
+import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.BNaviGuideActivity
+import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.DemoGuideActivity
+import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.WNaviGuideActivity
 import com.xz.schoolnavinfo.presentation.common.components.CheckGps
 import com.xz.schoolnavinfo.presentation.common.components.CheckPermission
 import com.xz.schoolnavinfo.presentation.common.utils.DataStoreUtils
 import com.xz.schoolnavinfo.presentation.common.utils.LocateUtils
 import com.xz.schoolnavinfo.presentation.common.utils.TimeUtils
+import com.xz.schoolnavinfo.presentation.map.components.FavoriteItemEdit
 import com.xz.schoolnavinfo.presentation.map.components.LocateNow
 import com.xz.schoolnavinfo.presentation.map.components.PoiDetailCard
 import com.xz.schoolnavinfo.presentation.map.components.PoiSearch
 import com.xz.schoolnavinfo.presentation.map.components.QuickViaItem
 import com.xz.schoolnavinfo.presentation.map.components.RoutePlan
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 
 val TAG = "MapScreen"
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MapScreen(
-    locationMapViewModel: LocationMapViewModel = hiltViewModel(),
+    locationMapViewModel: LocateViewModel = hiltViewModel(),
     mapViewModel: MapViewModel = hiltViewModel(),
 ) {
+    //设备状态
     val deviceState by locationMapViewModel.deviceState.collectAsState()
+    //poi状态
     val poiState by mapViewModel.poiState.collectAsState()
+    //路线规划类型
     var routePlanType: RoutePlanType by remember { mutableStateOf(RoutePlanType.Walking) }
+    //是否显示快速访问
     var isShowQuickVia by remember { mutableStateOf(true) }
+    //快速访问数据
     val mPoiInfos by mapViewModel.mPoiInfos.collectAsState()
+    //路线状态
     val routeState by mapViewModel.routeState
+    //收藏编辑
+    var isShowEditFavorite by remember { mutableStateOf(false) }
+    var mPoiInfo by remember { mutableStateOf<MPoiInfo?>(null) }
+    val favoritePoi by remember { mapViewModel.favoritePoi }
+
+
     val context = LocalContext.current
     var scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
 
+    //检查定位和权限
     LocateCheck()
+
     LaunchedEffect(true) {
+        //开始定位
         locationMapViewModel.startLocation()
+        //这是点击事件
         BDMapSetting.setOnMapClickListener(object : OnMapClickListener {
             override fun onMapClick(point: LatLng?) {}
             override fun onMapPoiClick(poi: MapPoi?) {
                 if (poi != null) {
                     mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(poi.uid))
-                    locationMapViewModel.uiEvent(MapUiEvent.MoveToLocation(poi.position))
                     mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(poi.uid))
                 }
 
             }
         })
+        //导航消息
+        mapViewModel.navMsgEvent.collectLatest { event ->
+            when (event) {
+                is NavMsgEvent.CalculateMsg -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.msg,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+
+                is NavMsgEvent.EnterNav -> {
+                    val intent = when(event.routePlanType){
+                        is RoutePlanType.Walking -> Intent(context, WNaviGuideActivity::class.java)
+                        is RoutePlanType.Biking -> Intent(context, BNaviGuideActivity::class.java)
+                        is RoutePlanType.Driving -> {
+                            //开启导航的定位
+                            BaiduNaviManagerFactory.getBaiduNaviManager().stopLocationMonitor()
+                            Intent(context, DemoGuideActivity::class.java)
+                        }
+                    }
+                    context.startActivity(intent)
+                }
+            }
+        }
     }
 
     //将最新的位置信息保存到本地
@@ -108,48 +160,61 @@ fun MapScreen(
         mapViewModel.onPoiEvent(PoiEvent.CenterPointChange(deviceState.locationPoint))
     }
 
-    Box {
-        //地图
-        BDMapScreen()
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState)
+        },
+    ) {
+        Box {
+            //地图
+            BDMapScreen()
 
-        //搜索
-        if (poiState.isShowSearch) {
-            PoiSearch(
-                onTextChange = {
-                    mapViewModel.onPoiEvent(PoiEvent.SearchTextChange(it))
-                }, onClose = {
-                    mapViewModel.onPoiEvent(PoiEvent.ClearSearchText)
-                }, onClickItem = {
-                    mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                    locationMapViewModel.uiEvent(MapUiEvent.MoveToLocation(it.location))
-                    mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(it.uid))
-                }
+            //搜索
+            if (poiState.isShowSearch) {
+                PoiSearch(
+                    onTextChange = {
+                        mapViewModel.onPoiEvent(PoiEvent.SearchTextChange(it))
+                    }, onClose = {
+                        mapViewModel.onPoiEvent(PoiEvent.ClearSearchText)
+                    }, onClickItem = {
+                        mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
+                        mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(it.uid))
+                    }
+                )
+            }
+            //定位
+            LocateNow(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = 100.dp, end = 10.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        BDMapSetting.moveMapToLocation(deviceState.locationPoint)
+                    }
             )
-        }
-        //定位
-        LocateNow(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 100.dp, end = 10.dp)
-                .clickable {
-                    BDMapSetting.moveMapToLocation(deviceState.locationPoint)
-                }
-        )
-        //收藏
-        if (isShowQuickVia) {
-            QuickViaItem(
-                modifier = Modifier.align(Alignment.BottomStart),
-                mPoiInfos = mPoiInfos,
-                onClickItem = {
-                    mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                    mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(it.uid))
-                }
-            )
-        }
-        //poi详情
-        if (poiState.isShowDetailCard) {
-            isShowQuickVia = false
-            poiState.poiDetailInfo?.let {
+            //快速访问
+            if (isShowQuickVia) {
+                QuickViaItem(
+                    modifier = Modifier.align(Alignment.BottomStart),
+                    mPoiInfos = mPoiInfos,
+                    onClickItem = {
+                        mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
+                        mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(it.uid))
+                    },
+                    onLongClickItem = {
+                        isShowEditFavorite = true
+                        mPoiInfo = it
+                    }
+                )
+            }
+            //poi详情
+            if (poiState.isShowDetailCard) {
+                isShowQuickVia = false
+                val poiDetailInfo = poiState.poiDetailInfo
+                poiDetailInfo.image = favoritePoi?.iconPic
+                BDMapSetting.moveMapToLocation(poiDetailInfo.location)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -160,7 +225,8 @@ fun MapScreen(
                 ) {
                     PoiDetailCard(
                         modifier = Modifier.align(Alignment.Center),
-                        poiDetailInfo = it,
+                        poiDetailInfo = poiDetailInfo,
+                        isFavorite = mapViewModel.isFavoritePoi.value,
                         onCancel = {
                             isShowQuickVia = true
                             mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
@@ -169,10 +235,10 @@ fun MapScreen(
                             mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
                             onRoutePlan(
                                 mapViewModel = mapViewModel,
-                                endLocation = it.location
+                                endLocation = poiDetailInfo.location
                             )
                             BDMapSetting.startRoutePlan(RoutePlanType.Walking)
-                            BDMapSetting.moveMapToLocation(it.location, 14f)
+                            BDMapSetting.moveMapToLocation(poiDetailInfo.location, 14f)
                             mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
                         },
                         onCall = {
@@ -192,12 +258,12 @@ fun MapScreen(
                         },
                         onFavorite = {
                             val item = MPoiInfo(
-                                uid = it.uid,
-                                name = it.name,
+                                uid = poiDetailInfo.uid,
+                                name = poiDetailInfo.name,
                                 order = mPoiInfos.size + 1,
                                 iconPic = "",
-                                address = it.address,
-                                telephone = it.telephone
+                                address = poiDetailInfo.address,
+                                telephone = poiDetailInfo.telephone
                             )
                             scope.launch {
                                 mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.InsertMPoiInfo(item))
@@ -206,30 +272,55 @@ fun MapScreen(
                     )
                 }
             }
-        }
-        //路线
-        if (routeState.isShowRoutePlan) {
-            RoutePlan(
-                onCancel = {
-                    isShowQuickVia = true
-                    mapViewModel.onRouteEvent(RouteEvent.IsShowChange(false))
-                    mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(true))
-                    BDMapSetting.removeOverlay()
-                },
-                onRoutePlanType = {
-                    mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
-                    routePlanType = it
-                    BDMapSetting.startRoutePlan(it)
-                },
-                onNavi = {
+            //路线规划
+            if (routeState.isShowRoutePlan) {
+                RoutePlan(
+                    onCancel = {
+                        isShowQuickVia = true
+                        mapViewModel.onRouteEvent(RouteEvent.IsShowChange(false))
+                        mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(true))
+                        BDMapSetting.removeOverlay()
+                        routePlanType = RoutePlanType.Walking
+                    },
+                    onRoutePlanType = {
+                        mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
+                        routePlanType = it
+                        BDMapSetting.startRoutePlan(it)
+                    },
+                    onNavi = {
+                        mapViewModel.onGoNavEvent(
+                            stPoint = deviceState.locationPoint,
+                            endPoint = poiState.poiDetailInfo.location,
+                            routePlanType = routePlanType
+                        )
 
-                },
-                distance = routeState.routeDistance,
-                duration = routeState.routeDuration,
-                routePlanType = routePlanType
-            )
+                    },
+                    distance = routeState.routeDistance,
+                    duration = routeState.routeDuration,
+                    routePlanType = routePlanType
+                )
+            }
+            //编辑收藏
+            if (isShowEditFavorite) {
+                mPoiInfo?.let { info ->
+                    FavoriteItemEdit(
+                        modifier = Modifier.align(Alignment.Center),
+                        mPoiInfo = info,
+                        onDelete = {
+                            isShowEditFavorite = false
+                            mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.DeleteMPoiInfo(info))
+                        },
+                        onCancel = {
+                            isShowEditFavorite = false
+                        },
+                        onConfirm = {
+                            isShowEditFavorite = false
+                            mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.UpdateMPoiInfo(it))
+                        }
+                    )
+                }
+            }
         }
-
     }
 }
 
@@ -293,7 +384,7 @@ private fun onRoutePlan(
 }
 
 @Composable
-private fun LocateCheck(viewModel: LocationMapViewModel = hiltViewModel()) {
+private fun LocateCheck(viewModel: LocateViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     CheckGps()
@@ -319,3 +410,4 @@ private fun LocateCheck(viewModel: LocationMapViewModel = hiltViewModel()) {
         }
     }
 }
+

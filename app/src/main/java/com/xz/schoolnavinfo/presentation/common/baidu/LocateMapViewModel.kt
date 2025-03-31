@@ -23,7 +23,7 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 @HiltViewModel
-class LocationMapViewModel @Inject constructor(application: Application) :
+class LocateViewModel @Inject constructor(application: Application) :
     AndroidViewModel(application), SensorEventListener {
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState
@@ -55,39 +55,8 @@ class LocationMapViewModel @Inject constructor(application: Application) :
                     isGrantedPermission = event.res
                 )
             }
-
-            is LocateEvent.LocationChange -> {
-                _deviceState.value = deviceState.value.copy(
-                    locationPoint = event.latLng
-                )
-            }
         }
     }
-
-    fun uiEvent(event: MapUiEvent) {
-        when (event) {
-            is MapUiEvent.MoveNowLocation -> {
-                viewModelScope.launch {
-                    _moveMap.emit(_deviceState.value.locationPoint)
-                }
-            }
-
-            is MapUiEvent.MoveToLocation -> {
-                viewModelScope.launch {
-                    _moveMap.emit(event.latLng)
-                }
-            }
-
-            is MapUiEvent.ShowSnackBar -> {
-
-            }
-
-            is MapUiEvent.ShowOpenGpsDialog -> {
-
-            }
-        }
-    }
-
 
     //差值 减少重组
     private var prePoint = LatLng(0.0, 0.0)
@@ -112,7 +81,7 @@ class LocationMapViewModel @Inject constructor(application: Application) :
     private val locationClient: LocationClient = LocationClient(application).apply {
         locOption = LocationClientOption().apply {
             coorType = "bd09ll"
-            scanSpan = 3000 // 每 3 秒获取一次定位
+            scanSpan = 1000
             isOpenGnss = true
             setIgnoreKillProcess(false)
             setIsNeedAddress(true)
@@ -165,17 +134,9 @@ class LocationMapViewModel @Inject constructor(application: Application) :
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
-
     override fun onCleared() {
         super.onCleared()
         sensorManager.unregisterListener(this)
         stopLocation()
     }
-}
-
-sealed class MapUiEvent {
-    data class ShowSnackBar(val message: String) : MapUiEvent()
-    data object ShowOpenGpsDialog : MapUiEvent()
-    data object MoveNowLocation : MapUiEvent()
-    data class MoveToLocation(val latLng: LatLng) : MapUiEvent()
 }

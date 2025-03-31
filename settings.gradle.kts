@@ -28,6 +28,9 @@ dependencyResolutionManagement {
         maven { setUrl("https://maven.aliyun.com/repository/public") }
         google()
         mavenCentral()
+        flatDir {
+            dirs("$rootDir/app/libs") // 确保路径正确
+        }
     }
 }
 
