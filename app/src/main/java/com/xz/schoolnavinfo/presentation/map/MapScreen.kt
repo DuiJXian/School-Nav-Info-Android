@@ -47,7 +47,7 @@ import com.baidu.mapapi.search.route.OnGetRoutePlanResultListener
 import com.baidu.mapapi.search.route.TransitRouteResult
 import com.baidu.mapapi.search.route.WalkingRouteResult
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
-import com.xz.schoolnavinfo.domain.model.MPoiInfo
+import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
 import com.xz.schoolnavinfo.presentation.common.baidu.BDMapScreen
 import com.xz.schoolnavinfo.presentation.common.baidu.BDMapSetting
 import com.xz.schoolnavinfo.presentation.common.baidu.LocateEvent
@@ -88,13 +88,13 @@ fun MapScreen(
     //是否显示快速访问
     var isShowQuickVia by remember { mutableStateOf(true) }
     //快速访问数据
-    val mPoiInfos by mapViewModel.mPoiInfos.collectAsState()
+    val mPoiInfos by mapViewModel.localPoiState.collectAsState()
     //路线状态
     val routeState by mapViewModel.routeState
     //收藏编辑
     var isShowEditFavorite by remember { mutableStateOf(false) }
-    var mPoiInfo by remember { mutableStateOf<MPoiInfo?>(null) }
-    val favoritePoi by remember { mapViewModel.favoritePoi }
+    var mPoiInfo by remember { mutableStateOf<LocalPoiInfo?>(null) }
+    val localPoiState by mapViewModel.localPoiState.collectAsState()
 
 
     val context = LocalContext.current
@@ -103,24 +103,24 @@ fun MapScreen(
 
 
     //检查定位和权限
-    LocateCheck()
+    ManageLifeCycle()
 
     LaunchedEffect(true) {
         //开始定位
         locationMapViewModel.startLocation()
-        //这是点击事件
+        //点击事件
         BDMapSetting.setOnMapClickListener(object : OnMapClickListener {
             override fun onMapClick(point: LatLng?) {}
             override fun onMapPoiClick(poi: MapPoi?) {
                 if (poi != null) {
                     mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(poi.uid))
-                    mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(poi.uid))
+                    mapViewModel.onMPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(poi.uid))
                 }
 
             }
         })
         //导航消息
-        mapViewModel.navMsgEvent.collectLatest { event ->
+        mapViewModel.navEvent.collectLatest { event ->
             when (event) {
                 is NavMsgEvent.CalculateMsg -> {
                     snackbarHostState.showSnackbar(
@@ -178,7 +178,7 @@ fun MapScreen(
                         mapViewModel.onPoiEvent(PoiEvent.ClearSearchText)
                     }, onClickItem = {
                         mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                        mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(it.uid))
+                        mapViewModel.onMPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
                     }
                 )
             }
@@ -198,10 +198,10 @@ fun MapScreen(
             if (isShowQuickVia) {
                 QuickViaItem(
                     modifier = Modifier.align(Alignment.BottomStart),
-                    mPoiInfos = mPoiInfos,
+                    localPoiInfos = localPoiState.localPoiInfos,
                     onClickItem = {
                         mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                        mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.GetMPoiInfoByUid(it.uid))
+                        mapViewModel.onMPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
                     },
                     onLongClickItem = {
                         isShowEditFavorite = true
@@ -213,7 +213,7 @@ fun MapScreen(
             if (poiState.isShowDetailCard) {
                 isShowQuickVia = false
                 val poiDetailInfo = poiState.poiDetailInfo
-                poiDetailInfo.image = favoritePoi?.iconPic
+                poiDetailInfo.image = localPoiState.favoritePoi?.iconPic
                 BDMapSetting.moveMapToLocation(poiDetailInfo.location)
                 Box(
                     modifier = Modifier
@@ -226,7 +226,7 @@ fun MapScreen(
                     PoiDetailCard(
                         modifier = Modifier.align(Alignment.Center),
                         poiDetailInfo = poiDetailInfo,
-                        isFavorite = mapViewModel.isFavoritePoi.value,
+                        isFavorite = localPoiState.isFavoritePoi,
                         onCancel = {
                             isShowQuickVia = true
                             mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
@@ -257,16 +257,16 @@ fun MapScreen(
                             }
                         },
                         onFavorite = {
-                            val item = MPoiInfo(
+                            val item = LocalPoiInfo(
                                 uid = poiDetailInfo.uid,
                                 name = poiDetailInfo.name,
-                                order = mPoiInfos.size + 1,
+                                order = localPoiState.localPoiInfos.size + 1,
                                 iconPic = "",
                                 address = poiDetailInfo.address,
                                 telephone = poiDetailInfo.telephone
                             )
                             scope.launch {
-                                mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.InsertMPoiInfo(item))
+                                mapViewModel.onMPoiInfoEvent(LocalInfoEvent.InsertMPoiInfo(item))
                             }
                         }
                     )
@@ -308,14 +308,14 @@ fun MapScreen(
                         mPoiInfo = info,
                         onDelete = {
                             isShowEditFavorite = false
-                            mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.DeleteMPoiInfo(info))
+                            mapViewModel.onMPoiInfoEvent(LocalInfoEvent.DeleteMPoiInfo(info))
                         },
                         onCancel = {
                             isShowEditFavorite = false
                         },
                         onConfirm = {
                             isShowEditFavorite = false
-                            mapViewModel.onMPoiInfoEvent(MPoiInfoEvent.UpdateMPoiInfo(it))
+                            mapViewModel.onMPoiInfoEvent(LocalInfoEvent.UpdateMPoiInfo(it))
                         }
                     )
                 }
@@ -384,7 +384,7 @@ private fun onRoutePlan(
 }
 
 @Composable
-private fun LocateCheck(viewModel: LocateViewModel = hiltViewModel()) {
+private fun ManageLifeCycle(viewModel: LocateViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     CheckGps()
@@ -398,13 +398,13 @@ private fun LocateCheck(viewModel: LocateViewModel = hiltViewModel()) {
                     viewModel.locateEvent(LocateEvent.GpsChange(isOpenGps))
                     viewModel.locateEvent(LocateEvent.PermissionChange(isGrantedPermission))
                 }
-
+                Lifecycle.Event.ON_DESTROY -> {
+                    viewModel.stopLocation()
+                }
                 else -> Unit
             }
         }
-
         lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
-
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
         }

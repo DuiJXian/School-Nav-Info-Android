@@ -1,18 +1,15 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
 import AppColors
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +20,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -43,16 +38,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.domain.model.MPoiInfo
+import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -60,8 +52,8 @@ import kotlin.math.roundToInt
 @Composable
 @Preview
 fun TPreview() {
-    val mPoiInfos: List<MPoiInfo> = listOf(
-        MPoiInfo(
+    val mPoiInfos: List<LocalPoiInfo> = listOf(
+        LocalPoiInfo(
             uid = "12312wsfwe141",
             name = "蜜雪冰城",
             order = 1,
@@ -70,15 +62,15 @@ fun TPreview() {
             telephone = "18274340988"
         )
     )
-    QuickViaItem(mPoiInfos = mPoiInfos, onClickItem = {}, onLongClickItem = {})
+    QuickViaItem(localPoiInfos = mPoiInfos, onClickItem = {}, onLongClickItem = {})
 }
 
 @Composable
 fun QuickViaItem(
     modifier: Modifier = Modifier,
-    mPoiInfos: List<MPoiInfo>,
-    onClickItem: (mPoiInfo: MPoiInfo) -> Unit,
-    onLongClickItem: (mPoiInfo: MPoiInfo) -> Unit,
+    localPoiInfos: List<LocalPoiInfo>,
+    onClickItem: (localPoiInfo: LocalPoiInfo) -> Unit,
+    onLongClickItem: (localPoiInfo: LocalPoiInfo) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val bottomBoxHeightDp = 86.dp
@@ -158,7 +150,7 @@ fun QuickViaItem(
 
         ) {
             BottomMenu(
-                mPoiInfos = mPoiInfos,
+                localPoiInfos = localPoiInfos,
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem
             )
@@ -169,9 +161,9 @@ fun QuickViaItem(
 @Composable
 fun BottomMenu(
     modifier: Modifier = Modifier,
-    mPoiInfos: List<MPoiInfo>,
-    onClickItem: (mPoiInfo: MPoiInfo) -> Unit,
-    onLongClickItem: (mPoiInfo: MPoiInfo) -> Unit,
+    localPoiInfos: List<LocalPoiInfo>,
+    onClickItem: (localPoiInfo: LocalPoiInfo) -> Unit,
+    onLongClickItem: (localPoiInfo: LocalPoiInfo) -> Unit,
 ) {
     val appColors = AppColors.current
     Row(
@@ -182,7 +174,7 @@ fun BottomMenu(
             .padding(10.dp)
             .fillMaxWidth()
     ) {
-        for (info in mPoiInfos) {
+        for (info in localPoiInfos) {
             Column(
                 modifier = Modifier
                     .size(66.dp)

@@ -1,5 +1,6 @@
 package com.xz.schoolnavinfo.presentation.common.baidu
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -15,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.baidu.mapapi.map.BaiduMapOptions
 import com.baidu.mapapi.map.MapView
 import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
@@ -26,13 +28,14 @@ val TAG = "BDMapScreen"
 @Composable
 fun BDMapScreen(
     modifier: Modifier = Modifier,
+    options: BaiduMapOptions = BaiduMapOptions(),
     viewModel: LocateViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val deviceState by viewModel.deviceState.collectAsState()
 
     val mapView = remember {
-        MapView(context)
+        MapView(context, options)
     }
     BDMapSetting.setConfig(mapView)
 
@@ -41,9 +44,6 @@ fun BDMapScreen(
         var latitude = DataStoreUtils.getData(context, DataStoreUtils.Keys.LATITUDE, 39.5427)
         var longitude = DataStoreUtils.getData(context, DataStoreUtils.Keys.LONGITUDE, 116.2317)
         BDMapSetting.moveMapToLocation(LatLng(latitude, longitude))
-        viewModel.moveMap.collectLatest {
-            BDMapSetting.moveMapToLocation(it)
-        }
     }
 
     BDMapSetting.setMyLocationData(
@@ -82,7 +82,6 @@ private fun MapLifeCycle() {
                 }
 
                 Lifecycle.Event.ON_DESTROY -> {
-                    BDMapSetting.isFinishSetConfig = false
                     BDMapSetting.onDestroy()
                 }
 

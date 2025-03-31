@@ -100,7 +100,7 @@ fun SearchTextField(
         colors = TextFieldDefaults.colors(
             cursorColor = customColors.primary,
             focusedIndicatorColor = customColors.primary,
-            unfocusedIndicatorColor = customColors.secondary,
+            unfocusedIndicatorColor = customColors.primary.copy(alpha = 0.5f),
 
             focusedContainerColor = customColors.bgSecondary,
             unfocusedContainerColor = customColors.bgSecondary

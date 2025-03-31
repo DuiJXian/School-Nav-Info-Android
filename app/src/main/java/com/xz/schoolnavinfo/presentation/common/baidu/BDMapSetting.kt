@@ -30,7 +30,7 @@ object BDMapSetting {
     var isFinishSetConfig = false
     var bDMapView: MapView? = null
     var baiduMap: BaiduMap? = null
-    var routePlanSearch: RoutePlanSearch? = null
+    private var routePlanSearch: RoutePlanSearch? = null
     private var overlayManager: OverlayManager? = null
     private var routePlanListener: OnGetRoutePlanResultListener? = null
     var myLocation: LatLng = LatLng(39.5427, 116.2317)
@@ -114,6 +114,7 @@ object BDMapSetting {
     }
 
     fun onDestroy() {
+        isFinishSetConfig = false
         routePlanSearch?.destroy()
         bDMapView?.onDestroy()
     }

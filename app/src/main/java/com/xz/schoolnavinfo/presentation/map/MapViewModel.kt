@@ -4,7 +4,6 @@ import android.app.Application
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,8 +33,7 @@ import com.baidu.mapapi.walknavi.params.WalkRouteNodeInfo
 import com.baidu.navisdk.adapter.BNRoutePlanNode
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
 import com.baidu.navisdk.adapter.IBNRoutePlanManager
-import com.xz.schoolnavinfo.domain.model.MPoiInfo
-import com.xz.schoolnavinfo.domain.use_case.MPoiInfoUseCases
+import com.xz.schoolnavinfo.domain.use_case.LocalPoiInfoUseCases
 import com.xz.schoolnavinfo.presentation.common.baidu.RoutePlanType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -53,7 +51,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
-    private val mPoiInfoUseCases: MPoiInfoUseCases,
+    private val localPoiInfoUseCases: LocalPoiInfoUseCases,
     private val application: Application
 ) : AndroidViewModel(application) {
     private val _poiState = MutableStateFlow(PoiState())
@@ -62,18 +60,22 @@ class MapViewModel @Inject constructor(
     private val _routeState = mutableStateOf(RouteState())
     val routeState = _routeState
 
-    private var getMPoiInfoJob: Job? = null
-    private val _mPoiInfos = MutableStateFlow<List<MPoiInfo>>(emptyList())
-    val mPoiInfos: StateFlow<List<MPoiInfo>> = _mPoiInfos
+    private var getLocalPoiInfoJob: Job? = null
 
-    private val _isFavoritePoi = mutableStateOf(false)
-    val isFavoritePoi = _isFavoritePoi
+    private val _localPoiState = MutableStateFlow(LocalPoiState())
+    val localPoiState: StateFlow<LocalPoiState> = _localPoiState
 
-    private val _favoritePoi = mutableStateOf<MPoiInfo?>(null)
-    var favoritePoi: MutableState<MPoiInfo?> = _favoritePoi
+//    private val _localPoiInfos = MutableStateFlow<List<LocalPoiInfo>>(emptyList())
+//    val localPoiInfos: StateFlow<List<LocalPoiInfo>> = _localPoiInfos
+//
+//    private val _isFavoritePoi = mutableStateOf(false)
+//    val isFavoritePoi = _isFavoritePoi
+//
+//    private val _favoritePoi = mutableStateOf<LocalPoiInfo?>(null)
+//    var favoritePoi: MutableState<LocalPoiInfo?> = _favoritePoi
 
-    private val _navMsgEvent = MutableSharedFlow<NavMsgEvent>()
-    val navMsgEvent: SharedFlow<NavMsgEvent> = _navMsgEvent.asSharedFlow()
+    private val _navEvent = MutableSharedFlow<NavMsgEvent>()
+    val navEvent: SharedFlow<NavMsgEvent> = _navEvent.asSharedFlow()
 
 
     init {
@@ -93,19 +95,19 @@ class MapViewModel @Inject constructor(
             viewModelScope.launch {
                 when (msg.what) {
                     IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_START -> {
-                        _navMsgEvent.emit(NavMsgEvent.CalculateMsg("算路开始"))
+                        _navEvent.emit(NavMsgEvent.CalculateMsg("算路开始"))
                     }
 
                     IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_SUCCESS -> {
-                        _navMsgEvent.emit(NavMsgEvent.CalculateMsg("算路成功"))
+                        _navEvent.emit(NavMsgEvent.CalculateMsg("算路成功"))
                     }
 
                     IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_FAILED -> {
-                        _navMsgEvent.emit(NavMsgEvent.CalculateMsg("算路失败"))
+                        _navEvent.emit(NavMsgEvent.CalculateMsg("算路失败"))
                     }
 
                     IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_TO_NAVI -> {
-                        _navMsgEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Driving))
+                        _navEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Driving))
                     }
 
                     else -> {}
@@ -140,7 +142,7 @@ class MapViewModel @Inject constructor(
 
                                     override fun onRoutePlanSuccess() {
                                         viewModelScope.launch {
-                                            _navMsgEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Walking))
+                                            _navEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Walking))
                                         }
                                     }
 
@@ -179,7 +181,7 @@ class MapViewModel @Inject constructor(
                                     }
                                     override fun onRoutePlanSuccess() {
                                         viewModelScope.launch {
-                                            _navMsgEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Biking))
+                                            _navEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Biking))
                                         }
                                     }
                                     override fun onRoutePlanFail(p0: BikeRoutePlanError?) {
@@ -217,35 +219,39 @@ class MapViewModel @Inject constructor(
 
 
     private fun getMPoiInfos() {
-        getMPoiInfoJob?.cancel()
-        getMPoiInfoJob = mPoiInfoUseCases.getMPoiInfos()
-            .onEach { mPoiInfos ->
-                _mPoiInfos.value = mPoiInfos
+        getLocalPoiInfoJob?.cancel()
+        getLocalPoiInfoJob = localPoiInfoUseCases.getMPoiInfos()
+            .onEach { localPoiInfos ->
+                _localPoiState.value = localPoiState.value.copy(
+                    localPoiInfos = localPoiInfos
+                )
             }.launchIn(viewModelScope)
     }
 
-    fun onMPoiInfoEvent(event: MPoiInfoEvent) {
+    fun onMPoiInfoEvent(event: LocalInfoEvent) {
         when (event) {
-            is MPoiInfoEvent.DeleteMPoiInfo -> {
+            is LocalInfoEvent.DeleteMPoiInfo -> {
                 viewModelScope.launch {
-                    mPoiInfoUseCases.deleteMPoiInfo(event.mPoiInfo)
+                    localPoiInfoUseCases.deleteMPoiInfo(event.mPoiInfo)
                 }
             }
 
-            is MPoiInfoEvent.InsertMPoiInfo -> {
+            is LocalInfoEvent.InsertMPoiInfo -> {
                 viewModelScope.launch {
-                    mPoiInfoUseCases.insertMPoiInfo(event.mPoiInfo)
-                    _isFavoritePoi.value = true
+                    localPoiInfoUseCases.insertMPoiInfo(event.mPoiInfo)
+                    _localPoiState.value = localPoiState.value.copy(
+                        isFavoritePoi = true
+                    )
                 }
             }
 
-            is MPoiInfoEvent.GetMPoiInfoByUid -> {
+            is LocalInfoEvent.GetMPoiInfoByUid -> {
                 getMPoiInfoByUid(event.uid)
             }
 
-            is MPoiInfoEvent.UpdateMPoiInfo -> {
+            is LocalInfoEvent.UpdateMPoiInfo -> {
                 viewModelScope.launch {
-                    mPoiInfoUseCases.updateMPoiInfo(event.mPoiInfo)
+                    localPoiInfoUseCases.updateMPoiInfo(event.mPoiInfo)
                 }
             }
         }
@@ -253,11 +259,15 @@ class MapViewModel @Inject constructor(
 
     private fun getMPoiInfoByUid(uid: String) {
         viewModelScope.launch {
-            favoritePoi.value = mPoiInfoUseCases.getMPoiInfoByUid(uid)
+            _localPoiState.value = localPoiState.value.copy(
+                favoritePoi = localPoiInfoUseCases.getMPoiInfoByUid(uid)
+            )
         }
-        _isFavoritePoi.value = _mPoiInfos.value.any {
-            it.uid == uid
-        }
+        _localPoiState.value = localPoiState.value.copy(
+            isFavoritePoi = localPoiState.value.localPoiInfos.any { localPoiInfo ->
+                localPoiInfo.uid == uid
+            }
+        )
     }
 
     fun onPoiEvent(event: PoiEvent) {

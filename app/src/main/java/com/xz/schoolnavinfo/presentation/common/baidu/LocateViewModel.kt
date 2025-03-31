@@ -14,9 +14,7 @@ import com.baidu.location.LocationClient
 import com.baidu.location.LocationClientOption
 import com.baidu.mapapi.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,9 +25,6 @@ class LocateViewModel @Inject constructor(application: Application) :
     AndroidViewModel(application), SensorEventListener {
     private val _deviceState = MutableStateFlow(DeviceState())
     val deviceState: StateFlow<DeviceState> = _deviceState
-
-    private val _moveMap = MutableSharedFlow<LatLng>()
-    val moveMap: SharedFlow<LatLng> = _moveMap
 
     private val sensorManager =
         application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -46,7 +41,7 @@ class LocateViewModel @Inject constructor(application: Application) :
         when (event) {
             is LocateEvent.GpsChange -> {
                 _deviceState.value = deviceState.value.copy(
-                    isGpsOpen = event.res
+                    isOpenGps = event.res
                 )
             }
 
@@ -97,7 +92,7 @@ class LocateViewModel @Inject constructor(application: Application) :
         }
     }
 
-    private fun stopLocation() {
+    fun stopLocation() {
         viewModelScope.launch {
             locationClient.stop()
             locationClient.unRegisterLocationListener(locationListener)
@@ -137,6 +132,5 @@ class LocateViewModel @Inject constructor(application: Application) :
     override fun onCleared() {
         super.onCleared()
         sensorManager.unregisterListener(this)
-        stopLocation()
     }
 }

@@ -33,7 +33,7 @@ fun LocateNow(
         Image(
             painter = painterResource(R.drawable.position),
             contentDescription = "移动到当前位置",
-            colorFilter = ColorFilter.tint(color = appColors.fontSecondary),
+            colorFilter = ColorFilter.tint(color = appColors.fontPrimary.copy(alpha = 0.5f)),
             modifier = Modifier
                 .align(Alignment.Center)
                 .width(25.dp)

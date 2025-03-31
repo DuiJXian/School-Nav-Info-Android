@@ -1,7 +1,6 @@
 package com.xz.schoolnavinfo
 
 import android.app.Application
-import android.util.Log
 import com.baidu.location.LocationClient
 import com.baidu.mapapi.SDKInitializer
 import com.baidu.mapapi.tts.WNTTSManager
@@ -16,7 +15,6 @@ import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class SchoolNavInfoApp : Application() {
-    val TAG = "SchoolNavInfoApp"
     private var ttsHelper: TTSHelper? = null
     override fun onCreate() {
         super.onCreate()
@@ -30,7 +28,7 @@ class SchoolNavInfoApp : Application() {
     }
 
     private fun initTTs() {
-
+//        百度tts
 //        //驾车tts
 //        val carConfig = BNTTsInitConfig.Builder()
 //            .context(applicationContext)
@@ -50,19 +48,15 @@ class SchoolNavInfoApp : Application() {
 //        BaiduNaviManagerFactory.getTTSManager().initTTS(carConfig)
 //        WNTTSManager.getInstance().initTTS(wbConfig)
 
-//        使用系统tts
+//      使用系统tts
         BaiduNaviManagerFactory.getTTSManager().initTTS(object :
             IBNTTSManager.IBNOuterTTSPlayerCallback() {
             override fun getTTSState(): Int {
-                //返回状态
                 return getTTsSate()
             }
-
             override fun playTTSText(text: String, p1: String?, bPreempt: Int, p3: String?): Int {
-                Log.e(TAG, "playTTSText: $text $p1 $bPreempt $p3")
                 return playText(text = text, bPreempt = bPreempt)
             }
-
             override fun getCurTTSSpeech(): String {
                 return ""
             }
@@ -71,11 +65,9 @@ class SchoolNavInfoApp : Application() {
             override fun getTTSState(): Int {
                 return getTTsSate()
             }
-
             override fun playTTSText(text: String, bPreempt: Int, speechId: Int): Int {
                 return playText(text, bPreempt)
             }
-
         })
 
     }

@@ -4,12 +4,11 @@ import androidx.compose.ui.graphics.Color
 // 定义自定义颜色
 data class CustomColors(
     val primary: Color,
-    val secondary: Color,
-    val fontPrimary: Color,
-    val fontSecondary: Color,
-    val err: Color,
     val info: Color,
     val warn: Color,
+    val err: Color,
+    val fontPrimary: Color,
+    val fontSecondary: Color,
     val bgPrimary: Color,
     val bgSecondary: Color,
     val unSelect: Color,
@@ -20,7 +19,6 @@ data class CustomColors(
 // 亮色模式的颜色方案
 val LightCustomColors = CustomColors(
     primary = Color(0xFF0091EA),
-    secondary = Color(0xFF55B7F5),
     fontPrimary = Color.Black,
     fontSecondary = Color(0xFF3D3D3D),
     err = Color(0xFFDE4E4E),
@@ -36,7 +34,6 @@ val LightCustomColors = CustomColors(
 // 暗色模式的颜色方案
 val DarkCustomColors = CustomColors(
     primary = Color(0xFF0091EA),
-    secondary = Color(0xFF018786),
     fontPrimary = Color.White,
     fontSecondary = Color.White,
     err = Color(0xFFDE4E4E),

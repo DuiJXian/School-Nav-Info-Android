@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "mpoiinfo")
-data class MPoiInfo(
+data class LocalPoiInfo(
     @PrimaryKey val uid: String,            // uid
     val name: String,           // Poi名称
     val order: Int,             // 序号

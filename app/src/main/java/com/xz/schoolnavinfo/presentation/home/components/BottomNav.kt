@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -48,14 +49,14 @@ fun BottomNav(
 
 @Composable
 fun BNTabItem(
-    viewModel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
     modifier: Modifier,
     menuItem: MenuItems.MenuItem,
 ) {
     val currentColor = AppColors.current
-    var selectedIndex = viewModel.homeState.collectAsState().value
+    var selectedIndex by homeViewModel.selectedBtMenuIndex
     val color =
-        if (selectedIndex.selectedMenuIndex == menuItem.index) currentColor.primary else currentColor.unSelect
+        if (selectedIndex == menuItem.index) currentColor.primary else currentColor.unSelect
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -63,7 +64,7 @@ fun BNTabItem(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) {
-                viewModel.onEvent(HomeEvent.ChangeBTMenu(menuItem.index))
+                homeViewModel.onEvent(HomeEvent.ChangeBTMenu(menuItem.index))
             }
     ) {
         Column(

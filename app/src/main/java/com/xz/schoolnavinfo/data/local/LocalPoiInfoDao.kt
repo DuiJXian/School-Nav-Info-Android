@@ -6,23 +6,23 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.xz.schoolnavinfo.domain.model.MPoiInfo
+import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface MPoiInfoDao {
+interface LocalPoiInfoDao {
     @Query("SELECT * FROM mpoiinfo")
-    fun getMPoiInfos(): Flow<List<MPoiInfo>>
+    fun getLocalPoiInfos(): Flow<List<LocalPoiInfo>>
 
     @Query("SELECT * FROM mpoiinfo WHERE uid = :uid")
-    suspend fun getMPoiInfoByUid(uid: String): MPoiInfo?
+    suspend fun getLocalPoiInfoByUid(uid: String): LocalPoiInfo?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertMPoiInfo(mPoiInfo: MPoiInfo)
+    suspend fun insertLocalPoiInfo(mPoiInfo: LocalPoiInfo)
 
     @Delete
-    suspend fun deleteMPoiInfo(mPoiInfo: MPoiInfo)
+    suspend fun deleteLocalPoiInfo(mPoiInfo: LocalPoiInfo)
 
     @Update
-    suspend fun updateMPoiInfo(mPoiInfo: MPoiInfo)
+    suspend fun updateLocalPoiInfo(mPoiInfo: LocalPoiInfo)
 }

@@ -9,6 +9,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -17,16 +19,16 @@ import com.xz.schoolnavinfo.presentation.map.MapScreen
 
 @Composable
 fun HomeScreen(
-    viewmodel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
 ) {
     Column(
         modifier = Modifier.navigationBarsPadding()
     ) {
-        val state = viewmodel.homeState.collectAsState().value
+        val selectBtMenuIndex by homeViewModel.selectedBtMenuIndex
         val pagerState = rememberPagerState(pageCount = { MenuItems.items.size })
 
-        LaunchedEffect(state.selectedMenuIndex) {
-            pagerState.animateScrollToPage(state.selectedMenuIndex)
+        LaunchedEffect(selectBtMenuIndex) {
+            pagerState.animateScrollToPage(selectBtMenuIndex)
         }
         //pager主页面
         HorizontalPager(

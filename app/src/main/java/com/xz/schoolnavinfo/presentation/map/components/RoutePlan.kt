@@ -54,10 +54,10 @@ fun RoutePlan(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = routePlanTypeColor(
-                            routePlanType,
-                            RoutePlanType.Walking,
+                            selectedType = routePlanType,
+                             RoutePlanType.Walking,
                             appColors.primary,
-                            appColors.secondary
+                            appColors.primary.copy(alpha = 0.5f)
                         )
                     ),
                     shape = RoundedCornerShape(topStart = 30.dp, bottomStart = 30.dp)
@@ -71,10 +71,10 @@ fun RoutePlan(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = routePlanTypeColor(
-                            routePlanType,
-                            RoutePlanType.Biking,
-                            appColors.primary,
-                            appColors.secondary
+                            selectedType =  routePlanType,
+                            lightType =  RoutePlanType.Biking,
+                            selectColor =  appColors.primary,
+                            unselectColor =  appColors.primary.copy(alpha = 0.5f)
                         )
                     ),
                     shape = RoundedCornerShape(0.dp)
@@ -88,10 +88,10 @@ fun RoutePlan(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = routePlanTypeColor(
-                            routePlanType,
-                            RoutePlanType.Driving,
-                            appColors.primary,
-                            appColors.secondary
+                            selectedType =  routePlanType,
+                            lightType = RoutePlanType.Driving,
+                            selectColor =  appColors.primary,
+                            unselectColor =  appColors.primary.copy(0.5f)
                         )
                     ),
                     shape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp)
@@ -103,8 +103,8 @@ fun RoutePlan(
             Text(
                 text = "全程${distance}千米 约${duration}",
                 style = TextStyle(
-                    color = appColors.info,
-                    fontSize = 16.sp,
+                    color = appColors.err,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold
                 )
             )
@@ -152,11 +152,11 @@ fun RoutePlan(
 
 fun routePlanTypeColor(
     selectedType: RoutePlanType,
-    type: RoutePlanType,
+    lightType: RoutePlanType,
     selectColor: Color,
     unselectColor: Color
 ): Color {
-    return if (selectedType::class == type::class) selectColor else unselectColor
+    return if (selectedType::class == lightType::class) selectColor else unselectColor
 }
 
 @Preview

@@ -3,9 +3,9 @@ package com.xz.schoolnavinfo.di
 import android.app.Application
 import androidx.room.Room
 import com.xz.schoolnavinfo.data.local.SchoolNavInfoDataBase
-import com.xz.schoolnavinfo.data.repository.MPoiInfoRespImp
-import com.xz.schoolnavinfo.domain.repository.MPoiInfoRepository
-import com.xz.schoolnavinfo.domain.use_case.MPoiInfoUseCases
+import com.xz.schoolnavinfo.data.repository.LocalPoiInfoRespImp
+import com.xz.schoolnavinfo.domain.repository.LocalPoiInfoRepository
+import com.xz.schoolnavinfo.domain.use_case.LocalPoiInfoUseCases
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,11 +14,11 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object MPoiInfoModule {
+object LocalPoiInfoModule {
 
     @Provides
     @Singleton
-    fun provideMPoiInfoDataBase(app: Application): SchoolNavInfoDataBase{
+    fun provideLocalPoiInfoDataBase(app: Application): SchoolNavInfoDataBase{
         return Room.databaseBuilder(
             app,
             SchoolNavInfoDataBase::class.java,
@@ -28,13 +28,13 @@ object MPoiInfoModule {
 
     @Provides
     @Singleton
-    fun provideMPoiInfoRepository(db: SchoolNavInfoDataBase): MPoiInfoRepository{
-        return MPoiInfoRespImp(db.mPoiInfoDao)
+    fun provideLocalPoiInfoRepository(db: SchoolNavInfoDataBase): LocalPoiInfoRepository{
+        return LocalPoiInfoRespImp(db.localPoiInfoDao)
     }
 
     @Provides
-    fun provideMPoiInfoUseCases(repository: MPoiInfoRepository): MPoiInfoUseCases{
-        return MPoiInfoUseCases(repository)
+    fun provideMPoiInfoUseCases(repository: LocalPoiInfoRepository): LocalPoiInfoUseCases{
+        return LocalPoiInfoUseCases(repository)
     }
 
 }

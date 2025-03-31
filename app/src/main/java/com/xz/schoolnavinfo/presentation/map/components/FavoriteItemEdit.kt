@@ -42,7 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.domain.model.MPoiInfo
+import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
 import com.xz.schoolnavinfo.presentation.common.components.MyTextFiled
 import java.io.File
 import java.io.FileOutputStream
@@ -51,7 +51,7 @@ import java.io.FileOutputStream
 @Composable
 fun TestPreview() {
     FavoriteItemEdit(
-        mPoiInfo = MPoiInfo(
+        mPoiInfo = LocalPoiInfo(
             "", "罗家坪", 1, "", "", ""
         ),
         onDelete = {},
@@ -63,10 +63,10 @@ fun TestPreview() {
 @Composable
 fun FavoriteItemEdit(
     modifier: Modifier = Modifier,
-    mPoiInfo: MPoiInfo,
+    mPoiInfo: LocalPoiInfo,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
-    onConfirm: (MPoiInfo) -> Unit
+    onConfirm: (LocalPoiInfo) -> Unit
 ) {
     val appColors = AppColors.current
     val context = LocalContext.current

@@ -27,7 +27,7 @@ fun CheckGps(){
             confirmButton = {
                 Button(
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = appColors.secondary
+                        containerColor = appColors.primary
                     ),
                     onClick = {
                         showDialog = false
@@ -40,7 +40,7 @@ fun CheckGps(){
             dismissButton = {
                 Button(
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = appColors.secondary
+                        containerColor = appColors.warn
                     ),
                     onClick = { showDialog = false }
                 ) {
