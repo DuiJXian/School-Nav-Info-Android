@@ -1,22 +1,35 @@
 package com.xz.schoolnavinfo.presentation.home
 
+import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xz.schoolnavinfo.common.net.NetExceptionFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor():ViewModel() {
-    private val _selectedBtMenuIndex = mutableIntStateOf(0)
+class HomeViewModel @Inject constructor(
+    netExceptionFlow: NetExceptionFlow
+) : ViewModel() {
+    private val _selectedBtMenuIndex = mutableIntStateOf(1)
     val selectedBtMenuIndex = _selectedBtMenuIndex
 
-    fun onEvent(event: HomeEvent){
-        when(event){
+    init {
+        viewModelScope.launch {
+            netExceptionFlow.netErrFlow.collectLatest {
+                Log.e(TAG, it.msg)
+            }
+        }
+    }
+
+
+    fun onEvent(event: HomeEvent) {
+        when (event) {
             is HomeEvent.ChangeBTMenu -> {
-                _selectedBtMenuIndex.value = event.selectedMenuIndex
+                _selectedBtMenuIndex.intValue = event.selectedMenuIndex
             }
         }
     }

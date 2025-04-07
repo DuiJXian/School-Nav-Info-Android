@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.presentation.home.components
 
-import AppColors
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +29,7 @@ import com.xz.schoolnavinfo.presentation.home.MenuItems
 fun BottomNav(
     modifier: Modifier = Modifier,
 ) {
-    var currentColor = AppColors.current
+    val currentColor = AppColors.current
     Row(
         horizontalArrangement = Arrangement.SpaceAround,
         modifier = modifier
@@ -54,9 +54,9 @@ fun BNTabItem(
     menuItem: MenuItems.MenuItem,
 ) {
     val currentColor = AppColors.current
-    var selectedIndex by homeViewModel.selectedBtMenuIndex
+    val selectedIndex by homeViewModel.selectedBtMenuIndex
     val color =
-        if (selectedIndex == menuItem.index) currentColor.primary else currentColor.unSelect
+        if (selectedIndex == menuItem.index) currentColor.primary else currentColor.greyMedium
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier

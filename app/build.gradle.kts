@@ -70,39 +70,31 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    //百度地图
     implementation(files("libs/onsdk_all.aar"))
     implementation(files("libs/NaviTts.aar"))
     implementation(files("libs/BaiduLBS_Android.aar"))
-
-    implementation("androidx.legacy:legacy-support-v4:1.0.0")
-    implementation("androidx.cardview:cardview:1.0.0")
-    implementation("androidx.recyclerview:recyclerview:1.2.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("com.airbnb.android:lottie:3.6.0")
-    implementation("com.github.bumptech.glide:glide:4.12.0")
-    implementation("org.apache.httpcomponents:httpclient-android:4.3.5.1")
-
+    implementation("com.airbnb.android:lottie:5.2.0")
+    //权限
     implementation("com.google.accompanist:accompanist-permissions:0.37.0")
-
+    //依赖注入
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
-
+    //路由
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
-
+    //ds
     implementation("androidx.datastore:datastore-preferences:1.1.2")
-
+    //room
     val roomVersion = "2.6.1" // 使用最新版本
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
-
+    //加载异步图片
     implementation("io.coil-kt:coil-compose:2.6.0")
-
-    implementation ("com.airbnb.android:lottie:5.2.0")
-
-
+    //网络请求
+    implementation("com.squareup.retrofit2:retrofit:2.9.0") // Retrofit 核心库
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Gson 解析 JSON
+    implementation("com.squareup.okhttp3:okhttp:4.10.0") // OkHttp 日志
 }
 
 kapt {

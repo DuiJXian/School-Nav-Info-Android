@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
-import AppColors
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -42,7 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.presentation.common.components.MyTextFiled
 import java.io.File
 import java.io.FileOutputStream
@@ -99,9 +103,11 @@ fun FavoriteItemEdit(
                 .background(appColors.bgPrimary),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Card(
-                shape = CircleShape,
-                border = BorderStroke(1.dp, appColors.unSelectBorder.copy(alpha = 0.3f))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .size(108.dp)
+                    .border(1.dp, appColors.greyMedium, RoundedCornerShape(10.dp))
             ) {
                 if (imagePath.isNotBlank()) {
                     Image(
@@ -130,15 +136,17 @@ fun FavoriteItemEdit(
             Column(
                 modifier = Modifier
                     .width(210.dp)
+                    .height(108.dp)
                     .padding(start = 10.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 MyTextFiled(
-                    borderColor = appColors.primary,
-                    containerColor = appColors.unSelect.copy(alpha = 0.2f),
+                    borderColor = appColors.greyMedium,
+                    containerColor = appColors.greyLight,
                     defaultText = mPoiInfo.name,
                     onFocusContainerColor = appColors.bgPrimary,
                     alpha = 0.5f,
+                    height = 46.dp,
                     icon = Icons.Default.Edit
                 ) {
                     poiName = it
@@ -146,7 +154,7 @@ fun FavoriteItemEdit(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
+                        .offset(y = (3).dp),
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Button(
@@ -155,7 +163,7 @@ fun FavoriteItemEdit(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = appColors.err
                         ),
-                        shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
+                        shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp),
                         onClick = {
                             onDelete()
                         }
@@ -184,7 +192,7 @@ fun FavoriteItemEdit(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = appColors.primary
                         ),
-                        shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
+                        shape = RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp),
                         onClick = {
                             onConfirm(
                                 mPoiInfo.copy(

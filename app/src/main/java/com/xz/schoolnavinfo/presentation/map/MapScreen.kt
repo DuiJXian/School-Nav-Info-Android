@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -34,6 +35,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.baidu.mapapi.map.BaiduMap.OnMapClickListener
 import com.baidu.mapapi.map.MapPoi
+import com.baidu.mapapi.map.MapView
+import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
 import com.baidu.mapapi.overlayutil.BikingRouteOverlay
 import com.baidu.mapapi.overlayutil.DrivingRouteOverlay
@@ -47,20 +50,19 @@ import com.baidu.mapapi.search.route.OnGetRoutePlanResultListener
 import com.baidu.mapapi.search.route.TransitRouteResult
 import com.baidu.mapapi.search.route.WalkingRouteResult
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
-import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
-import com.xz.schoolnavinfo.presentation.common.baidu.BDMapScreen
-import com.xz.schoolnavinfo.presentation.common.baidu.BDMapSetting
-import com.xz.schoolnavinfo.presentation.common.baidu.LocateEvent
-import com.xz.schoolnavinfo.presentation.common.baidu.LocateViewModel
-import com.xz.schoolnavinfo.presentation.common.baidu.RoutePlanType
+import com.xz.schoolnavinfo.common.utils.LocateUtils
+import com.xz.schoolnavinfo.common.utils.TimeUtils
+import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateEvent
+import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateViewModel
+import com.xz.schoolnavinfo.presentation.common.baidu.map.MapSet
+import com.xz.schoolnavinfo.presentation.common.baidu.map.MapViewScreen
+import com.xz.schoolnavinfo.presentation.common.baidu.map.RoutePlanType
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.BNaviGuideActivity
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.DemoGuideActivity
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.WNaviGuideActivity
 import com.xz.schoolnavinfo.presentation.common.components.CheckGps
 import com.xz.schoolnavinfo.presentation.common.components.CheckPermission
-import com.xz.schoolnavinfo.presentation.common.utils.DataStoreUtils
-import com.xz.schoolnavinfo.presentation.common.utils.LocateUtils
-import com.xz.schoolnavinfo.presentation.common.utils.TimeUtils
 import com.xz.schoolnavinfo.presentation.map.components.FavoriteItemEdit
 import com.xz.schoolnavinfo.presentation.map.components.LocateNow
 import com.xz.schoolnavinfo.presentation.map.components.PoiDetailCard
@@ -78,7 +80,8 @@ val TAG = "MapScreen"
 fun MapScreen(
     locationMapViewModel: LocateViewModel = hiltViewModel(),
     mapViewModel: MapViewModel = hiltViewModel(),
-) {
+
+    ) {
     //设备状态
     val deviceState by locationMapViewModel.deviceState.collectAsState()
     //poi状态
@@ -96,29 +99,48 @@ fun MapScreen(
     var mPoiInfo by remember { mutableStateOf<LocalPoiInfo?>(null) }
     val localPoiState by mapViewModel.localPoiState.collectAsState()
 
-
     val context = LocalContext.current
-    var scope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val isDark = isSystemInDarkTheme()
 
+    val mapView = MapSet.createInstance(context)
 
     //检查定位和权限
     ManageLifeCycle()
 
+    LaunchedEffect(deviceState) {
+        mapViewModel.onPoiEvent(PoiEvent.CenterPointChange(deviceState.locationPoint))
+        MapSet.saveLocation(context, deviceState.locationPoint)
+        MapSet.setMyLocationData(
+            myLocationData = MyLocationData
+                .Builder()
+                .latitude(deviceState.locationPoint.latitude)
+                .longitude(deviceState.locationPoint.longitude)
+                .direction(deviceState.direction)
+                .build(),
+            mapView = mapView
+        )
+    }
+
+
     LaunchedEffect(true) {
+        val latLng = MapSet.loadLocation(context)
+        MapSet.moveMapToLocation(mapView, latLng)
+        MapSet.setDarkStyle(mapView, context, isDark)
         //开始定位
         locationMapViewModel.startLocation()
         //点击事件
-        BDMapSetting.setOnMapClickListener(object : OnMapClickListener {
+        MapSet.setOnMapClickListener(object : OnMapClickListener {
             override fun onMapClick(point: LatLng?) {}
             override fun onMapPoiClick(poi: MapPoi?) {
                 if (poi != null) {
                     mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(poi.uid))
-                    mapViewModel.onMPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(poi.uid))
+                    mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(poi.uid))
                 }
 
             }
-        })
+        }, mapView)
         //导航消息
         mapViewModel.navEvent.collectLatest { event ->
             when (event) {
@@ -130,7 +152,7 @@ fun MapScreen(
                 }
 
                 is NavMsgEvent.EnterNav -> {
-                    val intent = when(event.routePlanType){
+                    val intent = when (event.routePlanType) {
                         is RoutePlanType.Walking -> Intent(context, WNaviGuideActivity::class.java)
                         is RoutePlanType.Biking -> Intent(context, BNaviGuideActivity::class.java)
                         is RoutePlanType.Driving -> {
@@ -141,23 +163,9 @@ fun MapScreen(
                     }
                     context.startActivity(intent)
                 }
+
             }
         }
-    }
-
-    //将最新的位置信息保存到本地
-    LaunchedEffect(deviceState.locationPoint) {
-        DataStoreUtils.saveData(
-            context,
-            DataStoreUtils.Keys.LONGITUDE,
-            deviceState.locationPoint.longitude
-        )
-        DataStoreUtils.saveData(
-            context,
-            DataStoreUtils.Keys.LATITUDE,
-            deviceState.locationPoint.latitude
-        )
-        mapViewModel.onPoiEvent(PoiEvent.CenterPointChange(deviceState.locationPoint))
     }
 
     Scaffold(
@@ -167,7 +175,7 @@ fun MapScreen(
     ) {
         Box {
             //地图
-            BDMapScreen()
+            MapViewScreen(mapView = mapView)
 
             //搜索
             if (poiState.isShowSearch) {
@@ -178,7 +186,7 @@ fun MapScreen(
                         mapViewModel.onPoiEvent(PoiEvent.ClearSearchText)
                     }, onClickItem = {
                         mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                        mapViewModel.onMPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
+                        mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
                     }
                 )
             }
@@ -191,7 +199,7 @@ fun MapScreen(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) {
-                        BDMapSetting.moveMapToLocation(deviceState.locationPoint)
+                        MapSet.moveMapToLocation(mapView, deviceState.locationPoint)
                     }
             )
             //快速访问
@@ -201,7 +209,7 @@ fun MapScreen(
                     localPoiInfos = localPoiState.localPoiInfos,
                     onClickItem = {
                         mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                        mapViewModel.onMPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
+                        mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
                     },
                     onLongClickItem = {
                         isShowEditFavorite = true
@@ -214,7 +222,7 @@ fun MapScreen(
                 isShowQuickVia = false
                 val poiDetailInfo = poiState.poiDetailInfo
                 poiDetailInfo.image = localPoiState.favoritePoi?.iconPic
-                BDMapSetting.moveMapToLocation(poiDetailInfo.location)
+                MapSet.moveMapToLocation(mapView, poiDetailInfo.location)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -233,19 +241,27 @@ fun MapScreen(
                         },
                         onRoute = {
                             mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
-                            onRoutePlan(
-                                mapViewModel = mapViewModel,
-                                endLocation = poiDetailInfo.location
-                            )
-                            BDMapSetting.startRoutePlan(RoutePlanType.Walking)
-                            BDMapSetting.moveMapToLocation(poiDetailInfo.location, 14f)
+                            MapSet.onRoutePlan(
+                                startLocation = deviceState.locationPoint,
+                                endLocation = poiDetailInfo.location,
+                                mapView = mapView
+                            ) { distance, duration ->
+                                mapViewModel.onRouteEvent(
+                                    RouteEvent.DisAndDurChange(
+                                        distance,
+                                        duration
+                                    )
+                                )
+                                mapViewModel.onRouteEvent(RouteEvent.IsShowChange(true))
+                            }
+                            MapSet.startRoutePlan(RoutePlanType.Walking)
+                            MapSet.moveMapToLocation(mapView, poiDetailInfo.location, 14f)
                             mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
                         },
                         onCall = {
                             val intent = Intent(Intent.ACTION_DIAL).apply {
                                 data = Uri.parse("tel:$it")
                             }
-                            // 检查是否有 Activity 处理此 Intent
                             if (intent.resolveActivity(context.packageManager) != null) {
                                 context.startActivity(intent)
                             } else {
@@ -266,7 +282,7 @@ fun MapScreen(
                                 telephone = poiDetailInfo.telephone
                             )
                             scope.launch {
-                                mapViewModel.onMPoiInfoEvent(LocalInfoEvent.InsertMPoiInfo(item))
+                                mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.InsertMPoiInfo(item))
                             }
                         }
                     )
@@ -279,13 +295,13 @@ fun MapScreen(
                         isShowQuickVia = true
                         mapViewModel.onRouteEvent(RouteEvent.IsShowChange(false))
                         mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(true))
-                        BDMapSetting.removeOverlay()
+                        MapSet.removeOverlay()
                         routePlanType = RoutePlanType.Walking
                     },
                     onRoutePlanType = {
                         mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
                         routePlanType = it
-                        BDMapSetting.startRoutePlan(it)
+                        MapSet.startRoutePlan(it)
                     },
                     onNavi = {
                         mapViewModel.onGoNavEvent(
@@ -308,79 +324,20 @@ fun MapScreen(
                         mPoiInfo = info,
                         onDelete = {
                             isShowEditFavorite = false
-                            mapViewModel.onMPoiInfoEvent(LocalInfoEvent.DeleteMPoiInfo(info))
+                            mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.DeleteMPoiInfo(info))
                         },
                         onCancel = {
                             isShowEditFavorite = false
                         },
                         onConfirm = {
                             isShowEditFavorite = false
-                            mapViewModel.onMPoiInfoEvent(LocalInfoEvent.UpdateMPoiInfo(it))
+                            mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.UpdateMPoiInfo(it))
                         }
                     )
                 }
             }
         }
     }
-}
-
-private fun onRoutePlan(
-    mapViewModel: MapViewModel,
-    endLocation: LatLng
-) {
-    val onGetPlanListener = object : OnGetRoutePlanResultListener {
-        override fun onGetWalkingRouteResult(walkingRes: WalkingRouteResult) {
-            val overlay = WalkingRouteOverlay(BDMapSetting.baiduMap)
-            BDMapSetting.setOverlayManager(overlay)
-            if (walkingRes.routeLines.size > 0) {
-                val routeLine = walkingRes.routeLines[0]
-                overlay.setData(routeLine)
-                overlay.addToMap()
-                val distance = LocateUtils.metersToKilometers(routeLine.distance)
-                val duration = TimeUtils.formatTime(routeLine.duration)
-                mapViewModel.onRouteEvent(RouteEvent.DisAndDurChange(distance, duration))
-                mapViewModel.onRouteEvent(RouteEvent.IsShowChange(true))
-            }
-
-        }
-
-        override fun onGetTransitRouteResult(p0: TransitRouteResult?) {}
-        override fun onGetMassTransitRouteResult(p0: MassTransitRouteResult?) {}
-        override fun onGetDrivingRouteResult(drivingRes: DrivingRouteResult) {
-            val overlay = DrivingRouteOverlay(BDMapSetting.baiduMap)
-            BDMapSetting.setOverlayManager(overlay)
-            if (drivingRes.routeLines.size > 0) {
-                val routeLine = drivingRes.routeLines[0]
-                overlay.setData(routeLine)
-                overlay.addToMap()
-                val distance = LocateUtils.metersToKilometers(routeLine.distance)
-                val duration = TimeUtils.formatTime(routeLine.duration)
-                mapViewModel.onRouteEvent(RouteEvent.DisAndDurChange(distance, duration))
-                mapViewModel.onRouteEvent(RouteEvent.IsShowChange(true))
-            }
-        }
-
-        override fun onGetIndoorRouteResult(p0: IndoorRouteResult?) {}
-        override fun onGetBikingRouteResult(bikingRes: BikingRouteResult) {
-            val overlay = BikingRouteOverlay(BDMapSetting.baiduMap)
-            BDMapSetting.setOverlayManager(overlay)
-            if (bikingRes.routeLines.size > 0) {
-                val routeLine = bikingRes.routeLines[0]
-                overlay.setData(routeLine)
-                overlay.addToMap()
-                val distance = LocateUtils.metersToKilometers(routeLine.distance)
-                val duration = TimeUtils.formatTime(routeLine.duration)
-                mapViewModel.onRouteEvent(RouteEvent.DisAndDurChange(distance, duration))
-                mapViewModel.onRouteEvent(RouteEvent.IsShowChange(true))
-            }
-        }
-
-        override fun onGetIntegralRouteResult(p0: IntegralRouteResult?) {}
-    }
-    BDMapSetting.setRoutePlanListener(
-        listener = onGetPlanListener,
-        endPoint = endLocation
-    )
 }
 
 @Composable
@@ -398,9 +355,11 @@ private fun ManageLifeCycle(viewModel: LocateViewModel = hiltViewModel()) {
                     viewModel.locateEvent(LocateEvent.GpsChange(isOpenGps))
                     viewModel.locateEvent(LocateEvent.PermissionChange(isGrantedPermission))
                 }
+
                 Lifecycle.Event.ON_DESTROY -> {
                     viewModel.stopLocation()
                 }
+
                 else -> Unit
             }
         }
@@ -410,4 +369,7 @@ private fun ManageLifeCycle(viewModel: LocateViewModel = hiltViewModel()) {
         }
     }
 }
+
+
+
 

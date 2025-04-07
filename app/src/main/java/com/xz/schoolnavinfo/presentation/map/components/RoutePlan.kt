@@ -1,26 +1,33 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
-import AppColors
+import androidx.compose.foundation.background
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.xz.schoolnavinfo.presentation.common.baidu.RoutePlanType
+import com.xz.schoolnavinfo.R
+import com.xz.schoolnavinfo.presentation.common.baidu.map.RoutePlanType
 
 
 @Composable
@@ -45,7 +52,7 @@ fun RoutePlan(
         ) {
             Row(
                 modifier = Modifier
-                    .width(270.dp)
+                    .width(300.dp)
             ) {
                 Button(
                     modifier = Modifier.weight(1f),
@@ -55,14 +62,24 @@ fun RoutePlan(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = routePlanTypeColor(
                             selectedType = routePlanType,
-                             RoutePlanType.Walking,
+                            RoutePlanType.Walking,
                             appColors.primary,
-                            appColors.primary.copy(alpha = 0.5f)
+                            appColors.greyHeavy
                         )
                     ),
-                    shape = RoundedCornerShape(topStart = 30.dp, bottomStart = 30.dp)
+                    shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp)
                 ) {
-                    Text("步行", style = TextStyle(color = appColors.bgPrimary))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            painter = painterResource(R.drawable.directions_walk_24px),
+                            contentDescription = "取消"
+                        )
+                        Text("步行", style = TextStyle(color = appColors.bgPrimary))
+                    }
+
                 }
                 Button(
                     modifier = Modifier.weight(1f),
@@ -71,15 +88,24 @@ fun RoutePlan(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = routePlanTypeColor(
-                            selectedType =  routePlanType,
-                            lightType =  RoutePlanType.Biking,
-                            selectColor =  appColors.primary,
-                            unselectColor =  appColors.primary.copy(alpha = 0.5f)
+                            selectedType = routePlanType,
+                            lightType = RoutePlanType.Biking,
+                            selectColor = appColors.primary,
+                            unselectColor = appColors.greyHeavy
                         )
                     ),
                     shape = RoundedCornerShape(0.dp)
                 ) {
-                    Text("骑行", style = TextStyle(color = appColors.bgPrimary))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            painter = painterResource(R.drawable.directions_bike_24px),
+                            contentDescription = "骑行"
+                        )
+                        Text("骑行", style = TextStyle(color = appColors.bgPrimary))
+                    }
                 }
                 Button(
                     modifier = Modifier.weight(1f),
@@ -88,24 +114,36 @@ fun RoutePlan(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = routePlanTypeColor(
-                            selectedType =  routePlanType,
+                            selectedType = routePlanType,
                             lightType = RoutePlanType.Driving,
-                            selectColor =  appColors.primary,
-                            unselectColor =  appColors.primary.copy(0.5f)
+                            selectColor = appColors.primary,
+                            unselectColor = appColors.greyHeavy
                         )
                     ),
-                    shape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp)
+                    shape = RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp)
                 ) {
-                    Text("驾车", style = TextStyle(color = appColors.bgPrimary))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            painter = painterResource(R.drawable.directions_car_24px),
+                            contentDescription = "驾车"
+                        )
+                        Text("驾车", style = TextStyle(color = appColors.bgPrimary))
+                    }
+
                 }
             }
 
             Text(
+                modifier = Modifier
+                    .background(appColors.greyMedium.copy(alpha = 0.3f)),
                 text = "全程${distance}千米 约${duration}",
                 style = TextStyle(
-                    color = appColors.err,
+                    color = appColors.info,
                     fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             )
         }
@@ -119,7 +157,7 @@ fun RoutePlan(
         ) {
             Row(
                 modifier = Modifier
-                    .width(180.dp)
+                    .width(200.dp)
             ) {
                 Button(
                     modifier = Modifier.weight(1f),
@@ -129,9 +167,18 @@ fun RoutePlan(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = appColors.warn
                     ),
-                    shape = RoundedCornerShape(topStart = 30.dp, bottomStart = 30.dp)
+                    shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp)
                 ) {
-                    Text("取消", style = TextStyle(color = appColors.bgPrimary))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "取消"
+                        )
+                        Text("取消", style = TextStyle(color = appColors.bgPrimary))
+                    }
                 }
                 Button(
                     modifier = Modifier.weight(1f),
@@ -141,9 +188,19 @@ fun RoutePlan(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = appColors.primary
                     ),
-                    shape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp)
+                    shape = RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp)
                 ) {
-                    Text("导航", style = TextStyle(color = appColors.bgPrimary))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            painter = painterResource(R.drawable.navigation_24px),
+                            contentDescription = "取消"
+                        )
+                        Text("导航", style = TextStyle(color = appColors.bgPrimary))
+                    }
+
                 }
             }
         }

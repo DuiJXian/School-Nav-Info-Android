@@ -1,9 +1,10 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
-import AppColors
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,8 +44,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.baidu.mapapi.search.core.PoiDetailInfo
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.presentation.common.utils.LocateUtils
-import com.xz.schoolnavinfo.presentation.common.utils.TimeUtils
+import com.xz.schoolnavinfo.common.utils.LocateUtils
+import com.xz.schoolnavinfo.common.utils.TimeUtils
 
 @Composable
 fun PoiDetailCard(
@@ -112,7 +114,10 @@ fun PoiDetailCard(
                         Icon(
                             modifier = Modifier
                                 .size(22.dp)
-                                .clickable {
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
                                     onFavorite()
                                 },
                             imageVector = Icons.Default.Favorite,
@@ -120,7 +125,7 @@ fun PoiDetailCard(
                             tint = if (isFavorite) {
                                 Color(0xFFFFA000)
                             } else {
-                                appColors.unSelect
+                                appColors.greyMedium
                             }
                         )
                     }
@@ -171,7 +176,7 @@ fun PoiDetailCard(
                     )
 
                     if (!poiDetailInfo.shopHours.isNullOrBlank()) {
-                        var businessColor = appColors.unSelect
+                        var businessColor = appColors.greyMedium
                         if (TimeUtils.isTimeInRange(poiDetailInfo.shopHours)) {
                             businessColor = appColors.info
                         }
@@ -294,7 +299,7 @@ fun PoiDetailCard(
                     ) {
                         Icon(
                             modifier = Modifier.size(18.dp).padding(end = 3.dp),
-                            imageVector = Icons.Default.Build,
+                            painter = painterResource(R.drawable.route_24px),
                             contentDescription = "路线"
                         )
                         Text("路线")

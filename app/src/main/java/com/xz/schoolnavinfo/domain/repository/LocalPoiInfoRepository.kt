@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.domain.repository
 
-import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
 import kotlinx.coroutines.flow.Flow
 
 interface LocalPoiInfoRepository {

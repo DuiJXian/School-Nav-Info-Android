@@ -2,8 +2,8 @@ package com.xz.schoolnavinfo.di
 
 import android.app.Application
 import androidx.room.Room
-import com.xz.schoolnavinfo.data.local.SchoolNavInfoDataBase
-import com.xz.schoolnavinfo.data.repository.LocalPoiInfoRespImp
+import com.xz.schoolnavinfo.data.dao.local.SchoolNavInfoDataBase
+import com.xz.schoolnavinfo.data.repository.LocalPoiInfoRepositoryImp
 import com.xz.schoolnavinfo.domain.repository.LocalPoiInfoRepository
 import com.xz.schoolnavinfo.domain.use_case.LocalPoiInfoUseCases
 import dagger.Module
@@ -18,7 +18,7 @@ object LocalPoiInfoModule {
 
     @Provides
     @Singleton
-    fun provideLocalPoiInfoDataBase(app: Application): SchoolNavInfoDataBase{
+    fun provideLocalPoiInfoDataBase(app: Application): SchoolNavInfoDataBase {
         return Room.databaseBuilder(
             app,
             SchoolNavInfoDataBase::class.java,
@@ -29,7 +29,7 @@ object LocalPoiInfoModule {
     @Provides
     @Singleton
     fun provideLocalPoiInfoRepository(db: SchoolNavInfoDataBase): LocalPoiInfoRepository{
-        return LocalPoiInfoRespImp(db.localPoiInfoDao)
+        return LocalPoiInfoRepositoryImp(db.localPoiInfoDao)
     }
 
     @Provides

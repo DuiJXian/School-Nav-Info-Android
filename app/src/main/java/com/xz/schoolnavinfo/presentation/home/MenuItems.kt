@@ -12,7 +12,7 @@ object MenuItems {
 
     val items = listOf(
         MenuItem(0,"地图", R.drawable.map_24px),
-        MenuItem(1,"校圈", R.drawable.forum_24px),
+        MenuItem(1,"校园", R.drawable.newsmode_24px),
         MenuItem(2,"我", R.drawable.person_24px)
     )
 }

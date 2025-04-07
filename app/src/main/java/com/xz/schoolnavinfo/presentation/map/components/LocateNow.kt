@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
-import AppColors
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

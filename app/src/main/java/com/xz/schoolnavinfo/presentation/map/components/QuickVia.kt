@@ -1,6 +1,5 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
-import AppColors
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.rememberSplineBasedDecay
@@ -10,7 +9,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,7 +18,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,11 +37,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.domain.model.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -73,7 +72,7 @@ fun QuickViaItem(
     onLongClickItem: (localPoiInfo: LocalPoiInfo) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val bottomBoxHeightDp = 86.dp
+    val bottomBoxHeightDp = 76.dp
     val bottomBoxHeightPx = with(LocalDensity.current) { bottomBoxHeightDp.toPx() }
 
     val menuPosition = remember { Animatable(0f) }
@@ -149,9 +148,10 @@ fun QuickViaItem(
                 )
 
         ) {
-            BottomMenu(
+            MenuItem(
                 localPoiInfos = localPoiInfos,
                 onClickItem = onClickItem,
+                bottomBoxHeightDp = bottomBoxHeightDp,
                 onLongClickItem = onLongClickItem
             )
         }
@@ -159,9 +159,10 @@ fun QuickViaItem(
 }
 
 @Composable
-fun BottomMenu(
+fun MenuItem(
     modifier: Modifier = Modifier,
     localPoiInfos: List<LocalPoiInfo>,
+    bottomBoxHeightDp: Dp,
     onClickItem: (localPoiInfo: LocalPoiInfo) -> Unit,
     onLongClickItem: (localPoiInfo: LocalPoiInfo) -> Unit,
 ) {
@@ -169,13 +170,13 @@ fun BottomMenu(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .height(86.dp)
-            .background(Color.White)
-            .padding(10.dp)
+            .height(bottomBoxHeightDp)
+            .background(appColors.bgPrimary)
+            .padding(top = 10.dp)
             .fillMaxWidth()
     ) {
         for (info in localPoiInfos) {
-            Column(
+            Box(
                 modifier = Modifier
                     .size(66.dp)
                     .pointerInput(Unit) {
@@ -188,30 +189,27 @@ fun BottomMenu(
                             }
                         )
                     },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Bottom
             ) {
                 Card(
                     modifier = Modifier
-                        .size(46.dp) // 设置图片的大小
-                        .clip(CircleShape), // 裁剪为圆形
-                    shape = CircleShape,
+                        .size(46.dp)
+                        .align(Alignment.TopCenter),
+                    colors = CardDefaults.cardColors(containerColor = appColors.greyLight),
+                    shape = RoundedCornerShape(10.dp),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
-                    if(info.iconPic.isNotBlank()){
+                    if (info.iconPic.isNotBlank()) {
                         Image(
                             modifier = Modifier
-                                .size(46.dp)
-                                .clip(CircleShape),
+                                .size(46.dp),
                             contentScale = ContentScale.Crop,
                             painter = rememberAsyncImagePainter(info.iconPic),
                             contentDescription = null,
                         )
-                    }else{
+                    } else {
                         Image(
                             modifier = Modifier
-                                .size(46.dp)
-                                .clip(CircleShape),
+                                .size(46.dp),
                             painter = painterResource(R.drawable.home),
                             contentDescription = null,
                         )
@@ -219,7 +217,9 @@ fun BottomMenu(
 
                 }
                 Text(
-                    text = info.name,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter),
+                    text = maxLengthTextFilter(info.name),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(
@@ -229,4 +229,8 @@ fun BottomMenu(
             }
         }
     }
+}
+
+fun maxLengthTextFilter(text: String): String {
+    return if (text.length <= 4) text else text.take(4) + ".."
 }

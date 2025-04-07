@@ -34,7 +34,7 @@ import com.baidu.navisdk.adapter.BNRoutePlanNode
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
 import com.baidu.navisdk.adapter.IBNRoutePlanManager
 import com.xz.schoolnavinfo.domain.use_case.LocalPoiInfoUseCases
-import com.xz.schoolnavinfo.presentation.common.baidu.RoutePlanType
+import com.xz.schoolnavinfo.presentation.common.baidu.map.RoutePlanType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -65,21 +65,12 @@ class MapViewModel @Inject constructor(
     private val _localPoiState = MutableStateFlow(LocalPoiState())
     val localPoiState: StateFlow<LocalPoiState> = _localPoiState
 
-//    private val _localPoiInfos = MutableStateFlow<List<LocalPoiInfo>>(emptyList())
-//    val localPoiInfos: StateFlow<List<LocalPoiInfo>> = _localPoiInfos
-//
-//    private val _isFavoritePoi = mutableStateOf(false)
-//    val isFavoritePoi = _isFavoritePoi
-//
-//    private val _favoritePoi = mutableStateOf<LocalPoiInfo?>(null)
-//    var favoritePoi: MutableState<LocalPoiInfo?> = _favoritePoi
-
     private val _navEvent = MutableSharedFlow<NavMsgEvent>()
     val navEvent: SharedFlow<NavMsgEvent> = _navEvent.asSharedFlow()
 
 
     init {
-        getMPoiInfos()
+        getLocalPoiInfos()
         viewModelScope.launch {
             _poiState.collectLatest {
                 if (it.searchText.isBlank()) {
@@ -116,6 +107,7 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    //导航事件
     fun onGoNavEvent(stPoint: LatLng, endPoint: LatLng, routePlanType: RoutePlanType) {
         when (routePlanType) {
             is RoutePlanType.Walking -> {
@@ -216,9 +208,8 @@ class MapViewModel @Inject constructor(
             }
         }
     }
-
-
-    private fun getMPoiInfos() {
+    //获取本地兴趣点
+    private fun getLocalPoiInfos() {
         getLocalPoiInfoJob?.cancel()
         getLocalPoiInfoJob = localPoiInfoUseCases.getMPoiInfos()
             .onEach { localPoiInfos ->
@@ -227,8 +218,8 @@ class MapViewModel @Inject constructor(
                 )
             }.launchIn(viewModelScope)
     }
-
-    fun onMPoiInfoEvent(event: LocalInfoEvent) {
+    //本地兴趣点事件
+    fun onLocalPoiInfoEvent(event: LocalInfoEvent) {
         when (event) {
             is LocalInfoEvent.DeleteMPoiInfo -> {
                 viewModelScope.launch {
@@ -256,7 +247,7 @@ class MapViewModel @Inject constructor(
             }
         }
     }
-
+    //通过UID获取兴趣点
     private fun getMPoiInfoByUid(uid: String) {
         viewModelScope.launch {
             _localPoiState.value = localPoiState.value.copy(
@@ -269,7 +260,7 @@ class MapViewModel @Inject constructor(
             }
         )
     }
-
+    //兴趣点检索事件
     fun onPoiEvent(event: PoiEvent) {
         when (event) {
             is PoiEvent.SearchTextChange -> {
@@ -323,7 +314,7 @@ class MapViewModel @Inject constructor(
             }
         }
     }
-
+    //导航事件
     fun onRouteEvent(event: RouteEvent) {
         when (event) {
             is RouteEvent.DisAndDurChange -> {
@@ -341,10 +332,12 @@ class MapViewModel @Inject constructor(
         }
     }
 
+
+
     private val poiSearchListener = object : OnGetPoiSearchResultListener {
         override fun onGetPoiResult(result: PoiResult) {
             var poiList: MutableList<PoiInfo> = mutableListOf()
-            if (result?.allPoi != null) {
+            if (result.allPoi != null) {
                 for (poi in result.allPoi) {
                     poi.distance = DistanceUtil
                         .getDistance(_poiState.value.centerPoint, poi.location)

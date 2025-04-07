@@ -1,9 +1,9 @@
+package com.xz.schoolnavinfo.presentation.theme
+
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
-import com.xz.schoolnavinfo.presentation.theme.DarkCustomColors
-import com.xz.schoolnavinfo.presentation.theme.LightCustomColors
 
 val AppColors = staticCompositionLocalOf { LightCustomColors }
 

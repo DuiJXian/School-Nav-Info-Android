@@ -9,10 +9,12 @@ data class CustomColors(
     val err: Color,
     val fontPrimary: Color,
     val fontSecondary: Color,
+    val bgScreen: Color,
     val bgPrimary: Color,
     val bgSecondary: Color,
-    val unSelect: Color,
-    val unSelectBorder: Color,
+    val greyHeavy: Color,
+    val greyMedium: Color,
+    val greyLight: Color,
     val onButtonColor: Color,
 )
 
@@ -20,15 +22,17 @@ data class CustomColors(
 val LightCustomColors = CustomColors(
     primary = Color(0xFF0091EA),
     fontPrimary = Color.Black,
-    fontSecondary = Color(0xFF3D3D3D),
+    fontSecondary = Color(0xFF2F2F2F),
     err = Color(0xFFDE4E4E),
     info = Color(0xff18A058),
     warn = Color(0xffF0A020),
     bgPrimary = Color.White,
     bgSecondary = Color(0xFFF5F5F5),
-    unSelect = Color(0xFFBDBDBD),
-    unSelectBorder = Color(0xFFDCDCDC),
-    onButtonColor = Color.White
+    greyHeavy = Color(0xFF858585),
+    greyMedium = Color(0xFFBDBDBD),
+    greyLight = Color(0xFFF1F2F5),
+    onButtonColor = Color.White,
+    bgScreen = Color(0xFFD9D9D9)
 )
 
 // 暗色模式的颜色方案
@@ -39,9 +43,11 @@ val DarkCustomColors = CustomColors(
     err = Color(0xFFDE4E4E),
     info = Color(0xff18A058),
     warn = Color(0xffF0A020),
-    bgPrimary = Color.Black,
+    bgPrimary = Color(0xFF313131),
     bgSecondary = Color(0xFF5C5C5C),
-    unSelect = Color(0xFFBDBDBD),
-    unSelectBorder = Color(0xFFD4D4D4),
-    onButtonColor = Color.White
+    greyHeavy = Color(0xFF858585),
+    greyMedium = Color(0xFFBDBDBD),
+    greyLight = Color(0xFFD4D4D4),
+    onButtonColor = Color.White,
+    bgScreen = Color(0xFF464646)
 )

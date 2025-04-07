@@ -10,7 +10,7 @@ import com.baidu.navisdk.adapter.IBNTTSManager.IBNOuterTTSPlayerCallback.PLAYER_
 import com.baidu.navisdk.adapter.IBNTTSManager.IBNOuterTTSPlayerCallback.PLAYER_STATE_PLAYING
 import com.baidu.navisdk.adapter.IBaiduNaviManager.INaviInitListener
 import com.baidu.navisdk.adapter.struct.BNaviInitConfig
-import com.xz.schoolnavinfo.presentation.common.utils.TTSHelper
+import com.xz.schoolnavinfo.common.utils.TTSHelper
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp

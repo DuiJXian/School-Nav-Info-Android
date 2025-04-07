@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
-import AppColors
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,13 +21,16 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,27 +43,32 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.baidu.mapapi.search.core.PoiInfo
-import com.xz.schoolnavinfo.presentation.common.utils.LocateUtils
+import com.xz.schoolnavinfo.common.utils.LocateUtils
 import com.xz.schoolnavinfo.presentation.map.PoiEvent
 import com.xz.schoolnavinfo.presentation.map.MapViewModel
 
 @Composable
 fun PoiSearch(
-    onTextChange: (text: String) -> Unit,
+    onTextChange: (String) -> Unit,
     onClose: () -> Unit,
-    onClickItem: (poiInfo: PoiInfo) -> Unit
+    onClickItem: (PoiInfo) -> Unit
 ) {
+    var isShowSearchPoi by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
-            .padding(top = 46.dp, start = 20.dp, end = 20.dp)
-            .shadow(20.dp)
+            .padding(vertical = 46.dp, horizontal = 20.dp)
+            .shadow(3.dp, RoundedCornerShape(16.dp))
     ) {
         SearchTextField(
             onTextChange = onTextChange,
             onClose = onClose,
+            isShowSearchPoi = isShowSearchPoi
         )
         SearchResult(
-            onClickItem = onClickItem
+            onClickItem = onClickItem,
+            isShowSearchPoi = {
+                isShowSearchPoi = it
+            }
         )
     }
 }
@@ -69,16 +77,21 @@ fun PoiSearch(
 @Composable
 fun SearchTextField(
     mapViewModel: MapViewModel = hiltViewModel(),
+    isShowSearchPoi: Boolean = false,
     onTextChange: (text: String) -> Unit,
     onClose: () -> Unit,
 ) {
-    var customColors = AppColors.current
+    var appColors = AppColors.current
     val focusManager = LocalFocusManager.current
 
     val poiState by mapViewModel.poiState.collectAsState()
 
+    val shape = if (isShowSearchPoi) RoundedCornerShape(
+        topStart = 16.dp,
+        topEnd = 16.dp
+    ) else RoundedCornerShape(16.dp)
 
-    TextField(
+    OutlinedTextField(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
@@ -88,22 +101,23 @@ fun SearchTextField(
         value = poiState.searchText,
         textStyle = TextStyle(
             fontSize = 16.sp,
-            color = customColors.fontSecondary
+            color = appColors.fontSecondary
         ),
         onValueChange = {
             onTextChange(it)
         },
         placeholder = {
-            Text("搜地点", style = TextStyle(fontSize = 14.sp, color = customColors.unSelect))
+            Text("搜地点", style = TextStyle(fontSize = 14.sp, color = appColors.greyMedium))
         },
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        shape = shape,
         colors = TextFieldDefaults.colors(
-            cursorColor = customColors.primary,
-            focusedIndicatorColor = customColors.primary,
-            unfocusedIndicatorColor = customColors.primary.copy(alpha = 0.5f),
+            cursorColor = appColors.primary,
 
-            focusedContainerColor = customColors.bgSecondary,
-            unfocusedContainerColor = customColors.bgSecondary
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+
+            unfocusedContainerColor = appColors.bgPrimary,
+            focusedContainerColor = appColors.bgPrimary,
         ),
         leadingIcon = {
             Icon(
@@ -146,16 +160,18 @@ fun SearchTextField(
 @Composable
 fun SearchResult(
     onClickItem: (poiInfo: PoiInfo) -> Unit,
-    mapViewModel: MapViewModel = hiltViewModel()
+    mapViewModel: MapViewModel = hiltViewModel(),
+    isShowSearchPoi: (Boolean) -> Unit
 ) {
     var appColors = AppColors.current
     val poiState by mapViewModel.poiState.collectAsState()
     val focusManager = LocalFocusManager.current
     if (poiState.poiInfoList.isNotEmpty() && poiState.isFocused) {
+        isShowSearchPoi(true)
         LazyColumn(
             modifier = Modifier
                 .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
-                .background(appColors.bgSecondary)
+                .background(appColors.bgPrimary)
                 .heightIn(max = 182.dp)
         ) {
             items(poiState.poiInfoList) { item ->
@@ -185,7 +201,7 @@ fun SearchResult(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(0.5.dp)
-                            .background(appColors.unSelectBorder)
+                            .background(appColors.greyLight)
                     )
                 }
 
@@ -193,5 +209,7 @@ fun SearchResult(
         }
 
 
+    } else {
+        isShowSearchPoi(false)
     }
 }

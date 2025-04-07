@@ -21,11 +21,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 
 @Composable
 fun MyTextFiled(
@@ -37,11 +39,12 @@ fun MyTextFiled(
     alpha: Float = 0.5f,
     icon: ImageVector,
     borderSize: Dp = 1.dp,
-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
+    shape: RoundedCornerShape = RoundedCornerShape(10.dp),
     height: Dp = 50.dp,
     width: Dp = 210.dp,
     onValueChange: (text: String) -> Unit
 ){
+    val appColors = AppColors.current
     var text by remember { mutableStateOf(defaultText) }
     var isFocused by remember { mutableStateOf(false) }
     var mBorderColor by remember { mutableStateOf(borderColor.copy(alpha = alpha)) }
@@ -74,7 +77,7 @@ fun MyTextFiled(
             modifier = Modifier
                 .padding(start = 10.dp)
                 .size(20.dp),
-            tint = mBorderColor
+            tint = appColors.fontSecondary
         )
         BasicTextField(
             value = text,
@@ -93,6 +96,7 @@ fun MyTextFiled(
                 fontSize = 18.sp,
                 color = mTextColor
             ),
+            cursorBrush = SolidColor(appColors.primary),
             singleLine = true
         )
     }
