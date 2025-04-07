@@ -1,4 +1,4 @@
-package com.xz.schoolnavinfo.presentation.common.components
+package com.xz.schoolnavinfo.presentation.common.compose
 
 import android.Manifest
 import androidx.compose.runtime.Composable

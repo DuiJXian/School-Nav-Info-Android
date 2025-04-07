@@ -10,9 +10,12 @@ android {
     namespace = "com.xz.schoolnavinfo"
     compileSdk = 35
 
+    dataBinding {
+        enable = true
+    }
     defaultConfig {
         applicationId = "com.xz.schoolnavinfo"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -94,7 +97,13 @@ dependencies {
     //网络请求
     implementation("com.squareup.retrofit2:retrofit:2.9.0") // Retrofit 核心库
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Gson 解析 JSON
-    implementation("com.squareup.okhttp3:okhttp:4.10.0") // OkHttp 日志
+    implementation("com.squareup.okhttp3:okhttp:4.10.0") // OkHttp 日志3
+    //图片选择
+//    implementation("io.github.ParkSangGwon:tedimagepicker:1.6.1")
+    implementation("com.github.esafirm:android-image-picker:3.0.0")
+//    implementation("io.github.leavesczy:matisse:2.1.4")
+//    implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+
 }
 
 kapt {

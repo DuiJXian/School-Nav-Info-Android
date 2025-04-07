@@ -60,6 +60,7 @@ fun DiscussCard(
                 Text(
                     text = userInfo?.nickname ?: "",
                     style = TextStyle(
+                        color = appColors.fontPrimary,
                         fontSize = 20.sp
                     )
                 )

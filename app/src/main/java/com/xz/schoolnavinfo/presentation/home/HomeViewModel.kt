@@ -12,14 +12,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    netExceptionFlow: NetExceptionFlow
+    private val _netExceptionFlow: NetExceptionFlow
 ) : ViewModel() {
     private val _selectedBtMenuIndex = mutableIntStateOf(1)
     val selectedBtMenuIndex = _selectedBtMenuIndex
 
+    val netExceptionFlow = _netExceptionFlow.netErrFlow
+
     init {
         viewModelScope.launch {
-            netExceptionFlow.netErrFlow.collectLatest {
+            _netExceptionFlow.netErrFlow.collectLatest {
                 Log.e(TAG, it.msg)
             }
         }

@@ -1,4 +1,4 @@
-package com.xz.schoolnavinfo.presentation.common.components
+package com.xz.schoolnavinfo.presentation.common.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

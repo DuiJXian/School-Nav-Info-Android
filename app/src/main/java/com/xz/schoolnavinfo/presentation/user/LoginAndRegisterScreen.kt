@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.presentation.user
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -66,6 +67,7 @@ fun LoginOrRegisterScreen(
     ) {
         Column(
             modifier = Modifier
+                .background(appColors.bgScreen)
                 .padding(20.dp)
                 .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -112,13 +114,24 @@ fun LoginOrRegisterScreen(
                 onValueChange = {
                     authViewModel.onEvent(UserEvent.ChangeUsername(it))
                 },
-                label = { Text("账号") },
+                label = {
+                    Text(
+                        modifier = Modifier
+                            .background(appColors.bgScreen),
+                        text = "账号",
+                        style = TextStyle(
+                            color = appColors.fontSecondary
+                        )
+                    )
+                },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = appColors.primary,
-                    focusedContainerColor = appColors.bgPrimary,
-                    unfocusedContainerColor = appColors.bgPrimary,
+                    focusedContainerColor = appColors.bgScreen,
+                    unfocusedContainerColor = appColors.bgScreen,
                     focusedLabelColor = appColors.primary,
-                    unfocusedIndicatorColor = appColors.fontSecondary
+                    unfocusedIndicatorColor = appColors.fontSecondary,
+                    focusedTextColor = appColors.primary,
+                    unfocusedTextColor = appColors.fontPrimary,
                 ),
                 singleLine = true
             )
@@ -126,13 +139,24 @@ fun LoginOrRegisterScreen(
             OutlinedTextField(
                 value = authState.password,
                 onValueChange = { authViewModel.onEvent(UserEvent.ChangePassword(it)) },
-                label = { Text("密码") },
+                label = {
+                    Text(
+                        modifier = Modifier
+                            .background(appColors.bgScreen),
+                        text = "密码",
+                        style = TextStyle(
+                            color = appColors.fontSecondary
+                        )
+                    )
+                },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = appColors.primary,
-                    focusedContainerColor = appColors.bgPrimary,
-                    unfocusedContainerColor = appColors.bgPrimary,
+                    focusedContainerColor = appColors.bgScreen,
+                    unfocusedContainerColor = appColors.bgScreen,
                     focusedLabelColor = appColors.primary,
-                    unfocusedIndicatorColor = appColors.fontSecondary
+                    unfocusedIndicatorColor = appColors.fontSecondary,
+                    focusedTextColor = appColors.primary,
+                    unfocusedTextColor = appColors.fontPrimary,
                 ),
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation()
@@ -142,13 +166,24 @@ fun LoginOrRegisterScreen(
                 OutlinedTextField(
                     value = authState.password,
                     onValueChange = { authViewModel.onEvent(UserEvent.ChangePassword(it)) },
-                    label = { Text("确认密码") },
+                    label = {
+                        Text(
+                            modifier = Modifier
+                                .background(appColors.bgScreen),
+                            text = "确认密码",
+                            style = TextStyle(
+                                color = appColors.fontSecondary
+                            )
+                        )
+                    },
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = appColors.primary,
-                        focusedContainerColor = appColors.bgPrimary,
-                        unfocusedContainerColor = appColors.bgPrimary,
+                        focusedContainerColor = appColors.bgScreen,
+                        unfocusedContainerColor = appColors.bgScreen,
                         focusedLabelColor = appColors.primary,
-                        unfocusedIndicatorColor = appColors.fontSecondary
+                        unfocusedIndicatorColor = appColors.fontSecondary,
+                        focusedTextColor = appColors.primary,
+                        unfocusedTextColor = appColors.fontPrimary,
                     ),
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation()

@@ -1,4 +1,4 @@
-package com.xz.schoolnavinfo.presentation.common.components
+package com.xz.schoolnavinfo.presentation.common.compose
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.xz.schoolnavinfo.presentation.theme.AppColors

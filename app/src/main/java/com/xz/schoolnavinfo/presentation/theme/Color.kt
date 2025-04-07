@@ -32,7 +32,7 @@ val LightCustomColors = CustomColors(
     greyMedium = Color(0xFFBDBDBD),
     greyLight = Color(0xFFF1F2F5),
     onButtonColor = Color.White,
-    bgScreen = Color(0xFFD9D9D9)
+    bgScreen = Color(0xFFEAEAEA)
 )
 
 // 暗色模式的颜色方案
@@ -45,9 +45,9 @@ val DarkCustomColors = CustomColors(
     warn = Color(0xffF0A020),
     bgPrimary = Color(0xFF313131),
     bgSecondary = Color(0xFF5C5C5C),
-    greyHeavy = Color(0xFF858585),
-    greyMedium = Color(0xFFBDBDBD),
-    greyLight = Color(0xFFD4D4D4),
+    greyHeavy = Color(0xFFC5C5C5),
+    greyMedium = Color(0xFFDCDCDC),
+    greyLight = Color(0xFFF3F3F3),
     onButtonColor = Color.White,
     bgScreen = Color(0xFF464646)
 )
