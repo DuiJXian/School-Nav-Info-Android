@@ -1,243 +1,138 @@
 package com.xz.schoolnavinfo.presentation.campus.activity
 
+import android.util.Log
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.xz.schoolnavinfo.R
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
+import com.xz.schoolnavinfo.common.net.getStaticCompleteUrl
+import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
+import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
+import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
-@Preview
-fun ActivityScreen(){
+fun ActivityScreen(
+    commonViewModel: CommonViewModel,
+    activityViewModel: ActivityViewModel = hiltViewModel()
+) {
 
     val appColors = AppColors.current
     val scrollState = rememberScrollState()
 
-    Box(
+    val articleList = activityViewModel.activityList
+    val bannerList = activityViewModel.bannerList
+    val lazyListState = rememberLazyListState()
+
+
+    LaunchedEffect(true) {
+        commonViewModel.globalFlow.refreshData.collectLatest {
+            if (it == ArticleType.Activity) {
+                activityViewModel.onGetActivityEvent()
+                activityViewModel.onGetBannerEvent()
+            }
+        }
+    }
+
+    LaunchedEffect(lazyListState) {
+        snapshotFlow {
+            val layoutInfo = lazyListState.layoutInfo
+            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val totalItems = layoutInfo.totalItemsCount
+            lastVisibleItem to totalItems
+        }.collect { (lastVisibleItem, totalItems) ->
+            if (lastVisibleItem == totalItems - 1 && activityViewModel.hasMore) {
+                activityViewModel.onGetMoreActivityEvent()
+            }
+        }
+    }
+
+
+    // 使用 LazyColumn 显示文章
+    LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-    ){
-        Column(
-            modifier = Modifier
-                .verticalScroll(scrollState)
-                .padding(10.dp)
-                .fillMaxSize(),
-
-        ) {
-            Row {
-                Box(
+            .fillMaxSize(),
+        contentPadding = PaddingValues(
+            top = 10.dp,
+            start = 10.dp,
+            end = 10.dp
+        )
+    ) {
+        if (bannerList.isNotEmpty()) {
+            item {
+                CarouselBanner(
                     modifier = Modifier
+                        .padding(bottom = 10.dp)
                         .clip(RoundedCornerShape(10.dp))
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentScale = ContentScale.Crop,
-                        painter = painterResource(R.drawable.lunbo1),
-                        contentDescription = null
-                    )
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .height(50.dp)
-                            .fillMaxWidth()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black),
-                                    startY = 0f,
-                                    endY = Float.POSITIVE_INFINITY
-                                )
-                            )
-                    )
-                    Row(
-                        modifier = Modifier
-                            .align(alignment = Alignment.BottomEnd)
-                            .padding(bottom = 10.dp, end = 10.dp)
-                    ) {
-                        Box(
-                            modifier =  Modifier
-                                .clip(CircleShape)
-                                .background(appColors.bgPrimary)
-                                .size(10.dp)
-                        )
-                        Box(
-                            modifier =  Modifier
-                                .padding(horizontal = 5.dp)
-                                .clip(CircleShape)
-                                .background(appColors.greyMedium)
-                                .size(10.dp)
-                        )
-                        Box(
-                            modifier =  Modifier
-                                .clip(CircleShape)
-                                .background(appColors.greyMedium)
-                                .size(10.dp)
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 10.dp, bottom = 5.dp)
-                    ) {
-                        Text(
-                            text = "活动测试1",
-                            color = appColors.bgPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 20.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(appColors.bgPrimary)
-                    .padding(top = 10.dp, bottom = 10.dp, end = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    modifier = Modifier
-                        .padding(start = 5.dp, end = 10.dp)
-                        .size(16.dp),
-                    painter = painterResource(R.drawable.top_up),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(appColors.primary)
-                )
-                Text(
-                    text = "置顶置顶置顶置顶置顶置顶置顶置顶置顶置顶置顶置顶置顶",
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(
-                        color = appColors.fontPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 5.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(appColors.bgPrimary)
-                    .padding(top = 10.dp, bottom = 10.dp, end = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    modifier = Modifier
-                        .padding(start = 5.dp, end = 10.dp)
-                        .size(16.dp),
-                    painter = painterResource(R.drawable.notify),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(appColors.primary)
-                )
-                Text(
-                    text = "通知通知通知通知通知通知通知通知通知通知通知通知通知通知通知通知通知通知通知",
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(
-                        color = appColors.fontPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
+                        .height(300.dp)
+                        .background(appColors.err),
+                    articleDTOList = bannerList
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(appColors.bgPrimary)
-                    .fillMaxWidth()
-                    .padding(10.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                ) {
-                    Text(
-                        text = "9月1日在操场举行开学典礼活动",
-                        overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(
-                            color = appColors.fontPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                        )
+        }
 
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .padding(top = 5.dp)
-                        .clip(RoundedCornerShape(5.dp))
-                ) {
-                    Row {
-                        Image(
-                            modifier = Modifier
-                                .size(120.dp),
-                            painter = painterResource(R.drawable.img1),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop
-                        )
-                        Image(
-                            modifier = Modifier
-                                .size(120.dp),
-                            painter = painterResource(R.drawable.img3),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop
+        items(articleList) { item ->
+            Box(
+                modifier = Modifier
+                    .clickable {
+                        commonViewModel.onNavEvent(
+                            NavEvent.ArticleDetail(
+                                articleDTO = item,
+                                type = "活动"
+                            )
                         )
                     }
-                    Row(
-                        modifier = Modifier
-                            .padding(top = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            modifier = Modifier
-                                .size(16.dp),
-                            imageVector = Icons.Default.LocationOn,
-                            tint = appColors.fontSecondary,
-                            contentDescription = null
-                        )
-                        Text(
-                            "晨光体育场",
-                            style = TextStyle(
-                                color = appColors.fontSecondary,
-                                fontSize = 14.sp
-                            )
+                    .padding(bottom = 10.dp)
+            ) {
+                ActivityCard(
+                    articleDTO = item
+                ) {
+                    if (item.imageList != null) {
+                        val startIndex = item.imageList.indexOf(it)
+                        commonViewModel.onLoadImageUrlEvent(
+                            item.imageList.map { url -> getStaticCompleteUrl(url) },
+                            startIndex,
+                            0.dp
                         )
                     }
                 }
@@ -245,5 +140,105 @@ fun ActivityScreen(){
         }
     }
 
+}
 
+@Composable
+fun CarouselBanner(
+    articleDTOList: List<ArticleDTO>,
+    modifier: Modifier = Modifier,
+    autoScrollInterval: Long = 3000L, // 自动滚动间隔
+    onImageClick: (index: Int) -> Unit = {}
+) {
+    val pagerState = rememberPagerState { articleDTOList.size }
+    val appColor = AppColors.current
+    val scope = rememberCoroutineScope()
+
+    // 自动滚动
+    LaunchedEffect(pagerState.currentPage) {
+        if (articleDTOList.size <= 1) return@LaunchedEffect
+        delay(autoScrollInterval)
+        val nextPage = (pagerState.currentPage + 1) % articleDTOList.size
+        scope.launch {
+            pagerState.animateScrollToPage(nextPage, animationSpec = tween(durationMillis = 1000))
+        }
+    }
+
+
+    val imageList = articleDTOList.flatMap { e ->
+        e.imageList?.filter { v -> v.contains("banner") }
+            ?: listOf()
+    }
+    if (imageList.isNotEmpty()) {
+        Box(
+            modifier = modifier
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) { page ->
+                Image(
+                    painter = rememberAsyncImagePainter(getStaticCompleteUrl(imageList[page])),
+                    contentDescription = "banner-$page",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { onImageClick(page) }
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.3f)
+                            ), // 渐变从透明到半透明黑色
+                            startY = 0f,
+                            endY = Float.POSITIVE_INFINITY
+                        )
+                    )
+            )
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 10.dp, start = 10.dp)
+                    .align(Alignment.BottomStart)
+            ) {
+                val article = articleDTOList[pagerState.currentPage]
+                article.article?.title?.let {
+                    Text(
+                        text = it,
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+            // 小圆点指示器
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .padding(bottom = 10.dp, end = 10.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .align(Alignment.BottomEnd)
+                    .background(Color.Gray.copy(alpha = .5f))
+            ) {
+                repeat(imageList.size) { index ->
+                    val isSelected = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) Color.White else appColor.greyHeavy)
+                    )
+                }
+            }
+        }
+    }
 }

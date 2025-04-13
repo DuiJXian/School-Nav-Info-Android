@@ -1,7 +1,7 @@
 package com.xz.schoolnavinfo.di
 
 import android.app.Application
-import com.xz.schoolnavinfo.common.net.NetExceptionFlow
+import com.xz.schoolnavinfo.common.event.GlobalFlow
 import com.xz.schoolnavinfo.common.net.AuthInterceptor
 import com.xz.schoolnavinfo.common.net.BASE_URL
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
@@ -54,13 +54,13 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideGlobalFlow(): NetExceptionFlow {
-        return NetExceptionFlow()
+    fun provideGlobalFlow(): GlobalFlow {
+        return GlobalFlow()
     }
 
     @Provides
     @Singleton
-    fun provideNetErrManager(netExceptionFlow: NetExceptionFlow): NetExceptionManager {
+    fun provideNetErrManager(netExceptionFlow: GlobalFlow): NetExceptionManager {
         return NetExceptionManager(netExceptionFlow)
     }
 }

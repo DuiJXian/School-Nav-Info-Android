@@ -2,12 +2,37 @@ package com.xz.schoolnavinfo.domain.use_case
 
 import com.xz.schoolnavinfo.common.model.BaseResponse
 import com.xz.schoolnavinfo.common.model.PageResponse
-import com.xz.schoolnavinfo.common.request.ArticleRequest
-import com.xz.schoolnavinfo.domain.model.dto.ArticleDTO
+import com.xz.schoolnavinfo.data.dao.remote.request.ArticleRequest
+import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.repository.ArticleRepository
 
 class ArticleUseCases(private val articleRepository: ArticleRepository) {
-    suspend fun getArticles(articleRequest: ArticleRequest): BaseResponse<PageResponse<ArticleDTO>> {
-        return articleRepository.getArticles(articleRequest)
+    suspend fun getDiscussArticleList(articleRequest: ArticleRequest): BaseResponse<PageResponse<ArticleDTO>> {
+        return articleRepository.getDiscussArticleList(articleRequest)
+    }
+
+    suspend fun createDiscussArticle(articleDTO: ArticleDTO): BaseResponse<String> {
+        return articleRepository.createDiscussArticle(articleDTO)
+    }
+
+    suspend fun deleteDiscussArticle(articleId: String): BaseResponse<String> {
+        return articleRepository.deleteDiscussArticle(articleId)
+    }
+
+
+    suspend fun getActivityArticleList(articleRequest: ArticleRequest): BaseResponse<PageResponse<ArticleDTO>> {
+        return articleRepository.getActivityArticleList(articleRequest)
+    }
+
+    suspend fun getActivityBanner(): BaseResponse<List<ArticleDTO>> {
+        return articleRepository.getActivityBanner()
+    }
+
+    suspend fun createActivityArticle(articleDTO: ArticleDTO): BaseResponse<String> {
+        return articleRepository.createActivityArticle(articleDTO)
+    }
+
+    suspend fun deleteActivityArticle(articleId: String): BaseResponse<String> {
+        return articleRepository.deleteActivityArticle(articleId)
     }
 }

@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.domain.use_case
 
-import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.domain.repository.LocalPoiInfoRepository
 import kotlinx.coroutines.flow.Flow
 

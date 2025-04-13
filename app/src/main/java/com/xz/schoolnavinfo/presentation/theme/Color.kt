@@ -22,7 +22,7 @@ data class CustomColors(
 val LightCustomColors = CustomColors(
     primary = Color(0xFF0091EA),
     fontPrimary = Color.Black,
-    fontSecondary = Color(0xFF2F2F2F),
+    fontSecondary = Color(0xFF383838),
     err = Color(0xFFDE4E4E),
     info = Color(0xff18A058),
     warn = Color(0xffF0A020),

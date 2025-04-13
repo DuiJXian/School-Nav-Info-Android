@@ -1,7 +1,13 @@
 package com.xz.schoolnavinfo.common.utils
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import java.text.SimpleDateFormat
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -23,7 +29,6 @@ object TimeUtils {
     private fun timeCheck(timeRange: String): Boolean {
         // 将时间区间通过 "-" 分割成开始时间和结束时间
         val times = timeRange.split("-")
-        Log.e("TAG", "timeCheck: $times")
         if (times.size != 2) {
             throw IllegalArgumentException("时间区间格式不正确${timeRange}，正确格式为 'HH:mm-HH:mm'")
         }
@@ -63,4 +68,38 @@ object TimeUtils {
             else -> "${remainingSeconds}秒"
         }
     }
+
+
+    fun formatTimeDifference(pastTime: String): String {
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val pastDate = formatter.parse(pastTime) ?: return "时间格式错误"
+        val currentDate = Date()
+
+        val diffInMillis = currentDate.time - pastDate.time
+        val diffInSeconds = diffInMillis / 1000
+        val diffInMinutes = diffInSeconds / 60
+        val diffInHours = diffInMinutes / 60
+        val diffInDays = diffInHours / 24
+
+        return when {
+            diffInSeconds < 60 -> "$diffInSeconds 秒钟前"  // 小于60秒
+            diffInMinutes < 60 -> "$diffInMinutes 分钟前"  // 小于60分钟
+            diffInHours < 24 -> "$diffInHours 小时前"      // 小于24小时
+            diffInDays in 1..30 -> "$diffInDays 天前"       // 小于30天
+            else -> {
+                val calendar = Calendar.getInstance()
+                calendar.time = pastDate
+                val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+
+                // 如果年份相同，显示月日，如4月1日
+                if (calendar.get(Calendar.YEAR) == currentYear) {
+                    "${calendar.get(Calendar.MONTH) + 1}月${calendar.get(Calendar.DAY_OF_MONTH)}日"
+                } else {
+                    // 否则显示年份，月日，如2024年4月1日
+                    "${calendar.get(Calendar.YEAR)}年${calendar.get(Calendar.MONTH) + 1}月${calendar.get(Calendar.DAY_OF_MONTH)}日"
+                }
+            }
+        }
+    }
+
 }

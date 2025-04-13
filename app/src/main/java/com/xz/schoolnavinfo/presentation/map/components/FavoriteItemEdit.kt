@@ -41,7 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.presentation.common.compose.MyTextFiled
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import java.io.File

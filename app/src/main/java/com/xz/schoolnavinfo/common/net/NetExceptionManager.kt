@@ -1,11 +1,13 @@
 package com.xz.schoolnavinfo.common.net
 
-import com.xz.schoolnavinfo.common.model.BaseResponse
+import android.util.Log
+import com.xz.schoolnavinfo.common.event.GlobalFlow
+import com.xz.schoolnavinfo.common.event.NetExceptionEvent
 import retrofit2.HttpException
 import java.io.IOException
 
 class NetExceptionManager(
-    private val netExceptionFlow: NetExceptionFlow
+    private val globalFlow: GlobalFlow
 ) {
 
     // 在这里捕获网络异常并发送错误消息
@@ -13,25 +15,28 @@ class NetExceptionManager(
         return try {
             apiCall()
         } catch (e: HttpException) {
+            Log.e("TAG", "safeApiCall: ${e.message}")
             when (e.code()) {
                 401 -> {
-                    netExceptionFlow.onEvent(NetException.Code401)
+                    globalFlow.onNetEvent(NetExceptionEvent.Code401)
                 }
 
                 403 -> {
-                    netExceptionFlow.onEvent(NetException.Code403)
+                    globalFlow.onNetEvent(NetExceptionEvent.Code403)
                 }
 
                 else -> {
-                    netExceptionFlow.onEvent(NetException.CodeOther(e.code(), e.message ?: ""))
+                    globalFlow.onNetEvent(NetExceptionEvent.CodeOther(e.code(), e.message ?: ""))
                 }
             }
             null
         } catch (e: IOException) {
-            netExceptionFlow.onEvent(NetException.IOException(e))
+            Log.e("TAG", "safeApiCall: ${e.message}")
+            globalFlow.onNetEvent(NetExceptionEvent.IOException(e))
             null
         } catch (e: Exception) {
-            netExceptionFlow.onEvent(NetException.OtherException(e))
+            Log.e("TAG", "safeApiCall: ${e.message}")
+            globalFlow.onNetEvent(NetExceptionEvent.OtherException(e))
             null
         }
     }

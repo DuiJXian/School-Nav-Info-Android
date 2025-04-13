@@ -2,7 +2,7 @@ package com.xz.schoolnavinfo.data.dao.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 
 @Database(
     entities = [LocalPoiInfo::class],

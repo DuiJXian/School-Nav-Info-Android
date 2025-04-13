@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.presentation.map
 
-import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 
 sealed class LocalInfoEvent {
     data class DeleteMPoiInfo(val mPoiInfo: LocalPoiInfo): LocalInfoEvent()

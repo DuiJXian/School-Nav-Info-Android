@@ -1,10 +1,12 @@
 package com.xz.schoolnavinfo.presentation.theme
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 
+@SuppressLint("CompositionLocalNaming")
 val AppColors = staticCompositionLocalOf { LightCustomColors }
 
 

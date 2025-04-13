@@ -2,7 +2,9 @@ package com.xz.schoolnavinfo.presentation.map
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,7 +41,7 @@ import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
 import com.xz.schoolnavinfo.common.utils.LocateUtils
-import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateEvent
 import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateViewModel
 import com.xz.schoolnavinfo.presentation.common.baidu.map.MapSet
@@ -67,8 +69,7 @@ val TAG = "MapScreen"
 fun MapScreen(
     locationMapViewModel: LocateViewModel = hiltViewModel(),
     mapViewModel: MapViewModel = hiltViewModel(),
-
-    ) {
+) {
     //设备状态
     val deviceState by locationMapViewModel.deviceState.collectAsState()
     //poi状态
@@ -249,7 +250,11 @@ fun MapScreen(
                             val intent = Intent(Intent.ACTION_DIAL).apply {
                                 data = Uri.parse("tel:$it")
                             }
-                            if (intent.resolveActivity(context.packageManager) != null) {
+                            val hasTelephony = context.packageManager.hasSystemFeature(
+                                PackageManager.FEATURE_TELEPHONY
+                            )
+                            if (hasTelephony) {
+                                Log.e(TAG, "MapScreen: $it")
                                 context.startActivity(intent)
                             } else {
                                 Toast.makeText(

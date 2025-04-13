@@ -1,7 +1,7 @@
 package com.xz.schoolnavinfo.data.repository
 
 import com.xz.schoolnavinfo.data.dao.local.LocalPoiInfoDao
-import com.xz.schoolnavinfo.domain.model.entity.LocalPoiInfo
+import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.domain.repository.LocalPoiInfoRepository
 import kotlinx.coroutines.flow.Flow
 

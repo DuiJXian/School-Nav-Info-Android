@@ -1,8 +1,8 @@
 package com.xz.schoolnavinfo.domain.use_case
 
 import com.xz.schoolnavinfo.common.model.BaseResponse
-import com.xz.schoolnavinfo.common.request.LoginRequest
-import com.xz.schoolnavinfo.domain.model.entity.UserInfo
+import com.xz.schoolnavinfo.data.dao.remote.request.LoginRequest
+import com.xz.schoolnavinfo.domain.data.entity.UserInfo
 import com.xz.schoolnavinfo.domain.repository.UserRepository
 
 class UserUseCases(private val authRepository: UserRepository) {

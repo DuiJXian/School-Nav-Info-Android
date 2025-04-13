@@ -1,10 +1,9 @@
 package com.xz.schoolnavinfo.data.repository
 
 import com.xz.schoolnavinfo.common.model.BaseResponse
-import com.xz.schoolnavinfo.common.net.NetExceptionManager
-import com.xz.schoolnavinfo.common.request.LoginRequest
+import com.xz.schoolnavinfo.data.dao.remote.request.LoginRequest
 import com.xz.schoolnavinfo.data.dao.remote.UserApi
-import com.xz.schoolnavinfo.domain.model.entity.UserInfo
+import com.xz.schoolnavinfo.domain.data.entity.UserInfo
 import com.xz.schoolnavinfo.domain.repository.UserRepository
 
 class UserRepositoryImpl(

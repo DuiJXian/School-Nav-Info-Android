@@ -1,4 +1,4 @@
-package com.xz.schoolnavinfo.common.request
+package com.xz.schoolnavinfo.data.dao.remote.request
 
 data class LoginRequest(
     val username: String,

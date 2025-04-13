@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.presentation.user
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +14,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -38,19 +38,20 @@ import com.xz.schoolnavinfo.presentation.theme.AppColors
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun LoginOrRegisterScreen(
-    authViewModel: UserViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    val loginOrRegister by authViewModel.loginOrRegister
-    val authState by authViewModel.loginOrRegisterState
-    val loginRes by authViewModel.loginRes
+    val loginOrRegister by userViewModel.loginOrRegister
+    val userState by userViewModel.loginOrRegisterState
+    val loginRes by userViewModel.loginRes
     val appColors = AppColors.current
 
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(loginRes) {
         if (loginRes.code == "fail") {
-            snackbarHostState.showSnackbar(loginRes.message, duration = SnackbarDuration.Short)
+            Log.e("TAG", "LoginOrRegisterScreen: ", )
+            //snackbarHostState.showSnackbar(loginRes.message, duration = SnackbarDuration.Short)
         } else if (loginRes.code == "success") {
             navController.navigate(Screen.Home.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
@@ -89,7 +90,10 @@ fun LoginOrRegisterScreen(
                 }
                 Text(
                     modifier = Modifier
-                        .clickable { authViewModel.onEvent(UserEvent.ChangeLoginRegister) },
+                        .clickable(
+                            interactionSource = null,
+                            indication = null
+                        ) { userViewModel.onEvent(UserEvent.ChangeLoginRegister) },
                     text = "登录",
                     style = TextStyle(
                         color = loginColor,
@@ -99,7 +103,10 @@ fun LoginOrRegisterScreen(
                 )
                 Text(
                     modifier = Modifier
-                        .clickable { authViewModel.onEvent(UserEvent.ChangeLoginRegister) },
+                        .clickable(
+                            interactionSource = null,
+                            indication = null
+                        ) { userViewModel.onEvent(UserEvent.ChangeLoginRegister) },
                     text = "注册",
                     style = TextStyle(
                         color = registerColor,
@@ -110,9 +117,9 @@ fun LoginOrRegisterScreen(
             }
 
             OutlinedTextField(
-                value = authState.username,
+                value = userState.username,
                 onValueChange = {
-                    authViewModel.onEvent(UserEvent.ChangeUsername(it))
+                    userViewModel.onEvent(UserEvent.ChangeUsername(it))
                 },
                 label = {
                     Text(
@@ -137,8 +144,8 @@ fun LoginOrRegisterScreen(
             )
 
             OutlinedTextField(
-                value = authState.password,
-                onValueChange = { authViewModel.onEvent(UserEvent.ChangePassword(it)) },
+                value = userState.password,
+                onValueChange = { userViewModel.onEvent(UserEvent.ChangePassword(it)) },
                 label = {
                     Text(
                         modifier = Modifier
@@ -164,8 +171,8 @@ fun LoginOrRegisterScreen(
 
             if (loginOrRegister == 1) {
                 OutlinedTextField(
-                    value = authState.password,
-                    onValueChange = { authViewModel.onEvent(UserEvent.ChangePassword(it)) },
+                    value = userState.password,
+                    onValueChange = { userViewModel.onEvent(UserEvent.ChangePassword(it)) },
                     label = {
                         Text(
                             modifier = Modifier
@@ -194,7 +201,7 @@ fun LoginOrRegisterScreen(
                 modifier = Modifier
                     .padding(top = 10.dp),
                 onClick = {
-                    authViewModel.onEvent(UserEvent.Login)
+                    userViewModel.onEvent(UserEvent.Login)
                 },
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(

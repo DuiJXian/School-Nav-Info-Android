@@ -94,20 +94,19 @@ fun SearchTextField(
     OutlinedTextField(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(48.dp)
             .onFocusChanged {
                 mapViewModel.onPoiEvent(PoiEvent.FocusedChange(it.isFocused))
             },
         value = poiState.searchText,
         textStyle = TextStyle(
-            fontSize = 16.sp,
             color = appColors.fontSecondary
         ),
         onValueChange = {
             onTextChange(it)
         },
         placeholder = {
-            Text("搜地点", style = TextStyle(fontSize = 14.sp, color = appColors.greyMedium))
+            Text("搜地点", style = TextStyle(color = appColors.fontSecondary))
         },
         shape = shape,
         colors = TextFieldDefaults.colors(

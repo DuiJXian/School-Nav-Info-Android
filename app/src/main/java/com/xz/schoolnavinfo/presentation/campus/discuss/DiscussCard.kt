@@ -1,8 +1,8 @@
 package com.xz.schoolnavinfo.presentation.campus.discuss
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,18 +25,20 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.BASE_URL
-import com.xz.schoolnavinfo.domain.model.dto.ArticleDTO
+import com.xz.schoolnavinfo.common.net.getStaticCompleteUrl
+import com.xz.schoolnavinfo.common.utils.TimeUtils
+import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 
 @Composable
 fun DiscussCard(
-    articleDTO: ArticleDTO
+    articleDTO: ArticleDTO,
+    onImageClick: (String) -> Unit
 ) {
     val appColors = AppColors.current
     val article = articleDTO.article
     val userInfo = articleDTO.userInfo
-    val images = articleDTO.images
-    Log.e("TAG", "DiscussCard: $article $userInfo")
+    val imageList = articleDTO.imageList
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
@@ -64,12 +66,14 @@ fun DiscussCard(
                         fontSize = 20.sp
                     )
                 )
-                Text(
-                    text = "${article?.createTime}",
-                    style = TextStyle(
-                        color = appColors.greyMedium
+                article?.createTime?.let {
+                    Text(
+                        text = TimeUtils.formatTimeDifference(article.createTime),
+                        style = TextStyle(
+                            color = appColors.greyMedium
+                        )
                     )
-                )
+                }
             }
         }
 
@@ -111,30 +115,71 @@ fun DiscussCard(
 
         Row(
             modifier = Modifier
-                .padding(top = 3.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .padding(top = 5.dp)
         ) {
-            Column {
-
-                Row {
-                    if (images != null) {
-                        for (image in images) {
-                            // todo
-                            val imgUrl = "$BASE_URL/uploads/${image.url}"
-                            Log.e("TAG", "DiscussCard: $imgUrl")
-                            Image(
-                                modifier = Modifier
-                                    .size(120.dp),
-                                painter = rememberAsyncImagePainter(imgUrl),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    }
+            if (!imageList.isNullOrEmpty()) {
+                ImageGrid(imageList = imageList) {
+                    onImageClick(it)
                 }
-
             }
+        }
 
+    }
+}
+
+@Composable
+fun ImageGrid(imageList: List<String>, onImageClick: (String) -> Unit) {
+    // 图片数量和每行最大显示数量
+    val maxImagesPerRow = 3
+    val rows = (imageList.size + maxImagesPerRow - 1) / maxImagesPerRow // 计算行数
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .padding(top = 3.dp)
+    ) {
+        if (imageList.size == 4) {
+            for (i in 0 until 2) {
+                val start = i * 2
+                val end = start + 2
+                val rowImages = imageList.subList(start, end)
+                ImageRow(rowImages, onImageClick)
+            }
+        } else {
+            for (i in 0 until rows) {
+                // 当前行的图片子列表
+                val start = i * maxImagesPerRow
+                val end = minOf(start + maxImagesPerRow, imageList.size)
+                val rowImages = imageList.subList(start, end)
+                ImageRow(rowImages, onImageClick)
+            }
         }
     }
 }
+
+@Composable
+private fun ImageRow(
+    rowImageUrlList: List<String>,
+    onImageClick: (String) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(3.dp), // 设置间隔
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        rowImageUrlList.forEach { image ->
+            Image(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(5.dp))
+                    .size(120.dp)
+                    .clickable { onImageClick(image) },
+                painter = rememberAsyncImagePainter(getStaticCompleteUrl(image)),
+                contentDescription = null,
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+}
+
+
+

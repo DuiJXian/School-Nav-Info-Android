@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.presentation.campus
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,48 +27,83 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.xz.schoolnavinfo.presentation.campus.activity.ActivityScreen
 import com.xz.schoolnavinfo.presentation.campus.discuss.DiscussScreen
 import com.xz.schoolnavinfo.presentation.campus.stuff.StuffScreen
+import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
+import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-@Preview
-fun CampusScreen() {
+fun CampusScreen(
+    commonViewModel: CommonViewModel
+) {
     val tabTitles = listOf("活动", "讨论") //, "物品"
-    val pagerState = rememberPagerState(initialPage = 1) { tabTitles.size }
+    val pagerState = rememberPagerState(initialPage = 0) { tabTitles.size }
     val coroutineScope = rememberCoroutineScope()
     val appColors = AppColors.current
+    val userInfo by commonViewModel.userInfo.collectAsState()
+
+
+    val lifecycle = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycle) {
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    Log.e("TAG", "CampusScreen: onGetUserInfoEvent")
+                    commonViewModel.onGetUserInfoEvent()
+                }
+                else -> Unit
+            }
+        }
+        lifecycle.lifecycle.addObserver(lifecycleObserver)
+        onDispose {
+            lifecycle.lifecycle.removeObserver(lifecycleObserver)
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier
-                    .size(46.dp),
-                onClick = {},
-                shape = CircleShape,
-                containerColor = appColors.bgPrimary
+            if (pagerState.currentPage == 1 ||
+                (pagerState.currentPage == 0 && userInfo.role == "ADMIN")
             ) {
-                Icon(
+                FloatingActionButton(
                     modifier = Modifier
-                        .size(24.dp),
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Create Article",
-                    tint = appColors.primary
-                )
+                        .size(46.dp),
+                    onClick = {
+                        commonViewModel.onNavEvent(NavEvent.PublishArticle(tabTitles[pagerState.currentPage]))
+                    },
+                    shape = CircleShape,
+                    containerColor = appColors.bgPrimary
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .size(24.dp),
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Create Article",
+                        tint = appColors.primary
+                    )
+                }
             }
         }
+
     ) {
         Column(
             modifier = Modifier
@@ -81,6 +116,7 @@ fun CampusScreen() {
                 modifier = Modifier
                     .background(appColors.bgPrimary)
                     .padding(top = 20.dp)
+                    .zIndex(1f)
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
@@ -95,7 +131,7 @@ fun CampusScreen() {
                                 .fillMaxWidth()
                                 .tabIndicatorOffset(tabPositions[pagerState.currentPage]),
                             contentAlignment = Alignment.Center
-                        ){
+                        ) {
                             Box(
                                 modifier = Modifier
                                     .width(35.dp)
@@ -111,7 +147,7 @@ fun CampusScreen() {
                     tabTitles.forEachIndexed { index, title ->
                         var textColor = appColors.fontSecondary
                         var fontWeight = FontWeight.Normal
-                        if (pagerState.currentPage == index){
+                        if (pagerState.currentPage == index) {
                             textColor = appColors.primary
                             fontWeight = FontWeight.Bold
                         }
@@ -144,10 +180,9 @@ fun CampusScreen() {
                 state = pagerState,
                 beyondViewportPageCount = 2,
             ) { page ->
-                when(page)
-                {
-                    0 -> ActivityScreen()
-                    1 -> DiscussScreen()
+                when (page) {
+                    0 -> ActivityScreen(commonViewModel = commonViewModel)
+                    1 -> DiscussScreen(commonViewModel = commonViewModel)
                     2 -> StuffScreen()
                 }
             }

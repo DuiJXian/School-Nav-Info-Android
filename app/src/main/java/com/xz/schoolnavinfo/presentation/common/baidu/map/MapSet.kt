@@ -30,8 +30,6 @@ import com.baidu.mapapi.search.route.WalkingRouteResult
 import com.xz.schoolnavinfo.common.utils.DataStoreUtils
 import com.xz.schoolnavinfo.common.utils.LocateUtils
 import com.xz.schoolnavinfo.common.utils.TimeUtils
-import com.xz.schoolnavinfo.presentation.map.MapViewModel
-import com.xz.schoolnavinfo.presentation.map.RouteEvent
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -107,7 +105,7 @@ object MapSet {
     }
 
 
-    public fun onRoutePlan(
+    fun onRoutePlan(
         startLocation: LatLng,
         endLocation: LatLng,
         mapView: MapView,
@@ -116,7 +114,7 @@ object MapSet {
         val onGetPlanListener = object : OnGetRoutePlanResultListener {
             override fun onGetWalkingRouteResult(walkingRes: WalkingRouteResult) {
                 val overlay = WalkingRouteOverlay(mapView.map)
-                MapSet.setOverlayManager(overlay)
+                overlayManager = overlay
                 if (walkingRes.routeLines.size > 0) {
                     val routeLine = walkingRes.routeLines[0]
                     overlay.setData(routeLine)
@@ -132,7 +130,7 @@ object MapSet {
             override fun onGetMassTransitRouteResult(p0: MassTransitRouteResult?) {}
             override fun onGetDrivingRouteResult(drivingRes: DrivingRouteResult) {
                 val overlay = DrivingRouteOverlay(mapView.map)
-                MapSet.setOverlayManager(overlay)
+                overlayManager = overlay
                 if (drivingRes.routeLines.size > 0) {
                     val routeLine = drivingRes.routeLines[0]
                     overlay.setData(routeLine)
@@ -146,7 +144,7 @@ object MapSet {
             override fun onGetIndoorRouteResult(p0: IndoorRouteResult?) {}
             override fun onGetBikingRouteResult(bikingRes: BikingRouteResult) {
                 val overlay = BikingRouteOverlay(mapView.map)
-                MapSet.setOverlayManager(overlay)
+                overlayManager = overlay
                 if (bikingRes.routeLines.size > 0) {
                     val routeLine = bikingRes.routeLines[0]
                     overlay.setData(routeLine)
@@ -195,9 +193,6 @@ object MapSet {
         }
     }
 
-    fun setOverlayManager(overlayManager: OverlayManager) {
-        MapSet.overlayManager = overlayManager
-    }
 
     fun removeOverlay() {
         overlayManager?.removeFromMap()

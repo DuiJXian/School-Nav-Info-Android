@@ -99,11 +99,13 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Gson 解析 JSON
     implementation("com.squareup.okhttp3:okhttp:4.10.0") // OkHttp 日志3
     //图片选择
-//    implementation("io.github.ParkSangGwon:tedimagepicker:1.6.1")
     implementation("com.github.esafirm:android-image-picker:3.0.0")
-//    implementation("io.github.leavesczy:matisse:2.1.4")
-//    implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+    //图片压缩
+    implementation("top.zibin:Luban:1.1.8")
 
+    val version = "1.1.0-alpha.6"
+    // 图片浏览库
+    implementation("com.jvziyaoyao.scale:image-viewer:$version")
 }
 
 kapt {

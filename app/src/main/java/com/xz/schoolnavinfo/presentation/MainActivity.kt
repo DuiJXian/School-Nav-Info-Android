@@ -5,8 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
+import androidx.core.view.WindowCompat
 import com.xz.schoolnavinfo.presentation.home.NavScreen
 import com.xz.schoolnavinfo.presentation.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -19,7 +18,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
         setContent {
             AppTheme {
