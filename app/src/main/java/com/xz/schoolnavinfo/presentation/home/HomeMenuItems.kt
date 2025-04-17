@@ -7,7 +7,7 @@ import com.xz.schoolnavinfo.R
 
 const val TAG = "myLog"
 
-object MenuItems {
+object HomeMenuItems {
     data class MenuItem(val index: Int, val name: String, val iconRes: Int)
 
     val items = listOf(

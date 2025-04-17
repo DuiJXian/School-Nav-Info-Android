@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.common.utils
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -35,8 +36,12 @@ object LocateUtils {
         }
     }
 
+    @SuppressLint("DefaultLocale")
     fun metersToKilometers(distance: Int): String {
+        if (distance<1000){
+            return "${distance}m"
+        }
         val kilometers = distance / 1000.0
-        return String.format("%.1f", kilometers)
+        return "${String.format("%.1f", kilometers)}km"
     }
 }

@@ -1,14 +1,14 @@
 package com.xz.schoolnavinfo.common.utils
 
-class StringUtils {
+object StringUtils {
 
-    companion object
-
-    fun limitLength(str: String, maxLength: Int, endStr: String = ""): String {
-        return if (str.isBlank()) {
-            ""
-        } else {
-            str.take(maxLength) + endStr
-        }
+    fun truncateText(
+        text: String,
+        maxLength: Int,
+        suffix: String = ".."
+    ): String {
+        if (text.length <= maxLength) return text
+        return text.take(maxLength) + suffix
     }
+
 }

@@ -22,7 +22,7 @@ import com.xz.schoolnavinfo.R
 fun LocateNow(
     modifier: Modifier = Modifier
 ) {
-    var appColors = AppColors.current
+    val appColors = AppColors.current
     Box(
         modifier = modifier
             .shadow(5.dp, shape = CircleShape)

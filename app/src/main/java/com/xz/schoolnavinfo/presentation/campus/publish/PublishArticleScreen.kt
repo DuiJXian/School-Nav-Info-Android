@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.presentation.campus.publish
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -27,6 +28,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -62,6 +64,8 @@ import com.esafirm.imagepicker.features.ImagePickerConfig
 import com.esafirm.imagepicker.features.createImagePickerIntent
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.common.compose.CustomCheckbox
 import com.xz.schoolnavinfo.presentation.common.compose.LoadingDialog
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
@@ -74,13 +78,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun PublishDiscussScreen(
     publishArticleViewModel: PublishArticleViewModel,
-    title: String,
+    campusMenu: CampusMenu,
     commonViewModel: CommonViewModel
 ) {
     val context = LocalContext.current
     val appColors = AppColors.current
 
-    val articleState by publishArticleViewModel.articleState
+    val articleState by publishArticleViewModel.articleInfo
 
     val discussImages by publishArticleViewModel.discussImages
     val activityImages by publishArticleViewModel.activityImages
@@ -108,7 +112,7 @@ fun PublishDiscussScreen(
             val data = ImagePicker.getImages(result.data)
             data?.let {
                 if (selectType == 0) {
-                    if (title == "活动") {
+                    if (campusMenu == CampusMenu.Activity) {
                         publishArticleViewModel.onEvent(PublishArticleEvent.ActivityImagesAdd(it))
                     } else {
                         publishArticleViewModel.onEvent(PublishArticleEvent.DiscussImagesAdd(it))
@@ -129,9 +133,14 @@ fun PublishDiscussScreen(
             commonViewModel.onNavEvent(NavEvent.BackPage)
         }
     }
+    LaunchedEffect(true) {
+        commonViewModel.selectLocationFlow.collectLatest {
+            publishArticleViewModel.onEvent(PublishArticleEvent.LocationChange(it))
+        }
+    }
 
     Scaffold(
-        containerColor = appColors.bgScreen,
+        containerColor = appColors.bgPrimary,
         snackbarHost = {
             Box(
                 modifier = Modifier
@@ -147,7 +156,7 @@ fun PublishDiscussScreen(
         topBar = {
             TopAppBar(
                 modifier = Modifier
-                    .background(appColors.bgScreen),
+                    .background(appColors.bgPrimary),
                 title = {
                     Row(
                         modifier = Modifier
@@ -155,46 +164,18 @@ fun PublishDiscussScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = title,
+                            text = campusMenu.title,
                             style = TextStyle(
                                 fontSize = 18.sp,
                                 color = appColors.fontPrimary,
                                 fontWeight = FontWeight.Bold
                             )
                         )
-                        if (title == "活动") {
-                            Box(
-                                modifier = Modifier
-                                    .padding(start = 5.dp)
-                                    .clip(CircleShape)
-                                    .size(20.dp)
-                                    .background(appColors.primary.copy(alpha = .3f))
-                                    .clickable {
-                                        isBanner = !isBanner
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .size(16.dp)
-                                        .background(if (isBanner) appColors.primary else appColors.bgPrimary)
-                                )
-                            }
-                            Text(
-                                text = "添加到轮播图",
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = appColors.fontPrimary,
-                                )
-                            )
-                        }
 
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = appColors.bgScreen,
+                    containerColor = appColors.bgPrimary,
                     titleContentColor = appColors.fontPrimary,
                     navigationIconContentColor = appColors.fontPrimary
                 ),
@@ -220,7 +201,6 @@ fun PublishDiscussScreen(
                             .padding(end = 10.dp)
                             .height(30.dp)
                     ) {
-
                         Box(
                             modifier = Modifier
                                 .padding(end = 5.dp)
@@ -230,7 +210,7 @@ fun PublishDiscussScreen(
                                 .width(60.dp)
                                 .height(30.dp)
                                 .clickable {
-                                    publishArticleViewModel.onEvent(PublishArticleEvent.Clear(title))
+                                    publishArticleViewModel.onEvent(PublishArticleEvent.Clear(campusMenu))
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -252,26 +232,25 @@ fun PublishDiscussScreen(
                                 .height(30.dp)
                                 .clickable {
                                     val selectImageList =
-                                        if (title == "活动") activityImages else discussImages
+                                        if (campusMenu == CampusMenu.Activity) activityImages else discussImages
                                     if (isBanner && bannerImage.path.isBlank()) {
                                         scope.launch {
                                             snackbarHostState.showSnackbar(
-                                                "请选择轮播图片",
+                                                "请选择轮播图",
                                                 duration = SnackbarDuration.Short
                                             )
                                         }
                                     } else {
                                         if (articleState.title.isBlank() && articleState.content.isBlank() && selectImageList.isEmpty()) {
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar(
-                                                    "标题、内容、图片不能全为空",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                            }
+                                            Toast.makeText(
+                                                context,
+                                                "标题、内容、图片不能全为空",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         } else {
                                             publishArticleViewModel.onEvent(
                                                 PublishArticleEvent.PublishArticle(
-                                                    if (title == "讨论") ArticleType.Discuss else ArticleType.Activity,
+                                                    if (campusMenu == CampusMenu.Discuss) ArticleType.Discuss else ArticleType.Activity,
                                                     isBanner
                                                 )
                                             )
@@ -299,7 +278,7 @@ fun PublishDiscussScreen(
 
         Column(
             modifier = Modifier
-                .background(appColors.bgScreen)
+                .background(appColors.bgPrimary)
                 .padding(it)
                 .fillMaxSize()
         ) {
@@ -309,14 +288,14 @@ fun PublishDiscussScreen(
                     .horizontalScroll(scrollState)
 
             ) {
-                //是否显示轮播图选项
+                //轮播图封面选择
                 if (isBanner) {
                     Box(
                         modifier = Modifier
                             .padding(start = 10.dp)
                             .size(imageSize)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(appColors.greyMedium)
+                            .background(appColors.greyMedium.copy(.5f))
                             .clickable {
                                 selectType = 1
                                 val intent = createImagePickerIntent(
@@ -331,11 +310,11 @@ fun PublishDiscussScreen(
                     ) {
                         if (bannerImage.path.isBlank()) {
                             Text(
-                                text = "选择轮播图",
+                                text = "封面",
                                 style = TextStyle(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = appColors.fontPrimary
+                                    color = appColors.greyMedium
                                 )
                             )
                         } else {
@@ -351,7 +330,7 @@ fun PublishDiscussScreen(
                 }
 
                 //图片预览列表
-                val disImageList = if (title == "活动") activityImages else discussImages
+                val disImageList = if (campusMenu == CampusMenu.Activity) activityImages else discussImages
                 for (image in disImageList) {
                     Box(
                         modifier = Modifier
@@ -375,7 +354,7 @@ fun PublishDiscussScreen(
                                     publishArticleViewModel.onEvent(
                                         PublishArticleEvent.ImagesRemove(
                                             image,
-                                            title
+                                            campusMenu.title
                                         )
                                     )
                                 },
@@ -387,15 +366,15 @@ fun PublishDiscussScreen(
 
                 }
 
-                //选择按钮
-                val size = if (title == "活动") activityImages.size else discussImages.size
+                //图片选择
+                val size = if (campusMenu == CampusMenu.Activity) activityImages.size else discussImages.size
                 if (size < 9) {
                     Box(
                         modifier = Modifier
                             .padding(start = 10.dp)
                             .size(imageSize)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(appColors.greyMedium)
+                            .background(appColors.greyMedium.copy(.5f))
                             .clickable {
                                 selectType = 0
                                 val intent = createImagePickerIntent(
@@ -413,7 +392,7 @@ fun PublishDiscussScreen(
                                 .width(26.dp)
                                 .height(3.dp)
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(appColors.greyHeavy)
+                                .background(appColors.greyMedium)
 
                         )
                         Box(
@@ -421,13 +400,78 @@ fun PublishDiscussScreen(
                                 .width(3.dp)
                                 .height(26.dp)
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(appColors.greyHeavy)
+                                .background(appColors.greyMedium)
 
                         )
                     }
                 }
 
             }
+
+            //是否选择轮播图
+            if (campusMenu == CampusMenu.Activity) {
+                Row(
+                    modifier = Modifier
+                        .padding(start = 10.dp, top = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CustomCheckbox(
+                        size = 18.dp,
+                        uncheckedColor = appColors.greyMedium.copy(.5f),
+                        checkedColor = appColors.fontPrimary
+                    ) { isChecked ->
+                        isBanner = isChecked
+                    }
+                    Text(
+                        modifier = Modifier
+                            .padding(start = 2.dp),
+                        text = "添加到轮播图",
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isBanner) appColors.fontSecondary else appColors.greyHeavy,
+                        )
+                    )
+                }
+            }
+            //选择地址
+            Box(
+                modifier = Modifier
+                    .padding(start = 10.dp, top = 5.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(appColors.greyMedium.copy(.5f))
+                        .clickable(
+                            interactionSource = null,
+                            indication = null
+                        ) {
+                            commonViewModel.onNavEvent(NavEvent.MapLocationSelect)
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .padding(start = 5.dp)
+                            .size(20.dp),
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = appColors.fontSecondary
+                    )
+                    Text(
+                        modifier = Modifier
+                            .padding(vertical = 5.dp)
+                            .padding(end = 10.dp),
+                        text = articleState.address.ifBlank { "选择地址.." },
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            color = appColors.greyHeavy
+                        )
+                    )
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .padding(horizontal = 10.dp)
@@ -435,7 +479,6 @@ fun PublishDiscussScreen(
                     .padding(vertical = 5.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-
                 BasicTextField(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -522,10 +565,3 @@ fun PublishDiscussScreen(
         }
     }
 }
-
-
-//@Preview
-//@Composable
-//private fun Tmp() {
-//    PublishDiscussScreen()
-//}

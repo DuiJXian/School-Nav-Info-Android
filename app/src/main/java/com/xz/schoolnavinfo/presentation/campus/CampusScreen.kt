@@ -30,6 +30,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,12 +56,13 @@ import kotlinx.coroutines.launch
 fun CampusScreen(
     commonViewModel: CommonViewModel
 ) {
-    val tabTitles = listOf("活动", "讨论") //, "物品"
-    val pagerState = rememberPagerState(initialPage = 0) { tabTitles.size }
+    val tabTitles = listOf(CampusMenu.Activity, CampusMenu.Discuss, CampusMenu.Stuff)
+    val pagerState = rememberPagerState(initialPage = 2) { tabTitles.size }
     val coroutineScope = rememberCoroutineScope()
     val appColors = AppColors.current
     val userInfo by commonViewModel.userInfo.collectAsState()
 
+    val stuffType by remember {  mutableStateOf(false) }
 
     val lifecycle = LocalLifecycleOwner.current
 
@@ -82,13 +85,18 @@ fun CampusScreen(
     Scaffold(
         floatingActionButton = {
             if (pagerState.currentPage == 1 ||
+                pagerState.currentPage == 2 ||
                 (pagerState.currentPage == 0 && userInfo.role == "ADMIN")
             ) {
                 FloatingActionButton(
                     modifier = Modifier
                         .size(46.dp),
                     onClick = {
-                        commonViewModel.onNavEvent(NavEvent.PublishArticle(tabTitles[pagerState.currentPage]))
+                        if (pagerState.currentPage == 0 || pagerState.currentPage ==1){
+                            commonViewModel.onNavEvent(NavEvent.PublishArticle(tabTitles[pagerState.currentPage]))
+                        }else{
+                            commonViewModel.onNavEvent(NavEvent.PublishStuff)
+                        }
                     },
                     shape = CircleShape,
                     containerColor = appColors.bgPrimary
@@ -144,7 +152,7 @@ fun CampusScreen(
                     divider = {}
 
                 ) {
-                    tabTitles.forEachIndexed { index, title ->
+                    tabTitles.forEachIndexed { index, menu ->
                         var textColor = appColors.fontSecondary
                         var fontWeight = FontWeight.Normal
                         if (pagerState.currentPage == index) {
@@ -160,7 +168,7 @@ fun CampusScreen(
                                 Text(
                                     modifier = Modifier
                                         .offset(y = (10).dp),
-                                    text = title,
+                                    text = menu.title,
                                     style = TextStyle(
                                         fontSize = 16.sp,
                                         fontWeight = fontWeight,
@@ -183,7 +191,7 @@ fun CampusScreen(
                 when (page) {
                     0 -> ActivityScreen(commonViewModel = commonViewModel)
                     1 -> DiscussScreen(commonViewModel = commonViewModel)
-                    2 -> StuffScreen()
+                    2 -> StuffScreen(commonViewModel = commonViewModel)
                 }
             }
         }

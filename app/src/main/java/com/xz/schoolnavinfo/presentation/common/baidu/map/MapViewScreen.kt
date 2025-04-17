@@ -24,27 +24,7 @@ val TAG = "MapViewScreen"
 fun MapViewScreen(
     modifier: Modifier = Modifier,
     mapView: MapView,
-    locateViewModel: LocateViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val deviceState by locateViewModel.deviceState.collectAsState()
-    //启动时地图显示到上次定位的位置
-//    LaunchedEffect(true) {
-//        val latitude =
-//            DataStoreUtils.getData(context, DataStoreUtils.Keys.LATITUDE, defaultPoint.latitude)
-//        val longitude =
-//            DataStoreUtils.getData(context, DataStoreUtils.Keys.LONGITUDE, defaultPoint.longitude)
-//
-//        if (latitude != defaultPoint.latitude) {
-//            MapSetting.moveMapToLocation(LatLng(latitude, longitude))
-//        }
-//
-//        locateViewModel.moveMap.collectLatest {
-//            MapSetting.moveMapToLocation(deviceState.locationPoint)
-//        }
-//    }
-
-
     MapLifeCycle(mapView)
     AndroidView(
         modifier = modifier

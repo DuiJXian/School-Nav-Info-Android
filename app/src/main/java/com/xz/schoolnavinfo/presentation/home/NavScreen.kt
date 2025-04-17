@@ -12,18 +12,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.xz.schoolnavinfo.common.event.NetExceptionEvent
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
+import com.xz.schoolnavinfo.domain.data.dto.StuffDTO
+import com.xz.schoolnavinfo.presentation.TestScreen
+import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.campus.detail.ArticleDetailScreen
 import com.xz.schoolnavinfo.presentation.campus.publish.PublishArticleViewModel
 import com.xz.schoolnavinfo.presentation.campus.publish.PublishDiscussScreen
+import com.xz.schoolnavinfo.presentation.campus.stuff.detail.StuffDetailScreen
+import com.xz.schoolnavinfo.presentation.campus.stuff.pub.PublishStuffScreen
 import com.xz.schoolnavinfo.presentation.common.Screen
-import com.xz.schoolnavinfo.presentation.common.compose.ImagePreviewScreen
+import com.xz.schoolnavinfo.presentation.common.baidu.select.MapLocationSelectScreen
+import com.xz.schoolnavinfo.presentation.common.compose.ImagePreview
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.user.LoginOrRegisterScreen
@@ -40,8 +44,13 @@ fun NavScreen(
 
     var articleDTO by remember { mutableStateOf(ArticleDTO()) }
 
+    var stuffDetailId by remember { mutableStateOf<String>("") }
+
     val publishArticleViewModel = hiltViewModel<PublishArticleViewModel>()
 
+    var articlePubMenu by remember { mutableStateOf<CampusMenu?>(null) }
+
+    var articleDetailMenu by remember { mutableStateOf<CampusMenu?>(null) }
 
     //全局路由
     LaunchedEffect(true) {
@@ -52,7 +61,8 @@ fun NavScreen(
                 }
 
                 is NavEvent.PublishArticle -> {
-                    navController.navigate("${Screen.PublishArticle.route}/${it.type}")
+                    articlePubMenu = it.campusMenu
+                    navController.navigate(Screen.PublishArticle.route)
                 }
 
                 is NavEvent.BackPage -> {
@@ -62,9 +72,9 @@ fun NavScreen(
                 }
 
                 is NavEvent.ImagePreview -> {
-                    navController.navigate(Screen.ImagePreviewScreen.route) {
+                    navController.navigate(Screen.ImagePreview.route) {
                         launchSingleTop = true
-                        popUpTo(Screen.ImagePreviewScreen.route) {
+                        popUpTo(Screen.ImagePreview.route) {
                             inclusive = false
                         }
                     }
@@ -72,7 +82,21 @@ fun NavScreen(
 
                 is NavEvent.ArticleDetail -> {
                     articleDTO = it.articleDTO
-                    navController.navigate("${Screen.ArticleDetail.route}/${it.type}")
+                    articleDetailMenu = it.campusMenu
+                    navController.navigate(Screen.ArticleDetail.route)
+                }
+
+                NavEvent.MapLocationSelect -> {
+                    navController.navigate(Screen.MapLocationSelect.route)
+                }
+
+                NavEvent.PublishStuff -> {
+                    navController.navigate(Screen.PublishStuff.route)
+                }
+
+                is NavEvent.StuffDetail -> {
+                    stuffDetailId = it.id
+                    navController.navigate(Screen.StuffDetail.route)
                 }
             }
         }
@@ -95,7 +119,7 @@ fun NavScreen(
     }
     //全局消息提心
     LaunchedEffect(true) {
-        commonViewModel.globalFlow.snackBarMsgShow.collectLatest {
+        commonViewModel.globalFlow.snackBarFlow.collectLatest {
             showSnackBarMsg(it, snackBarHostState)
         }
     }
@@ -122,28 +146,23 @@ fun NavScreen(
                 HomeScreen(commonViewModel = commonViewModel)
             }
             composable(
-                route = "${Screen.PublishArticle.route}/{type}",
-                arguments = listOf(navArgument("type") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val type = backStackEntry.arguments?.getString("type")
-                PublishDiscussScreen(
-                    commonViewModel = commonViewModel,
-                    publishArticleViewModel = publishArticleViewModel,
-                    title = type ?: "err"
-                )
+                route = Screen.PublishArticle.route,
+            ) {
+                articlePubMenu?.let {
+                    PublishDiscussScreen(
+                        commonViewModel = commonViewModel,
+                        publishArticleViewModel = publishArticleViewModel,
+                        campusMenu = it
+                    )
+                }
+
             }
 
             composable(route = "test") {
-                val list = listOf(
-                    "http://192.168.1.107:8080/uploads/609f2b0a-b02d-4859-b2ac-7ac36edd9ce9.jpeg",
-                    "http://192.168.1.107:8080/uploads/b118e1d4-09b8-4b1b-adf3-8d13f2dcd87a.jpg",
-                    "http://192.168.1.107:8080/uploads/0228a45e-4d76-494e-b0b2-c2a9634ca534.jpeg",
-                    "https://pic1.zhimg.com/80/v2-a390d6364bdb5e472f411479a80686d1_1440w.webp?source=1def8aca"
-                )
-                ImagePreviewScreen(list)
+                TestScreen()
             }
-            composable(route = Screen.ImagePreviewScreen.route) {
-                ImagePreviewScreen(
+            composable(route = Screen.ImagePreview.route) {
+                ImagePreview(
                     imageList = commonViewModel.imageUrlState.list,
                     startIndex = commonViewModel.imageUrlState.startIndex,
                     displayMaxHeight = commonViewModel.imageUrlState.displayHeight
@@ -151,13 +170,34 @@ fun NavScreen(
             }
 
             composable(
-                route = "${Screen.ArticleDetail.route}/{type}",
-                arguments = listOf(navArgument("type") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val type = backStackEntry.arguments?.getString("type")
-                ArticleDetailScreen(
-                    articleDTO = articleDTO,
-                    type = type ?: "err",
+                route = Screen.ArticleDetail.route
+            ) {
+                articleDetailMenu?.let { menu ->
+                    ArticleDetailScreen(
+                        articleDTO = articleDTO,
+                        campusMenu = menu,
+                        commonViewModel = commonViewModel
+                    )
+                }
+            }
+
+            composable(route = Screen.MapLocationSelect.route) {
+                MapLocationSelectScreen(
+                    commonViewModel = commonViewModel
+                ) {
+                    commonViewModel.onLocationSelectEvent(it)
+                }
+            }
+
+            composable(route = Screen.PublishStuff.route) {
+                PublishStuffScreen(
+                    commonViewModel = commonViewModel
+                )
+            }
+
+            composable(route = Screen.StuffDetail.route) {
+                StuffDetailScreen(
+                    id = stuffDetailId,
                     commonViewModel = commonViewModel
                 )
             }

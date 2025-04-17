@@ -2,6 +2,8 @@ package com.xz.schoolnavinfo.presentation.campus.publish
 
 import com.esafirm.imagepicker.model.Image
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationState
 
 sealed class PublishArticleEvent {
     data class TitleChange(val title: String) : PublishArticleEvent()
@@ -13,5 +15,6 @@ sealed class PublishArticleEvent {
     data class PublishArticle(val articleType: ArticleType, val isBanner: Boolean) :
         PublishArticleEvent()
 
-    data class Clear(val type: String) : PublishArticleEvent()
+    data class Clear(val type: CampusMenu) : PublishArticleEvent()
+    data class LocationChange(val locationState: LocationState?): PublishArticleEvent()
 }

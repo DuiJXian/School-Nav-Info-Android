@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -23,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xz.schoolnavinfo.presentation.home.HomeEvent
 import com.xz.schoolnavinfo.presentation.home.HomeViewModel
-import com.xz.schoolnavinfo.presentation.home.MenuItems
+import com.xz.schoolnavinfo.presentation.home.HomeMenuItems
 
 @Composable
 fun BottomNav(
@@ -37,7 +36,7 @@ fun BottomNav(
             .background(currentColor.bgPrimary)
     )
     {
-        for (item in MenuItems.items) {
+        for (item in HomeMenuItems.items) {
             BNTabItem(
                 modifier = Modifier.weight(1f),
                 menuItem = item,
@@ -51,7 +50,7 @@ fun BottomNav(
 fun BNTabItem(
     homeViewModel: HomeViewModel = hiltViewModel(),
     modifier: Modifier,
-    menuItem: MenuItems.MenuItem,
+    menuItem: HomeMenuItems.MenuItem,
 ) {
     val currentColor = AppColors.current
     val selectedIndex by homeViewModel.selectedBtMenuIndex

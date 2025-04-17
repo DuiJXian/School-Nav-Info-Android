@@ -219,7 +219,7 @@ fun PoiDetailCard(
                                     fontWeight = FontWeight.Bold
                                 )
                             ) {
-                                append("${LocateUtils.metersToKilometers(poiDetailInfo.distance)}km")
+                                append(LocateUtils.metersToKilometers(poiDetailInfo.distance))
                             }
                             withStyle(
                                 style = SpanStyle(

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esafirm.imagepicker.model.Image
+import com.google.gson.Gson
 import com.xz.schoolnavinfo.common.event.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
@@ -12,6 +13,7 @@ import com.xz.schoolnavinfo.domain.data.entity.Article
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.domain.use_case.ArticleUseCases
 import com.xz.schoolnavinfo.domain.use_case.FileUseCases
+import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,8 +28,8 @@ class PublishArticleViewModel @Inject constructor(
     private val netExceptionManager: NetExceptionManager,
     private val globalFlow: GlobalFlow
 ) : ViewModel() {
-    private val _articleTitleAndContent = mutableStateOf(ArticleState())
-    val articleState = _articleTitleAndContent
+    private val _articleInfo = mutableStateOf(ArticleState(location = null))
+    val articleInfo = _articleInfo
 
     private val _discussImages = mutableStateOf<List<Image>>(emptyList())
     val discussImages = _discussImages
@@ -46,10 +48,12 @@ class PublishArticleViewModel @Inject constructor(
     private val _netOver = MutableSharedFlow<Unit>()
     val netOver: SharedFlow<Unit> get() = _netOver.asSharedFlow()
 
+    private val gson = Gson()
+
     fun onEvent(event: PublishArticleEvent) {
         when (event) {
             is PublishArticleEvent.ContentChange -> {
-                _articleTitleAndContent.value = articleState.value.copy(
+                _articleInfo.value = articleInfo.value.copy(
                     content = event.content
                 )
             }
@@ -68,7 +72,7 @@ class PublishArticleViewModel @Inject constructor(
             }
 
             is PublishArticleEvent.TitleChange -> {
-                _articleTitleAndContent.value = articleState.value.copy(
+                _articleInfo.value = articleInfo.value.copy(
                     title = event.title
                 )
             }
@@ -94,12 +98,13 @@ class PublishArticleViewModel @Inject constructor(
                     }
 
                     val article = Article(
-                        title = articleState.value.title,
-                        content = articleState.value.content,
+                        title = articleInfo.value.title,
+                        content = articleInfo.value.content,
+                        address = articleInfo.value.address,
+                        location = gson.toJson(articleInfo.value.location),
                         banner = event.isBanner
                     )
 
-                    Log.e("TAG", "onEvent: $article")
                     val articleDTO = ArticleDTO(
                         article = article,
                         imageList = imageUrls.map { it }
@@ -110,8 +115,8 @@ class PublishArticleViewModel @Inject constructor(
                             netExceptionManager.safeApiCall {
                                 val resp = articleUseCases.createDiscussArticle(articleDTO)
                                 if (resp.code == "success") {
-                                    clearPublicArticleData(PublishArticleEvent.Clear("讨论"))
-                                    globalFlow.onRefreshDataEvent(ArticleType.Discuss)
+                                    clearPublicArticleData(PublishArticleEvent.Clear(CampusMenu.Discuss))
+                                    globalFlow.onRefreshDataEvent(CampusMenu.Discuss)
                                 }
                             }
                         }
@@ -120,8 +125,8 @@ class PublishArticleViewModel @Inject constructor(
                             netExceptionManager.safeApiCall {
                                 val resp = articleUseCases.createActivityArticle(articleDTO)
                                 if (resp.code == "success") {
-                                    clearPublicArticleData(PublishArticleEvent.Clear("活动"))
-                                    globalFlow.onRefreshDataEvent(ArticleType.Activity)
+                                    clearPublicArticleData(PublishArticleEvent.Clear(CampusMenu.Activity))
+                                    globalFlow.onRefreshDataEvent(CampusMenu.Activity)
                                 }
                             }
                         }
@@ -142,19 +147,27 @@ class PublishArticleViewModel @Inject constructor(
             is PublishArticleEvent.DiscussImagesAdd -> {
                 _discussImages.value = discussImages.value + event.images
             }
+
+            is PublishArticleEvent.LocationChange -> {
+                if (event.locationState == null) return
+                _articleInfo.value = articleInfo.value.copy(
+                    address = event.locationState.name + "-" + event.locationState.address,
+                    location = event.locationState.location
+                )
+            }
         }
     }
 
     private fun clearPublicArticleData(event: PublishArticleEvent.Clear) {
-        if (event.type == "活动") {
-            _articleTitleAndContent.value = articleState.value.copy(
+        if (event.type == CampusMenu.Activity) {
+            _articleInfo.value = articleInfo.value.copy(
                 title = "",
                 content = "",
             )
             activityImages.value = emptyList()
             _imageBanner.value = Image(0, "", "")
         } else {
-            _articleTitleAndContent.value = articleState.value.copy(
+            _articleInfo.value = articleInfo.value.copy(
                 title = "",
                 content = "",
             )

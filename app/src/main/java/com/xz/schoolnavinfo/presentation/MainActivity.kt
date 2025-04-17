@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import com.xz.schoolnavinfo.presentation.home.NavScreen
 import com.xz.schoolnavinfo.presentation.theme.AppTheme
@@ -21,9 +24,17 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
         setContent {
-            AppTheme {
-                NavScreen()
+            MaterialTheme(
+                colorScheme = lightColorScheme(
+                    primary = Color(0xFF0091EA),
+                    primaryContainer = Color(0xFF91D3FF)
+                )
+            ) {
+                AppTheme {
+                    NavScreen()
+                }
             }
+
         }
     }
 }

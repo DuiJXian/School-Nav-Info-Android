@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.foundation.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -106,6 +107,9 @@ dependencies {
     val version = "1.1.0-alpha.6"
     // 图片浏览库
     implementation("com.jvziyaoyao.scale:image-viewer:$version")
+
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+
 }
 
 kapt {

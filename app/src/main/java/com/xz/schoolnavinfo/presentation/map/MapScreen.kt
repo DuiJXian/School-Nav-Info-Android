@@ -3,6 +3,8 @@ package com.xz.schoolnavinfo.presentation.map
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -40,11 +42,12 @@ import com.baidu.mapapi.map.MapPoi
 import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
+import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.LocateUtils
 import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateEvent
 import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateViewModel
-import com.xz.schoolnavinfo.presentation.common.baidu.map.MapSet
+import com.xz.schoolnavinfo.presentation.common.baidu.map.MapControl
 import com.xz.schoolnavinfo.presentation.common.baidu.map.MapViewScreen
 import com.xz.schoolnavinfo.presentation.common.baidu.map.RoutePlanType
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.BNaviGuideActivity
@@ -78,8 +81,6 @@ fun MapScreen(
     var routePlanType: RoutePlanType by remember { mutableStateOf(RoutePlanType.Walking) }
     //是否显示快速访问
     var isShowQuickVia by remember { mutableStateOf(true) }
-    //快速访问数据
-    val mPoiInfos by mapViewModel.localPoiState.collectAsState()
     //路线状态
     val routeState by mapViewModel.routeState
     //收藏编辑
@@ -92,15 +93,16 @@ fun MapScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val isDark = isSystemInDarkTheme()
 
-    val mapView = MapSet.createInstance(context)
+
+    val mapView = mapViewModel.map
 
     //检查定位和权限
     ManageLifeCycle()
 
     LaunchedEffect(deviceState) {
         mapViewModel.onPoiEvent(PoiEvent.CenterPointChange(deviceState.locationPoint))
-        MapSet.saveLocation(context, deviceState.locationPoint)
-        MapSet.setMyLocationData(
+        MapControl.saveLocation(context, deviceState.locationPoint)
+        MapControl.setMyLocationData(
             myLocationData = MyLocationData
                 .Builder()
                 .latitude(deviceState.locationPoint.latitude)
@@ -113,13 +115,17 @@ fun MapScreen(
 
 
     LaunchedEffect(true) {
-        val latLng = MapSet.loadLocation(context)
-        MapSet.moveMapToLocation(mapView, latLng)
-        MapSet.setDarkStyle(mapView, context, isDark)
+        MapControl.setConfig(mapView)
+        if (!mapViewModel.isSignalMarker) {
+            mapViewModel.onMarkerChange(true)
+        }
+        //先加载本地保存的位置
+        MapControl.setMapWindow(mapView, MapControl.loadLocation(context), type = 0)
+        MapControl.setStyle(mapView, context, isDark)
         //开始定位
         locationMapViewModel.startLocation()
         //点击事件
-        MapSet.setOnMapClickListener(object : OnMapClickListener {
+        MapControl.setOnMapClickListener(object : OnMapClickListener {
             override fun onMapClick(point: LatLng?) {}
             override fun onMapPoiClick(poi: MapPoi?) {
                 if (poi != null) {
@@ -187,7 +193,7 @@ fun MapScreen(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) {
-                        MapSet.moveMapToLocation(mapView, deviceState.locationPoint)
+                        MapControl.setMapWindow(mapView, deviceState.locationPoint)
                     }
             )
             //快速访问
@@ -210,7 +216,7 @@ fun MapScreen(
                 isShowQuickVia = false
                 val poiDetailInfo = poiState.poiDetailInfo
                 poiDetailInfo.image = localPoiState.favoritePoi?.iconPic
-                MapSet.moveMapToLocation(mapView, poiDetailInfo.location)
+                MapControl.setMapWindow(mapView, poiDetailInfo.location)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -229,7 +235,7 @@ fun MapScreen(
                         },
                         onRoute = {
                             mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
-                            MapSet.onRoutePlan(
+                            MapControl.preRoutePlan(
                                 startLocation = deviceState.locationPoint,
                                 endLocation = poiDetailInfo.location,
                                 mapView = mapView
@@ -242,8 +248,8 @@ fun MapScreen(
                                 )
                                 mapViewModel.onRouteEvent(RouteEvent.IsShowChange(true))
                             }
-                            MapSet.startRoutePlan(RoutePlanType.Walking)
-                            MapSet.moveMapToLocation(mapView, poiDetailInfo.location, 14f)
+                            MapControl.startRoutePlan(RoutePlanType.Walking)
+                            MapControl.setMapWindow(mapView, poiDetailInfo.location, 14f)
                             mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
                         },
                         onCall = {
@@ -287,13 +293,13 @@ fun MapScreen(
                         isShowQuickVia = true
                         mapViewModel.onRouteEvent(RouteEvent.IsShowChange(false))
                         mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(true))
-                        MapSet.removeOverlay()
+                        MapControl.removeOverlay()
                         routePlanType = RoutePlanType.Walking
                     },
                     onRoutePlanType = {
                         mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
                         routePlanType = it
-                        MapSet.startRoutePlan(it)
+                        MapControl.startRoutePlan(it)
                     },
                     onNavi = {
                         mapViewModel.onGoNavEvent(

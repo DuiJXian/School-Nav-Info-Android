@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -138,11 +139,13 @@ fun RoutePlan(
 
             Text(
                 modifier = Modifier
-                    .background(appColors.greyMedium.copy(alpha = 0.3f)),
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(appColors.greyMedium.copy(alpha = 0.3f))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
                 text = "全程${distance}千米 约${duration}",
                 style = TextStyle(
-                    color = appColors.info,
-                    fontSize = 17.sp,
+                    color = appColors.fontPrimary,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                 )
             )

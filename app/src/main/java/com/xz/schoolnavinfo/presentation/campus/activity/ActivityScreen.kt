@@ -1,6 +1,5 @@
 package com.xz.schoolnavinfo.presentation.campus.activity
 
-import android.util.Log
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,7 +21,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,9 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
-import com.xz.schoolnavinfo.common.net.getStaticCompleteUrl
+import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.campus.CampusScreen
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -65,8 +65,8 @@ fun ActivityScreen(
 
 
     LaunchedEffect(true) {
-        commonViewModel.globalFlow.refreshData.collectLatest {
-            if (it == ArticleType.Activity) {
+        commonViewModel.globalFlow.refreshDataFlow.collectLatest {
+            if (it == CampusMenu.Activity) {
                 activityViewModel.onGetActivityEvent()
                 activityViewModel.onGetBannerEvent()
             }
@@ -103,9 +103,8 @@ fun ActivityScreen(
                     modifier = Modifier
                         .padding(bottom = 10.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .height(300.dp)
-                        .background(appColors.err),
-                    articleDTOList = bannerList
+                        .height(300.dp),
+                    articleDTOList = bannerList.reversed()
                 )
             }
 
@@ -118,7 +117,7 @@ fun ActivityScreen(
                         commonViewModel.onNavEvent(
                             NavEvent.ArticleDetail(
                                 articleDTO = item,
-                                type = "活动"
+                                campusMenu = CampusMenu.Activity
                             )
                         )
                     }
@@ -130,7 +129,7 @@ fun ActivityScreen(
                     if (item.imageList != null) {
                         val startIndex = item.imageList.indexOf(it)
                         commonViewModel.onLoadImageUrlEvent(
-                            item.imageList.map { url -> getStaticCompleteUrl(url) },
+                            item.imageList.map { url -> montageCompleteUrl(url) },
                             startIndex,
                             0.dp
                         )
@@ -178,7 +177,7 @@ fun CarouselBanner(
                     .fillMaxSize()
             ) { page ->
                 Image(
-                    painter = rememberAsyncImagePainter(getStaticCompleteUrl(imageList[page])),
+                    painter = rememberAsyncImagePainter(montageCompleteUrl(imageList[page])),
                     contentDescription = "banner-$page",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier

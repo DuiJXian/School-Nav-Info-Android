@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -24,8 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.common.net.BASE_URL
-import com.xz.schoolnavinfo.common.net.getStaticCompleteUrl
+import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -46,6 +49,7 @@ fun DiscussCard(
             .fillMaxWidth()
             .padding(10.dp),
     ) {
+        //用户信息区域
         Row {
             Image(
                 modifier = Modifier
@@ -76,7 +80,7 @@ fun DiscussCard(
                 }
             }
         }
-
+        //标题区域
         if (article?.title?.isNotBlank() == true) {
             Row(
                 modifier = Modifier
@@ -95,7 +99,7 @@ fun DiscussCard(
             }
 
         }
-
+        //内容区域
         if (article?.content?.isNotBlank() == true) {
             Row(
                 modifier = Modifier
@@ -112,18 +116,54 @@ fun DiscussCard(
                 )
             }
         }
-
-        Row(
-            modifier = Modifier
-                .padding(top = 5.dp)
-        ) {
-            if (!imageList.isNullOrEmpty()) {
+        //图片区域
+        if (!imageList.isNullOrEmpty()) {
+            Row(
+                modifier = Modifier
+                    .padding(top = 5.dp)
+            ) {
                 ImageGrid(imageList = imageList) {
                     onImageClick(it)
                 }
             }
-        }
 
+        }
+        //位置区域
+        if(article?.address?.isNotBlank() == true){
+            Row(
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(appColors.greyMedium.copy(.5f))
+                    .clickable(
+                        interactionSource = null,
+                        indication = null
+                    ) {
+
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .padding(start = 5.dp)
+                        .size(20.dp),
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = appColors.fontSecondary
+                )
+                Text(
+                    modifier = Modifier
+                        .padding(vertical = 5.dp)
+                        .padding(end = 10.dp),
+                    text = article.address,
+                    style = TextStyle(
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = appColors.greyHeavy
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -173,7 +213,7 @@ private fun ImageRow(
                     .clip(RoundedCornerShape(5.dp))
                     .size(120.dp)
                     .clickable { onImageClick(image) },
-                painter = rememberAsyncImagePainter(getStaticCompleteUrl(image)),
+                painter = rememberAsyncImagePainter(montageCompleteUrl(image)),
                 contentDescription = null,
                 contentScale = ContentScale.Crop
             )

@@ -102,4 +102,15 @@ object TimeUtils {
         }
     }
 
+    fun formatToMonthDayHourMinute(input: String): String {
+        return try {
+            val inputFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            val outputFormat = DateTimeFormatter.ofPattern("MM-dd HH:mm")
+            val dateTime = LocalDateTime.parse(input, inputFormat)
+            dateTime.format(outputFormat)
+        } catch (e: Exception) {
+            input // 出错就返回原始字符串
+        }
+    }
+
 }

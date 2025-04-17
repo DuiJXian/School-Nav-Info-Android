@@ -52,11 +52,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.common.net.BASE_URL
-import com.xz.schoolnavinfo.common.net.getStaticCompleteUrl
+import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
-import com.xz.schoolnavinfo.presentation.common.compose.ImagePreviewScreen
+import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.common.compose.ImageHorizontalScroll
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -65,12 +65,12 @@ import com.xz.schoolnavinfo.presentation.theme.AppColors
 @Composable
 fun ArticleDetailScreen(
     articleDTO: ArticleDTO,
-    type: String,
+    campusMenu: CampusMenu,
     articleDetailViewModel: ArticleDetailViewModel = hiltViewModel(),
     commonViewModel: CommonViewModel,
 ) {
 
-    val imageList = articleDTO.imageList?.map { getStaticCompleteUrl(it) }
+    val imageList = articleDTO.imageList?.map { montageCompleteUrl(it) }
     val article = articleDTO.article
     val userInfo = articleDTO.userInfo
 
@@ -123,7 +123,7 @@ fun ArticleDetailScreen(
 
 
 
-            if (type == "讨论") {
+            if (campusMenu == CampusMenu.Discuss) {
                 if (userInfo?.avatarUrl != null) {
                     Image(
                         modifier = Modifier
@@ -147,8 +147,7 @@ fun ArticleDetailScreen(
 
             Column(
             ) {
-
-                if (type != "活动") {
+                if (campusMenu != CampusMenu.Activity) {
                     Text(
                         modifier = Modifier
                             .padding(start = 5.dp),
@@ -183,12 +182,20 @@ fun ArticleDetailScreen(
                 .verticalScroll(scrollState)
         ) {
 
+
+            //图片区域
             Row {
-                if (!imageList.isNullOrEmpty()) {
-                    ImagePreviewScreen(
-                        imageList = imageList.filterNot { it.contains("banner") },
-                        displayMaxHeight = 300.dp
-                    )
+                val contentImageList = if (!imageList.isNullOrEmpty()) imageList.filterNot { it.contains("banner") } else emptyList()
+                if (contentImageList.isNotEmpty()) {
+                    ImageHorizontalScroll(
+                        contentImageList
+                    ) { index ->
+                        commonViewModel.onLoadImageUrlEvent(
+                            contentImageList,
+                            index,
+                            0.dp
+                        )
+                    }
                 }
             }
 
@@ -202,7 +209,7 @@ fun ArticleDetailScreen(
                         overflow = TextOverflow.Ellipsis,
                         style = TextStyle(
                             color = appColors.fontPrimary,
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
 
@@ -220,7 +227,8 @@ fun ArticleDetailScreen(
                         overflow = TextOverflow.Ellipsis,
                         style = TextStyle(
                             color = appColors.fontPrimary,
-                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
                         )
 
                     )
@@ -235,7 +243,7 @@ fun ArticleDetailScreen(
             )
 
 
-            if (type != "活动") {
+            if (campusMenu != CampusMenu.Activity && commentDTOList.isNotEmpty()) {
                 Row(
                     modifier = Modifier
                         .padding(start = 10.dp, top = 10.dp, bottom = 10.dp)
@@ -262,7 +270,7 @@ fun ArticleDetailScreen(
         }
 
 
-        if (type != "活动") {
+        if (campusMenu != CampusMenu.Activity) {
             val borderColor = if (isFocused) appColors.primary else appColors.greyHeavy
             var sendButtonColor by remember { mutableStateOf(Color(0xFFBDBDBD)) }
             Column(

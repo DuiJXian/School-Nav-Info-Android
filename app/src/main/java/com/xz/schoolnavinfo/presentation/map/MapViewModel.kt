@@ -1,5 +1,6 @@
 package com.xz.schoolnavinfo.presentation.map
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,8 @@ import com.baidu.mapapi.bikenavi.adapter.IBRoutePlanListener
 import com.baidu.mapapi.bikenavi.model.BikeRoutePlanError
 import com.baidu.mapapi.bikenavi.params.BikeNaviLaunchParam
 import com.baidu.mapapi.bikenavi.params.BikeRouteNodeInfo
+import com.baidu.mapapi.map.BaiduMapOptions
+import com.baidu.mapapi.map.MapView
 import com.baidu.mapapi.model.LatLng
 import com.baidu.mapapi.search.core.PoiInfo
 import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener
@@ -54,6 +57,17 @@ class MapViewModel @Inject constructor(
     private val localPoiInfoUseCases: LocalPoiInfoUseCases,
     private val application: Application
 ) : AndroidViewModel(application) {
+
+    @SuppressLint("StaticFieldLeak")
+    private val _map = MapView(application, BaiduMapOptions().apply {
+        zoomControlsEnabled(false)
+    })
+    val map get() = _map
+
+    private var _isAddMarker = mutableStateOf(false)
+    val isSignalMarker get() = _isAddMarker.value
+
+
     private val _poiState = MutableStateFlow(PoiState())
     val poiState: StateFlow<PoiState> = _poiState
 
@@ -80,6 +94,9 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    fun onMarkerChange(flag: Boolean){
+        _isAddMarker.value = flag
+    }
 
     private val handler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -111,7 +128,7 @@ class MapViewModel @Inject constructor(
     fun onGoNavEvent(stPoint: LatLng, endPoint: LatLng, routePlanType: RoutePlanType) {
         when (routePlanType) {
             is RoutePlanType.Walking -> {
-                if(BikeNavigateHelper.getInstance().isInitEngine){
+                if (BikeNavigateHelper.getInstance().isInitEngine) {
                     BikeNavigateHelper.getInstance().unInitNaviEngine()
                 }
                 val param = WalkNaviLaunchParam()
@@ -149,7 +166,7 @@ class MapViewModel @Inject constructor(
             }
 
             is RoutePlanType.Biking -> {
-                if(WalkNavigateHelper.getInstance().isInitEngine){
+                if (WalkNavigateHelper.getInstance().isInitEngine) {
                     WalkNavigateHelper.getInstance().unInitNaviEngine()
                 }
                 val param = BikeNaviLaunchParam()
@@ -171,11 +188,13 @@ class MapViewModel @Inject constructor(
                                     override fun onRoutePlanStart() {
 
                                     }
+
                                     override fun onRoutePlanSuccess() {
                                         viewModelScope.launch {
                                             _navEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Biking))
                                         }
                                     }
+
                                     override fun onRoutePlanFail(p0: BikeRoutePlanError?) {
                                     }
                                 })
@@ -208,6 +227,7 @@ class MapViewModel @Inject constructor(
             }
         }
     }
+
     //获取本地兴趣点
     private fun getLocalPoiInfos() {
         getLocalPoiInfoJob?.cancel()
@@ -218,6 +238,7 @@ class MapViewModel @Inject constructor(
                 )
             }.launchIn(viewModelScope)
     }
+
     //本地兴趣点事件
     fun onLocalPoiInfoEvent(event: LocalInfoEvent) {
         when (event) {
@@ -247,6 +268,7 @@ class MapViewModel @Inject constructor(
             }
         }
     }
+
     //通过UID获取兴趣点
     private fun getMPoiInfoByUid(uid: String) {
         viewModelScope.launch {
@@ -260,6 +282,10 @@ class MapViewModel @Inject constructor(
             }
         )
     }
+
+
+
+
     //兴趣点检索事件
     fun onPoiEvent(event: PoiEvent) {
         when (event) {
@@ -314,6 +340,7 @@ class MapViewModel @Inject constructor(
             }
         }
     }
+
     //导航事件
     fun onRouteEvent(event: RouteEvent) {
         when (event) {
@@ -333,10 +360,9 @@ class MapViewModel @Inject constructor(
     }
 
 
-
     private val poiSearchListener = object : OnGetPoiSearchResultListener {
         override fun onGetPoiResult(result: PoiResult) {
-            var poiList: MutableList<PoiInfo> = mutableListOf()
+            val poiList: MutableList<PoiInfo> = mutableListOf()
             if (result.allPoi != null) {
                 for (poi in result.allPoi) {
                     poi.distance = DistanceUtil
@@ -386,4 +412,8 @@ class MapViewModel @Inject constructor(
         )
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        map.onDestroy()
+    }
 }

@@ -1,6 +1,5 @@
 package com.xz.schoolnavinfo.presentation.campus.discuss
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -39,9 +38,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xz.schoolnavinfo.common.net.BASE_URL
-import com.xz.schoolnavinfo.common.net.getStaticCompleteUrl
+import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -75,8 +74,8 @@ fun DiscussScreen(
     }
 
     LaunchedEffect(true) {
-        commonViewModel.globalFlow.refreshData.collectLatest {
-            if (it == ArticleType.Discuss) {
+        commonViewModel.globalFlow.refreshDataFlow.collectLatest {
+            if (it == CampusMenu.Discuss) {
                 discussViewModel.onGetArticlesEvent()
             }
         }
@@ -117,7 +116,7 @@ fun DiscussScreen(
                             commonViewModel.onNavEvent(
                                 NavEvent.ArticleDetail(
                                     articleDTO = item,
-                                    type = "讨论"
+                                    campusMenu = CampusMenu.Discuss
                                 )
                             )
                         }
@@ -129,7 +128,7 @@ fun DiscussScreen(
                         if (item.imageList != null) {
                             val startIndex = item.imageList.indexOf(it)
                             commonViewModel.onLoadImageUrlEvent(
-                                item.imageList.map { url -> getStaticCompleteUrl(url) },
+                                item.imageList.map { url -> montageCompleteUrl(url) },
                                 startIndex,
                                 0.dp
                             )
