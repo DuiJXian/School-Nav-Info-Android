@@ -17,7 +17,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xz.schoolnavinfo.common.event.NetExceptionEvent
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
-import com.xz.schoolnavinfo.domain.data.dto.StuffDTO
 import com.xz.schoolnavinfo.presentation.TestScreen
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.campus.detail.ArticleDetailScreen
@@ -36,7 +35,8 @@ import kotlinx.coroutines.flow.collectLatest
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
 @Composable
 fun NavScreen(
-    commonViewModel: CommonViewModel = hiltViewModel()
+    commonViewModel: CommonViewModel = hiltViewModel(),
+    publishArticleViewModel: PublishArticleViewModel = hiltViewModel()
 ) {
 
     val navController = rememberNavController()
@@ -44,9 +44,7 @@ fun NavScreen(
 
     var articleDTO by remember { mutableStateOf(ArticleDTO()) }
 
-    var stuffDetailId by remember { mutableStateOf<String>("") }
-
-    val publishArticleViewModel = hiltViewModel<PublishArticleViewModel>()
+    var stuffDetailId by remember { mutableStateOf("") }
 
     var articlePubMenu by remember { mutableStateOf<CampusMenu?>(null) }
 

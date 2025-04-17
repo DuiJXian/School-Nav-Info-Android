@@ -11,11 +11,11 @@ class ArticleUseCases(private val articleRepository: ArticleRepository) {
         return articleRepository.getDiscussArticleList(articleRequest)
     }
 
-    suspend fun createDiscussArticle(articleDTO: ArticleDTO): BaseResponse<String> {
+    suspend fun createDiscussArticle(articleDTO: ArticleDTO): BaseResponse<Unit> {
         return articleRepository.createDiscussArticle(articleDTO)
     }
 
-    suspend fun deleteDiscussArticle(articleId: String): BaseResponse<String> {
+    suspend fun deleteDiscussArticle(articleId: String): BaseResponse<Unit> {
         return articleRepository.deleteDiscussArticle(articleId)
     }
 
@@ -28,11 +28,11 @@ class ArticleUseCases(private val articleRepository: ArticleRepository) {
         return articleRepository.getActivityBanner()
     }
 
-    suspend fun createActivityArticle(articleDTO: ArticleDTO): BaseResponse<String> {
+    suspend fun createActivityArticle(articleDTO: ArticleDTO): BaseResponse<Unit> {
         return articleRepository.createActivityArticle(articleDTO)
     }
 
-    suspend fun deleteActivityArticle(articleId: String): BaseResponse<String> {
+    suspend fun deleteActivityArticle(articleId: String): BaseResponse<Unit> {
         return articleRepository.deleteActivityArticle(articleId)
     }
 }

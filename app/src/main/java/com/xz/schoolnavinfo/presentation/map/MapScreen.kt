@@ -3,8 +3,6 @@ package com.xz.schoolnavinfo.presentation.map
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -42,7 +40,6 @@ import com.baidu.mapapi.map.MapPoi
 import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
-import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.LocateUtils
 import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateEvent

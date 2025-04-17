@@ -105,7 +105,14 @@ fun ActivityScreen(
                         .clip(RoundedCornerShape(10.dp))
                         .height(300.dp),
                     articleDTOList = bannerList.reversed()
-                )
+                ){ index ->
+                    commonViewModel.onNavEvent(
+                        NavEvent.ArticleDetail(
+                            articleDTO = bannerList.reversed()[index],
+                            campusMenu = CampusMenu.Activity
+                        )
+                    )
+                }
             }
 
         }

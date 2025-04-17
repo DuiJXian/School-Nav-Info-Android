@@ -15,11 +15,11 @@ class ArticleRepositoryImpl @Inject constructor(
         return articleApi.getDiscussArticleList(articleRequest)
     }
 
-    override suspend fun createDiscussArticle(articleDTO: ArticleDTO): BaseResponse<String> {
+    override suspend fun createDiscussArticle(articleDTO: ArticleDTO): BaseResponse<Unit> {
         return articleApi.createDiscussArticle(articleDTO)
     }
 
-    override suspend fun deleteDiscussArticle(articleId: String): BaseResponse<String> {
+    override suspend fun deleteDiscussArticle(articleId: String): BaseResponse<Unit> {
         return articleApi.deleteDiscussArticle(articleId)
     }
 
@@ -32,11 +32,11 @@ class ArticleRepositoryImpl @Inject constructor(
     }
 
 
-    override suspend fun createActivityArticle(articleDTO: ArticleDTO): BaseResponse<String> {
+    override suspend fun createActivityArticle(articleDTO: ArticleDTO): BaseResponse<Unit> {
         return articleApi.createActivityArticle(articleDTO)
     }
 
-    override suspend fun deleteActivityArticle(articleId: String): BaseResponse<String> {
+    override suspend fun deleteActivityArticle(articleId: String): BaseResponse<Unit> {
         return articleApi.deleteActivityArticle(articleId)
     }
 }

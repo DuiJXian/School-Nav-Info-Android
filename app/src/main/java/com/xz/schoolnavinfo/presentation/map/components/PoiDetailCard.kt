@@ -1,8 +1,8 @@
 package com.xz.schoolnavinfo.presentation.map.components
 
-import com.xz.schoolnavinfo.presentation.theme.AppColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Phone
@@ -46,6 +45,7 @@ import com.baidu.mapapi.search.core.PoiDetailInfo
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.LocateUtils
 import com.xz.schoolnavinfo.common.utils.TimeUtils
+import com.xz.schoolnavinfo.presentation.theme.AppColors
 
 @Composable
 fun PoiDetailCard(
@@ -78,7 +78,8 @@ fun PoiDetailCard(
                     Image(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .size(128.dp),
+                            .size(128.dp)
+                            .border(1.dp, appColors.greyLight, RoundedCornerShape(10.dp)),
                         contentScale = ContentScale.Crop,
                         painter = rememberAsyncImagePainter(poiDetailInfo.image),
                         contentDescription = null,
@@ -87,6 +88,7 @@ fun PoiDetailCard(
                     Image(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
+                            .border(1.dp, appColors.greyLight, RoundedCornerShape(10.dp))
                             .size(128.dp),
                         painter = painterResource(R.drawable.home),
                         contentDescription = null
@@ -102,7 +104,7 @@ fun PoiDetailCard(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         Text(
-                            text = "${poiDetailInfo.name}",
+                            text = poiDetailInfo.name,
                             style = TextStyle(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,

@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.presentation.campus.publish
 
 import android.app.Activity
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,10 +10,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,22 +34,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,10 +68,8 @@ import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublishDiscussScreen(
     publishArticleViewModel: PublishArticleViewModel,
@@ -84,26 +79,25 @@ fun PublishDiscussScreen(
     val context = LocalContext.current
     val appColors = AppColors.current
 
-    val articleState by publishArticleViewModel.articleInfo
+    val articleInfo = publishArticleViewModel.articleInfo
 
     val discussImages by publishArticleViewModel.discussImages
     val activityImages by publishArticleViewModel.activityImages
 
-    val bannerImage by publishArticleViewModel.imageBanner
+    val bannerImage = publishArticleViewModel.imageBanner
 
     val imageSize by remember { mutableStateOf(76.dp) }
     val scrollState = rememberScrollState()
     val isSystemInDarkTheme = isSystemInDarkTheme()
 
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    val scope = rememberCoroutineScope()
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    var isBanner by remember { mutableStateOf(false) }
+    val addBanner = publishArticleViewModel.addBanner
 
     var selectType by remember { mutableIntStateOf(0) } //0内容图片 轮播图
+
+    val statusBarPadding = WindowInsets.systemBars.asPaddingValues()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -139,157 +133,136 @@ fun PublishDiscussScreen(
         }
     }
 
-    Scaffold(
-        containerColor = appColors.bgPrimary,
-        snackbarHost = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                SnackbarHost(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter),
-                    hostState = snackbarHostState,
-                )
-            }
-        },
-        topBar = {
-            TopAppBar(
-                modifier = Modifier
-                    .background(appColors.bgPrimary),
-                title = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxHeight(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = campusMenu.title,
-                            style = TextStyle(
-                                fontSize = 18.sp,
-                                color = appColors.fontPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
 
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = appColors.bgPrimary,
-                    titleContentColor = appColors.fontPrimary,
-                    navigationIconContentColor = appColors.fontPrimary
-                ),
-                navigationIcon = {
-                    Icon(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable(
-                                interactionSource = null,
-                                indication = null
-                            ) {
-                                keyboardController?.hide()
-                                //CommonViewModel.
-                                commonViewModel.onNavEvent(NavEvent.BackPage)
-                            },
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回"
-                    )
-                },
-                actions = {
-                    Row(
-                        modifier = Modifier
-                            .padding(end = 10.dp)
-                            .height(30.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 5.dp)
-                                .shadow(3.dp, RoundedCornerShape(10.dp))
-                                .background(appColors.err)
-                                .clip(RoundedCornerShape(10.dp))
-                                .width(60.dp)
-                                .height(30.dp)
-                                .clickable {
-                                    publishArticleViewModel.onEvent(PublishArticleEvent.Clear(campusMenu))
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "清空",
-                                style = TextStyle(
-                                    color = appColors.onButtonColor,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .shadow(3.dp, RoundedCornerShape(10.dp))
-                                .background(appColors.primary)
-                                .clip(RoundedCornerShape(10.dp))
-                                .width(60.dp)
-                                .height(30.dp)
-                                .clickable {
-                                    val selectImageList =
-                                        if (campusMenu == CampusMenu.Activity) activityImages else discussImages
-                                    if (isBanner && bannerImage.path.isBlank()) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                "请选择轮播图",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
-                                    } else {
-                                        if (articleState.title.isBlank() && articleState.content.isBlank() && selectImageList.isEmpty()) {
-                                            Toast.makeText(
-                                                context,
-                                                "标题、内容、图片不能全为空",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } else {
-                                            publishArticleViewModel.onEvent(
-                                                PublishArticleEvent.PublishArticle(
-                                                    if (campusMenu == CampusMenu.Discuss) ArticleType.Discuss else ArticleType.Activity,
-                                                    isBanner
-                                                )
-                                            )
-                                        }
-                                    }
-
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "发布",
-                                style = TextStyle(
-                                    color = appColors.onButtonColor,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                        }
-                    }
-
-                }
-            )
-        }
+    Box(
+        modifier = Modifier
+            .background(appColors.bgPrimary)
+            .fillMaxSize()
+            .padding(statusBarPadding)
     ) {
-
 
         Column(
             modifier = Modifier
                 .background(appColors.bgPrimary)
-                .padding(it)
                 .fillMaxSize()
         ) {
             LoadingDialog(publishArticleViewModel.isShowLoading.value)
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(start = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxHeight(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .clickable {
+                                keyboardController?.hide()
+                                commonViewModel.onLocationSelectEvent(null)
+                                commonViewModel.onNavEvent(NavEvent.BackPage)
+                            },
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null
+                    )
+                    Text(
+                        text = campusMenu.title,
+                        style = TextStyle(
+                            fontSize = 18.sp,
+                            color = appColors.fontPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+
+                }
+
+                Row(
+                    modifier = Modifier
+                        .padding(end = 10.dp)
+                        .height(30.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .shadow(3.dp, RoundedCornerShape(10.dp))
+                            .background(appColors.err)
+                            .clip(RoundedCornerShape(10.dp))
+                            .width(60.dp)
+                            .height(30.dp)
+                            .clickable {
+                                publishArticleViewModel.onEvent(PublishArticleEvent.Clear(campusMenu))
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "清空",
+                            style = TextStyle(
+                                color = appColors.onButtonColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .shadow(3.dp, RoundedCornerShape(10.dp))
+                            .background(appColors.primary)
+                            .clip(RoundedCornerShape(10.dp))
+                            .width(60.dp)
+                            .height(30.dp)
+                            .clickable {
+                                val selectImageList =
+                                    if (campusMenu == CampusMenu.Activity) activityImages else discussImages
+                                if (addBanner && bannerImage == null) {
+                                    Toast.makeText(
+                                        context,
+                                        "请选择轮播图",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    if (articleInfo.title.isBlank() && articleInfo.content.isBlank() && selectImageList.isEmpty()) {
+                                        Toast.makeText(
+                                            context,
+                                            "标题、内容、图片不能全为空",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        publishArticleViewModel.onEvent(
+                                            PublishArticleEvent.PublishArticle(
+                                                if (campusMenu == CampusMenu.Discuss) ArticleType.Discuss else ArticleType.Activity,
+                                                addBanner
+                                            )
+                                        )
+                                        commonViewModel.onLocationSelectEvent(null)
+                                    }
+                                }
+
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "发布",
+                            style = TextStyle(
+                                color = appColors.onButtonColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                }
+            }
             Row(
                 modifier = Modifier
                     .horizontalScroll(scrollState)
 
             ) {
                 //轮播图封面选择
-                if (isBanner) {
+                if (addBanner) {
                     Box(
                         modifier = Modifier
                             .padding(start = 10.dp)
@@ -308,7 +281,7 @@ fun PublishDiscussScreen(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (bannerImage.path.isBlank()) {
+                        if (bannerImage == null) {
                             Text(
                                 text = "封面",
                                 style = TextStyle(
@@ -330,7 +303,8 @@ fun PublishDiscussScreen(
                 }
 
                 //图片预览列表
-                val disImageList = if (campusMenu == CampusMenu.Activity) activityImages else discussImages
+                val disImageList =
+                    if (campusMenu == CampusMenu.Activity) activityImages else discussImages
                 for (image in disImageList) {
                     Box(
                         modifier = Modifier
@@ -367,7 +341,8 @@ fun PublishDiscussScreen(
                 }
 
                 //图片选择
-                val size = if (campusMenu == CampusMenu.Activity) activityImages.size else discussImages.size
+                val size =
+                    if (campusMenu == CampusMenu.Activity) activityImages.size else discussImages.size
                 if (size < 9) {
                     Box(
                         modifier = Modifier
@@ -416,11 +391,12 @@ fun PublishDiscussScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CustomCheckbox(
+                        state = addBanner,
                         size = 18.dp,
                         uncheckedColor = appColors.greyMedium.copy(.5f),
                         checkedColor = appColors.fontPrimary
                     ) { isChecked ->
-                        isBanner = isChecked
+                        publishArticleViewModel.onEvent(PublishArticleEvent.AddBanner(isChecked))
                     }
                     Text(
                         modifier = Modifier
@@ -429,12 +405,13 @@ fun PublishDiscussScreen(
                         style = TextStyle(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isBanner) appColors.fontSecondary else appColors.greyHeavy,
+                            color = if (addBanner) appColors.fontSecondary else appColors.greyHeavy,
                         )
                     )
                 }
             }
             //选择地址
+            Log.e("TAG", "PublishDiscussScreen: ${articleInfo.address}", )
             Box(
                 modifier = Modifier
                     .padding(start = 10.dp, top = 5.dp)
@@ -463,7 +440,7 @@ fun PublishDiscussScreen(
                         modifier = Modifier
                             .padding(vertical = 5.dp)
                             .padding(end = 10.dp),
-                        text = articleState.address.ifBlank { "选择地址.." },
+                        text = articleInfo.address.ifBlank { "选择地址.." },
                         style = TextStyle(
                             fontSize = 16.sp,
                             color = appColors.greyHeavy
@@ -483,7 +460,7 @@ fun PublishDiscussScreen(
                     modifier = Modifier
                         .fillMaxWidth(),
                     cursorBrush = SolidColor(appColors.primary),
-                    value = articleState.title,
+                    value = articleInfo.title,
                     onValueChange = { text ->
                         publishArticleViewModel.onEvent(
                             PublishArticleEvent.TitleChange(
@@ -502,7 +479,7 @@ fun PublishDiscussScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                         ) {
-                            if (articleState.title.isBlank()) {
+                            if (articleInfo.title.isBlank()) {
                                 Text(
                                     text = "标题",
                                     style = TextStyle(
@@ -528,7 +505,7 @@ fun PublishDiscussScreen(
                     .padding(vertical = 5.dp, horizontal = 10.dp)
             ) {
                 BasicTextField(
-                    value = articleState.content,
+                    value = articleInfo.content,
                     onValueChange = { text ->
                         publishArticleViewModel.onEvent(
                             PublishArticleEvent.ContentChange(
@@ -547,7 +524,7 @@ fun PublishDiscussScreen(
                         fontWeight = FontWeight.Bold
                     ),
                     decorationBox = {
-                        if (articleState.content.isBlank()) {
+                        if (articleInfo.content.isBlank()) {
                             Text(
                                 text = "内容..",
                                 style = TextStyle(

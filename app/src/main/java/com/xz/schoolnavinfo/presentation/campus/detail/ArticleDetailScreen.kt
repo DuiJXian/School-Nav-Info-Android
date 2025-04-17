@@ -6,19 +6,21 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,8 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -55,6 +57,7 @@ import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
+import com.xz.schoolnavinfo.domain.data.type.RoleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.compose.ImageHorizontalScroll
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
@@ -89,90 +92,102 @@ fun ArticleDetailScreen(
     })
 
     var isFocused by remember { mutableStateOf(false) }
+    val systemPadding = WindowInsets.systemBars
 
     LaunchedEffect(true) {
         article?.id?.let { articleDetailViewModel.onGetComments(it) }
     }
 
+
+
     Box(
         modifier = Modifier
             .background(appColors.bgPrimary)
+            .padding(systemPadding.asPaddingValues())
             .offset(x = 0.dp, y = -animatedOffset)
     ) {
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 36.dp)
                 .height(50.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                modifier = Modifier
-                    .padding(start = 10.dp)
-                    .clickable(
-                        interactionSource = null,
-                        indication = null
+            Row {
+                Icon(
+                    modifier = Modifier
+                        .padding(start = 10.dp)
+                        .clickable(
+                            interactionSource = null,
+                            indication = null
+                        ) {
+                            commonViewModel.onNavEvent(NavEvent.BackPage)
+                        },
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "返回",
+                    tint = appColors.fontSecondary
+                )
+                if (campusMenu == CampusMenu.Discuss) {
+                    Image(
+                        modifier = Modifier
+                            .padding(start = 10.dp)
+                            .size(40.dp),
+                        painter = if (userInfo?.avatarUrl != null)
+                            rememberAsyncImagePainter(userInfo.avatarUrl) else
+                            painterResource(R.drawable.heard_image),
+                        contentDescription = "头像",
+                    )
+                    Column {
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 5.dp),
+                            text = userInfo?.nickname ?: "",
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                color = appColors.fontPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 5.dp),
+                            text = if (article?.createTime != null)
+                                TimeUtils.formatTimeDifference(article.createTime) else
+                                "err",
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                color = appColors.greyMedium,
+                            )
+                        )
+                    }
+                }
+            }
+
+            if ((article!!.userId == userInfo!!.id) || (campusMenu == CampusMenu.Activity && userInfo.role == RoleType.ADMIN.name))
+                Row(Modifier.padding(end = 10.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .shadow(3.dp, RoundedCornerShape(10.dp))
+                            .background(appColors.err)
+                            .clip(RoundedCornerShape(10.dp))
+                            .width(60.dp)
+                            .height(30.dp)
+                            .clickable {
+
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
-                        commonViewModel.onNavEvent(NavEvent.BackPage)
-                    },
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "返回",
-                tint = appColors.fontSecondary
-            )
-
-
-
-            if (campusMenu == CampusMenu.Discuss) {
-                if (userInfo?.avatarUrl != null) {
-                    Image(
-                        modifier = Modifier
-                            .padding(start = 10.dp)
-                            .size(40.dp),
-                        painter = rememberAsyncImagePainter(userInfo.avatarUrl),
-                        contentDescription = "头像",
-                    )
-                } else {
-                    Image(
-                        modifier = Modifier
-                            .padding(start = 10.dp)
-                            .size(40.dp),
-                        painter = painterResource(R.drawable.heard_image),
-                        contentDescription = "头像",
-                    )
-                }
-            }
-
-
-
-            Column(
-            ) {
-                if (campusMenu != CampusMenu.Activity) {
-                    Text(
-                        modifier = Modifier
-                            .padding(start = 5.dp),
-                        text = userInfo?.nickname ?: "",
-                        style = TextStyle(
-                            fontSize = 16.sp,
-                            color = appColors.fontPrimary,
-                            fontWeight = FontWeight.Bold
+                        Text(
+                            "删除",
+                            style = TextStyle(
+                                color = appColors.onButtonColor,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
+                    }
                 }
-
-                if (article?.createTime != null) {
-                    Text(
-                        modifier = Modifier
-                            .padding(start = 5.dp),
-                        text = TimeUtils.formatTimeDifference(article.createTime),
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            color = appColors.greyMedium,
-                        )
-                    )
-                }
-
-            }
         }
 
         Column(
@@ -185,7 +200,8 @@ fun ArticleDetailScreen(
 
             //图片区域
             Row {
-                val contentImageList = if (!imageList.isNullOrEmpty()) imageList.filterNot { it.contains("banner") } else emptyList()
+                val contentImageList =
+                    if (!imageList.isNullOrEmpty()) imageList.filterNot { it.contains("banner") } else emptyList()
                 if (contentImageList.isNotEmpty()) {
                     ImageHorizontalScroll(
                         contentImageList
@@ -265,27 +281,26 @@ fun ArticleDetailScreen(
                 CommentCard(commentDTO)
             }
 
-            Spacer(Modifier.height(18.dp))
 
         }
 
 
         if (campusMenu != CampusMenu.Activity) {
-            val borderColor = if (isFocused) appColors.primary else appColors.greyHeavy
-            var sendButtonColor by remember { mutableStateOf(Color(0xFFBDBDBD)) }
             Column(
                 modifier = Modifier
-                    .navigationBarsPadding()
                     .background(appColors.bgPrimary)
                     .align(Alignment.BottomCenter)
-                    .padding(10.dp)
+                    .padding(start = 10.dp, end = 10.dp)
             ) {
-
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .height(48.dp)
-                        .border(1.dp, borderColor, RoundedCornerShape(16.dp))
+                        .border(
+                            1.dp,
+                            if (isFocused) appColors.primary else appColors.greyLight,
+                            RoundedCornerShape(16.dp)
+                        )
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -303,18 +318,13 @@ fun ArticleDetailScreen(
                         ),
                         onValueChange = {
                             commentText = it
-                            sendButtonColor = if (commentText.isNotBlank()) {
-                                appColors.primary
-                            } else {
-                                Color(0xFFBDBDBD)
-                            }
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                     )
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .background(sendButtonColor)
+                            .background(appColors.primary)
                             .height(48.dp)
                             .width(76.dp)
                             .clickable(

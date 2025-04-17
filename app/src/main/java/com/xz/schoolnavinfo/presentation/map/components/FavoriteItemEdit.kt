@@ -72,7 +72,7 @@ fun FavoriteItemEdit(
     val context = LocalContext.current
     var imagePath by remember { mutableStateOf(mPoiInfo.iconPic) } // 获取保存的图片路径
     var poiName by remember { mutableStateOf(mPoiInfo.name) }
-    var isEnableConfirm by remember { mutableStateOf(false) }
+    //var isEnableConfirm by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
@@ -85,7 +85,7 @@ fun FavoriteItemEdit(
         }
     )
 
-    isEnableConfirm = imagePath != mPoiInfo.iconPic || poiName != mPoiInfo.name
+    //isEnableConfirm = imagePath != mPoiInfo.iconPic || poiName != mPoiInfo.name
 
     Box(
         modifier = modifier
@@ -103,7 +103,7 @@ fun FavoriteItemEdit(
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
                     .size(108.dp)
-                    .border(1.dp, appColors.greyMedium, RoundedCornerShape(10.dp))
+                    .border(1.dp, appColors.greyLight, RoundedCornerShape(10.dp))
             ) {
                 if (imagePath.isNotBlank()) {
                     Image(
@@ -138,7 +138,7 @@ fun FavoriteItemEdit(
             ) {
                 MyTextFiled(
                     borderColor = appColors.greyMedium,
-                    containerColor = appColors.greyLight,
+                    containerColor = appColors.bgPrimary,
                     defaultText = mPoiInfo.name,
                     onFocusContainerColor = appColors.bgPrimary,
                     alpha = 0.5f,
@@ -183,7 +183,6 @@ fun FavoriteItemEdit(
 
                     Button(
                         modifier = Modifier.width(70.dp),
-                        enabled = isEnableConfirm,
                         contentPadding = PaddingValues(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = appColors.primary

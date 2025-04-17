@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun CustomCheckbox(
+    state: Boolean = false,
     size: Dp = 24.dp, // 控制复选框大小
     cornerSize: Dp = 5.dp,
     uncheckedColor: Color = Color.Gray, // 未选中的颜色
@@ -30,7 +31,7 @@ fun CustomCheckbox(
     checkmarkColor: Color = Color.White, // 勾选标记颜色
     onCheckedChange: (Boolean) -> Unit
 ) {
-    var checked by remember { mutableStateOf(false) }
+    var checked by remember { mutableStateOf(state) }
     Box(
         modifier = Modifier
             .size(size)

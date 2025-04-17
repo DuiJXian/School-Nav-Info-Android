@@ -15,10 +15,10 @@ interface ArticleApi {
     suspend fun getDiscussArticleList(@Body articleRequest: ArticleRequest): BaseResponse<PageResponse<ArticleDTO>>
 
     @POST("/api/article/discuss/insert")
-    suspend fun createDiscussArticle(@Body articleDTO: ArticleDTO): BaseResponse<String>
+    suspend fun createDiscussArticle(@Body articleDTO: ArticleDTO): BaseResponse<Unit>
 
-    @GET("/api/article/discuss/delete")
-    suspend fun deleteDiscussArticle(@Body articleId: String): BaseResponse<String>
+    @GET("/api/article/discuss/del")
+    suspend fun deleteDiscussArticle(@Body articleId: String): BaseResponse<Unit>
 
 
     @GET("/api/article/activity/getBanner")
@@ -28,10 +28,10 @@ interface ArticleApi {
     suspend fun getActivityArticleList(@Body articleRequest: ArticleRequest): BaseResponse<PageResponse<ArticleDTO>>
 
     @POST("/api/article/activity/insert")
-    suspend fun createActivityArticle(@Body articleDTO: ArticleDTO): BaseResponse<String>
+    suspend fun createActivityArticle(@Body articleDTO: ArticleDTO): BaseResponse<Unit>
 
-    @GET("/api/article/activity/delete")
-    suspend fun deleteActivityArticle(@Body articleId: String): BaseResponse<String>
+    @GET("/api/article/activity/del")
+    suspend fun deleteActivityArticle(@Body articleId: String): BaseResponse<Unit>
 
 //    @GET("/article/getArticleById")
 //    suspend fun getArticleById() : ApiResponse

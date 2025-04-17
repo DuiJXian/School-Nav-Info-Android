@@ -14,6 +14,7 @@ import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.domain.use_case.ArticleUseCases
 import com.xz.schoolnavinfo.domain.use_case.FileUseCases
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,7 +30,7 @@ class PublishArticleViewModel @Inject constructor(
     private val globalFlow: GlobalFlow
 ) : ViewModel() {
     private val _articleInfo = mutableStateOf(ArticleState(location = null))
-    val articleInfo = _articleInfo
+    val articleInfo get() = _articleInfo.value
 
     private val _discussImages = mutableStateOf<List<Image>>(emptyList())
     val discussImages = _discussImages
@@ -38,9 +39,11 @@ class PublishArticleViewModel @Inject constructor(
     val activityImages = _activityImages
 
 
-    private val _imageBanner = mutableStateOf(Image(0, "", ""))
-    val imageBanner = _imageBanner
+    private val _imageBanner = mutableStateOf<Image?>(null)
+    val imageBanner get() = _imageBanner.value
 
+    private val _addBanner = mutableStateOf(false)
+    val addBanner get() = _addBanner.value
 
     private val _isShowLoading = mutableStateOf(false)
     val isShowLoading = _isShowLoading
@@ -53,7 +56,7 @@ class PublishArticleViewModel @Inject constructor(
     fun onEvent(event: PublishArticleEvent) {
         when (event) {
             is PublishArticleEvent.ContentChange -> {
-                _articleInfo.value = articleInfo.value.copy(
+                _articleInfo.value = articleInfo.copy(
                     content = event.content
                 )
             }
@@ -72,7 +75,7 @@ class PublishArticleViewModel @Inject constructor(
             }
 
             is PublishArticleEvent.TitleChange -> {
-                _articleInfo.value = articleInfo.value.copy(
+                _articleInfo.value = articleInfo.copy(
                     title = event.title
                 )
             }
@@ -84,9 +87,9 @@ class PublishArticleViewModel @Inject constructor(
                     val uploadImageList =
                         if (event.articleType == ArticleType.Activity) _activityImages else _discussImages
 
-                    if (event.isBanner) {
+                    if (event.isBanner && imageBanner != null) {
                         netExceptionManager.safeApiCall {
-                            val resp = fileUseCases.uploadImage(imageBanner.value.path, "banner")
+                            val resp = fileUseCases.uploadImage(imageBanner!!.path, "banner")
                             imageUrls.add(resp.data)
                         }
                     }
@@ -98,10 +101,10 @@ class PublishArticleViewModel @Inject constructor(
                     }
 
                     val article = Article(
-                        title = articleInfo.value.title,
-                        content = articleInfo.value.content,
-                        address = articleInfo.value.address,
-                        location = gson.toJson(articleInfo.value.location),
+                        title = articleInfo.title,
+                        content = articleInfo.content,
+                        address = articleInfo.address,
+                        location = gson.toJson(articleInfo.location),
                         banner = event.isBanner
                     )
 
@@ -115,7 +118,7 @@ class PublishArticleViewModel @Inject constructor(
                             netExceptionManager.safeApiCall {
                                 val resp = articleUseCases.createDiscussArticle(articleDTO)
                                 if (resp.code == "success") {
-                                    clearPublicArticleData(PublishArticleEvent.Clear(CampusMenu.Discuss))
+                                    clearPublicArticleData(CampusMenu.Discuss)
                                     globalFlow.onRefreshDataEvent(CampusMenu.Discuss)
                                 }
                             }
@@ -125,7 +128,9 @@ class PublishArticleViewModel @Inject constructor(
                             netExceptionManager.safeApiCall {
                                 val resp = articleUseCases.createActivityArticle(articleDTO)
                                 if (resp.code == "success") {
-                                    clearPublicArticleData(PublishArticleEvent.Clear(CampusMenu.Activity))
+                                    _addBanner.value = false
+                                    _imageBanner.value = null
+                                    clearPublicArticleData(CampusMenu.Activity)
                                     globalFlow.onRefreshDataEvent(CampusMenu.Activity)
                                 }
                             }
@@ -137,7 +142,7 @@ class PublishArticleViewModel @Inject constructor(
             }
 
             is PublishArticleEvent.Clear -> {
-                clearPublicArticleData(event)
+                clearPublicArticleData(event.type)
             }
 
             is PublishArticleEvent.ImageBanner -> {
@@ -149,31 +154,40 @@ class PublishArticleViewModel @Inject constructor(
             }
 
             is PublishArticleEvent.LocationChange -> {
-                if (event.locationState == null) return
-                _articleInfo.value = articleInfo.value.copy(
-                    address = event.locationState.name + "-" + event.locationState.address,
-                    location = event.locationState.location
-                )
+                updateLocation(event.locationState)
             }
+
+            is PublishArticleEvent.AddBanner -> {
+                _addBanner.value = event.select
+            }
+
         }
     }
 
-    private fun clearPublicArticleData(event: PublishArticleEvent.Clear) {
-        if (event.type == CampusMenu.Activity) {
-            _articleInfo.value = articleInfo.value.copy(
-                title = "",
-                content = "",
-            )
-            activityImages.value = emptyList()
-            _imageBanner.value = Image(0, "", "")
-        } else {
-            _articleInfo.value = articleInfo.value.copy(
-                title = "",
-                content = "",
-            )
+    private fun updateLocation(
+        locationState: LocationState?
+    ) {
+        if (locationState == null) return
+        _articleInfo.value = articleInfo.copy(
+            address = locationState.name + "-" + locationState.address,
+            location = locationState.location
+        )
+    }
+
+    private fun clearPublicArticleData(type: CampusMenu) {
+        Log.e("TAG", "clearPublicArticleData", )
+        _articleInfo.value = articleInfo.copy(
+            title = "",
+            content = "",
+            address = "",
+            location = null
+        )
+
+        if (type == CampusMenu.Activity) {
+            _imageBanner.value = null
+            _activityImages.value = emptyList()
+        }else{
             _discussImages.value = emptyList()
         }
     }
-
-
 }

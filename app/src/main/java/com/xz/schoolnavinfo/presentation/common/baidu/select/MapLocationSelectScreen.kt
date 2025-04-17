@@ -151,7 +151,7 @@ fun MapLocationSelectScreen(
                     .padding(bottom = DensityUtil.px2dip(context, 56f))
                     .size(DensityUtil.px2dip(context, 56f)),
                 painter = painterResource(R.drawable.target),
-                tint = appColors.info,
+                tint = appColors.primary,
                 contentDescription = null
             )
         }

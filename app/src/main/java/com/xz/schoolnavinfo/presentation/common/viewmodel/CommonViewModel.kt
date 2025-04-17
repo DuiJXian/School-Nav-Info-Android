@@ -1,5 +1,6 @@
 package com.xz.schoolnavinfo.presentation.common.viewmodel
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Dp
@@ -8,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.xz.schoolnavinfo.common.event.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
+import com.xz.schoolnavinfo.common.utils.DataStoreUtils
+import com.xz.schoolnavinfo.common.utils.parseJwtPayload
 import com.xz.schoolnavinfo.domain.data.entity.UserInfo
 import com.xz.schoolnavinfo.domain.use_case.UserUseCases
 import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationState
@@ -24,6 +27,7 @@ class CommonViewModel @Inject constructor(
     val globalFlow: GlobalFlow,
     private val userUseCases: UserUseCases,
     private val netExceptionManager: NetExceptionManager,
+    private val application: Application
 ) : ViewModel() {
 
     private val gson = Gson()
@@ -54,19 +58,19 @@ class CommonViewModel @Inject constructor(
 
 
     private suspend fun getUserInfo() {
-//        val token = DataStoreUtils.getData(application, DataStoreUtils.Keys.TOKEN, "")
-//        val json = parseJwtPayload(token)
-//        try {
-//            _userInfo.value = gson.fromJson(json.toString(), UserInfo::class.java)
-//        } catch (e: Exception) {
-//            onNavEvent(NavEvent.LoginOrRegister)
-//        }
-        netExceptionManager.safeApiCall {
-            val resp = userUseCases.getUserInfo()
-            if (resp.code == "success") {
-                _userInfo.value = resp.data
-            }
+        val token = DataStoreUtils.getData(application, DataStoreUtils.Keys.TOKEN, "")
+        val json = parseJwtPayload(token)
+        try {
+            _userInfo.value = gson.fromJson(json.toString(), UserInfo::class.java)
+        } catch (e: Exception) {
+            onNavEvent(NavEvent.LoginOrRegister)
         }
+//        netExceptionManager.safeApiCall {
+//            val resp = userUseCases.getUserInfo()
+//            if (resp.code == "success") {
+//                _userInfo.value = resp.data
+//            }
+//        }
     }
 
     fun onGetUserInfoEvent() {

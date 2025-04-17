@@ -17,4 +17,5 @@ sealed class PublishArticleEvent {
 
     data class Clear(val type: CampusMenu) : PublishArticleEvent()
     data class LocationChange(val locationState: LocationState?): PublishArticleEvent()
+    data class AddBanner(val select: Boolean): PublishArticleEvent()
 }

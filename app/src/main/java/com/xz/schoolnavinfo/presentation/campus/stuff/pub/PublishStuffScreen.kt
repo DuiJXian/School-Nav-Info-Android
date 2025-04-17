@@ -344,10 +344,10 @@ fun PublishStuffScreen(
                             modifier = Modifier
                                 .padding(vertical = 5.dp)
                                 .padding(end = 10.dp),
-                            text = stuffInfo.address.ifBlank { "丢失位置.." },
+                            text = stuffInfo.address.ifBlank { "选择位置.." },
                             style = TextStyle(
                                 fontSize = 16.sp,
-                                color = if (stuffInfo.address.isBlank()) appColors.greyHeavy else appColors.fontPrimary
+                                color = appColors.greyHeavy
                             )
                         )
                     }
@@ -450,10 +450,10 @@ fun PublishStuffScreen(
                             modifier = Modifier
                                 .padding(vertical = 5.dp)
                                 .padding(end = 10.dp),
-                            text = stuffInfo.happenTime.ifBlank { "丢失日期.." },
+                            text = stuffInfo.happenTime.ifBlank { "选择日期.." },
                             style = TextStyle(
                                 fontSize = 16.sp,
-                                color = if (stuffInfo.happenTime.isBlank()) appColors.greyHeavy else appColors.fontPrimary
+                                color = appColors.greyHeavy
                             )
                         )
                     }

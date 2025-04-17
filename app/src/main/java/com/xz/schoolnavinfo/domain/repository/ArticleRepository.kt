@@ -9,12 +9,12 @@ import retrofit2.http.Body
 interface ArticleRepository {
     suspend fun getDiscussArticleList(articleRequest: ArticleRequest) : BaseResponse<PageResponse<ArticleDTO>>
 
-    suspend fun createDiscussArticle(articleDTO: ArticleDTO): BaseResponse<String>
+    suspend fun createDiscussArticle(articleDTO: ArticleDTO): BaseResponse<Unit>
 
-    suspend fun deleteDiscussArticle(articleId: String) : BaseResponse<String>
+    suspend fun deleteDiscussArticle(articleId: String) : BaseResponse<Unit>
 
     suspend fun getActivityBanner(): BaseResponse<List<ArticleDTO>>
     suspend fun getActivityArticleList(articleRequest: ArticleRequest) : BaseResponse<PageResponse<ArticleDTO>>
-    suspend fun createActivityArticle(articleDTO: ArticleDTO): BaseResponse<String>
-    suspend fun deleteActivityArticle(articleId: String) : BaseResponse<String>
+    suspend fun createActivityArticle(articleDTO: ArticleDTO): BaseResponse<Unit>
+    suspend fun deleteActivityArticle(articleId: String) : BaseResponse<Unit>
 }
