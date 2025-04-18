@@ -64,10 +64,6 @@ class MapViewModel @Inject constructor(
     })
     val map get() = _map
 
-    private var _isAddMarker = mutableStateOf(false)
-    val isSignalMarker get() = _isAddMarker.value
-
-
     private val _poiState = MutableStateFlow(PoiState())
     val poiState: StateFlow<PoiState> = _poiState
 
@@ -92,10 +88,6 @@ class MapViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun onMarkerChange(flag: Boolean){
-        _isAddMarker.value = flag
     }
 
     private val handler = object : Handler(Looper.getMainLooper()) {
@@ -284,8 +276,6 @@ class MapViewModel @Inject constructor(
     }
 
 
-
-
     //兴趣点检索事件
     fun onPoiEvent(event: PoiEvent) {
         when (event) {
@@ -333,7 +323,7 @@ class MapViewModel @Inject constructor(
                 )
             }
 
-            is PoiEvent.IsShowSearchPoi -> {
+            is PoiEvent.ShowSearchPoi -> {
                 _poiState.value = poiState.value.copy(
                     isShowSearch = event.isShow
                 )
@@ -351,7 +341,7 @@ class MapViewModel @Inject constructor(
                 )
             }
 
-            is RouteEvent.IsShowChange -> {
+            is RouteEvent.whowRouteMenu -> {
                 _routeState.value = routeState.value.copy(
                     isShowRoutePlan = event.isShow
                 )
@@ -377,15 +367,17 @@ class MapViewModel @Inject constructor(
         }
 
         override fun onGetPoiDetailResult(result: PoiDetailResult) {}
-        override fun onGetPoiDetailResult(result: PoiDetailSearchResult) {
-            for (item in result.poiDetailInfoList) {
-                item.distance = DistanceUtil
-                    .getDistance(_poiState.value.centerPoint, item.location)
-                    .toInt()
-                _poiState.value = poiState.value.copy(
-                    poiDetailInfo = item,
-                    isShowDetailCard = true
-                )
+        override fun onGetPoiDetailResult(result: PoiDetailSearchResult?) {
+            if (result != null) {
+                for (item in result.poiDetailInfoList) {
+                    item.distance = DistanceUtil
+                        .getDistance(_poiState.value.centerPoint, item.location)
+                        .toInt()
+                    _poiState.value = poiState.value.copy(
+                        poiDetailInfo = item,
+                        isShowDetailCard = true
+                    )
+                }
             }
         }
 

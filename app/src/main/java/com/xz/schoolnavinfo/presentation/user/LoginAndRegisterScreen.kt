@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -21,9 +22,12 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,15 +46,19 @@ fun LoginOrRegisterScreen(
     navController: NavController
 ) {
     val loginOrRegister by userViewModel.loginOrRegister
-    val userState by userViewModel.loginOrRegisterState
+    val loginOrRegisterState = userViewModel.loginOrRegisterState
     val loginRes by userViewModel.loginRes
     val appColors = AppColors.current
+
+    var confirmPassword by remember { mutableStateOf("") }
+
+    var errMessage = userViewModel.errMessage
 
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(loginRes) {
         if (loginRes.code == "fail") {
-            Log.e("TAG", "LoginOrRegisterScreen: ", )
+            Log.e("TAG", "LoginOrRegisterScreen: ")
             //snackbarHostState.showSnackbar(loginRes.message, duration = SnackbarDuration.Short)
         } else if (loginRes.code == "success") {
             navController.navigate(Screen.Home.route) {
@@ -59,6 +67,11 @@ fun LoginOrRegisterScreen(
         }
     }
 
+//    LaunchedEffect(Unit) {
+//        userViewModel.registerSucFlow.collectLatest {
+//            userViewModel.onEvent(UserEvent.ChangeLoginRegister)
+//        }
+//    }
 
 
     Scaffold(
@@ -68,7 +81,7 @@ fun LoginOrRegisterScreen(
     ) {
         Column(
             modifier = Modifier
-                .background(appColors.bgScreen)
+                .background(appColors.bgPrimary)
                 .padding(20.dp)
                 .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -93,7 +106,10 @@ fun LoginOrRegisterScreen(
                         .clickable(
                             interactionSource = null,
                             indication = null
-                        ) { userViewModel.onEvent(UserEvent.ChangeLoginRegister) },
+                        ) {
+                            userViewModel.onEvent(UserEvent.ChangeLoginRegister)
+                            errMessage = ""
+                        },
                     text = "登录",
                     style = TextStyle(
                         color = loginColor,
@@ -106,7 +122,10 @@ fun LoginOrRegisterScreen(
                         .clickable(
                             interactionSource = null,
                             indication = null
-                        ) { userViewModel.onEvent(UserEvent.ChangeLoginRegister) },
+                        ) {
+                            errMessage = ""
+                            userViewModel.onEvent(UserEvent.ChangeLoginRegister)
+                        },
                     text = "注册",
                     style = TextStyle(
                         color = registerColor,
@@ -117,14 +136,15 @@ fun LoginOrRegisterScreen(
             }
 
             OutlinedTextField(
-                value = userState.username,
-                onValueChange = {
-                    userViewModel.onEvent(UserEvent.ChangeUsername(it))
+                value = loginOrRegisterState.username,
+                onValueChange = { usernameText ->
+                    val filteredText = usernameText.filter { it.isLetterOrDigit() && it.code < 128 }
+                    userViewModel.onEvent(UserEvent.ChangeUsername(filteredText))
                 },
                 label = {
                     Text(
                         modifier = Modifier
-                            .background(appColors.bgScreen),
+                            .background(appColors.bgPrimary),
                         text = "账号",
                         style = TextStyle(
                             color = appColors.fontSecondary
@@ -133,8 +153,8 @@ fun LoginOrRegisterScreen(
                 },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = appColors.primary,
-                    focusedContainerColor = appColors.bgScreen,
-                    unfocusedContainerColor = appColors.bgScreen,
+                    focusedContainerColor = appColors.bgPrimary,
+                    unfocusedContainerColor = appColors.bgPrimary,
                     focusedLabelColor = appColors.primary,
                     unfocusedIndicatorColor = appColors.fontSecondary,
                     focusedTextColor = appColors.primary,
@@ -144,12 +164,12 @@ fun LoginOrRegisterScreen(
             )
 
             OutlinedTextField(
-                value = userState.password,
+                value = loginOrRegisterState.password,
                 onValueChange = { userViewModel.onEvent(UserEvent.ChangePassword(it)) },
                 label = {
                     Text(
                         modifier = Modifier
-                            .background(appColors.bgScreen),
+                            .background(appColors.bgPrimary),
                         text = "密码",
                         style = TextStyle(
                             color = appColors.fontSecondary
@@ -158,8 +178,8 @@ fun LoginOrRegisterScreen(
                 },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = appColors.primary,
-                    focusedContainerColor = appColors.bgScreen,
-                    unfocusedContainerColor = appColors.bgScreen,
+                    focusedContainerColor = appColors.bgPrimary,
+                    unfocusedContainerColor = appColors.bgPrimary,
                     focusedLabelColor = appColors.primary,
                     unfocusedIndicatorColor = appColors.fontSecondary,
                     focusedTextColor = appColors.primary,
@@ -171,12 +191,14 @@ fun LoginOrRegisterScreen(
 
             if (loginOrRegister == 1) {
                 OutlinedTextField(
-                    value = userState.password,
-                    onValueChange = { userViewModel.onEvent(UserEvent.ChangePassword(it)) },
+                    value = confirmPassword,
+                    onValueChange = {
+                        confirmPassword = it
+                    },
                     label = {
                         Text(
                             modifier = Modifier
-                                .background(appColors.bgScreen),
+                                .background(appColors.bgPrimary),
                             text = "确认密码",
                             style = TextStyle(
                                 color = appColors.fontSecondary
@@ -185,8 +207,8 @@ fun LoginOrRegisterScreen(
                     },
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = appColors.primary,
-                        focusedContainerColor = appColors.bgScreen,
-                        unfocusedContainerColor = appColors.bgScreen,
+                        focusedContainerColor = appColors.bgPrimary,
+                        unfocusedContainerColor = appColors.bgPrimary,
                         focusedLabelColor = appColors.primary,
                         unfocusedIndicatorColor = appColors.fontSecondary,
                         focusedTextColor = appColors.primary,
@@ -196,19 +218,39 @@ fun LoginOrRegisterScreen(
                     visualTransformation = PasswordVisualTransformation()
                 )
             }
-
+            Log.e("TAG", "LoginOrRegisterScreen1: $errMessage")
+            if (errMessage.isNotEmpty()) {
+                Text(
+                    text = errMessage,
+                    color = Color.Red,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Button(
                 modifier = Modifier
                     .padding(top = 10.dp),
                 onClick = {
-                    userViewModel.onEvent(UserEvent.Login)
+                    if (loginOrRegister == 0) {
+                        userViewModel.onEvent(UserEvent.Login)
+                    } else {
+                        if (loginOrRegisterState.password != confirmPassword) {
+                            userViewModel.onErrMessage("两次密码不一致")
+                        } else {
+                            userViewModel.onErrMessage("")
+                            userViewModel.onEvent(UserEvent.Register)
+                        }
+                    }
                 },
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = appColors.primary
+                    containerColor = appColors.primary,
                 )
             ) {
-                Text(if (loginOrRegister == 0) "登录" else "注册")
+                Text(
+                    text = if (loginOrRegister == 0) "登录" else "注册",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
         }

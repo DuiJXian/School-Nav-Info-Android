@@ -13,25 +13,47 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,7 +66,11 @@ import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun StuffScreen(
@@ -52,6 +78,36 @@ fun StuffScreen(
     stuffViewModel: StuffViewModel = hiltViewModel()
 ) {
     val stuffList = stuffViewModel.stuffList
+    var searchText by remember { mutableStateOf("") }
+
+    val focusManager = LocalFocusManager.current
+    val appColors = AppColors.current
+
+    var job: Job? = null
+    val scope = rememberCoroutineScope()
+
+    val gridState = rememberLazyGridState()
+
+    val searchHeight = 66.dp
+    val searchHeightPx = with(LocalDensity.current) { searchHeight.roundToPx().toFloat() }
+    var searchHeightOffset by remember { mutableFloatStateOf(0f) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (gridState.canScrollForward){
+                    val delta = available.y
+                    searchHeightOffset += delta
+                    searchHeightOffset = searchHeightOffset.coerceIn(-searchHeightPx, 0f)
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
+
+
+    var boxHeight by remember { mutableIntStateOf(0) }
+    var gridHeight by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(true) {
         stuffViewModel.getStuff()
@@ -61,21 +117,117 @@ fun StuffScreen(
             }
         }
     }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(nestedScrollConnection)
+            .onGloballyPositioned {
+                boxHeight = it.size.height
+            }
+    ) {
 
-    Box {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2), // 固定2列
-            contentPadding = PaddingValues(8.dp),
+            contentPadding = PaddingValues(
+                top = searchHeight + 10.dp,
+                start = 10.dp,
+                end = 10.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
+            state = gridState,
+            modifier = Modifier
+                .fillMaxSize(),
         ) {
             items(stuffList.reversed()) { item ->
-                StuffCard(item) {
-                    if (item.stuff.id != null) {
-                        commonViewModel.onNavEvent(NavEvent.StuffDetail(item.stuff.id))
+                StuffCard(
+                    stuffDTO = item,
+                    onClick = {
+                        if (item.stuff.id != null) {
+                            commonViewModel.onNavEvent(NavEvent.StuffDetail(item.stuff.id))
+                        }
                     }
+                ) {
+                    commonViewModel.onHomePage(0)
+                    commonViewModel.onRoutePlan(it)
                 }
+            }
+        }
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .offset {
+                    IntOffset(x = 0, y = searchHeightOffset.roundToInt())
+                }
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .height(searchHeight)
+                    .background(appColors.bgPrimary)
+                    .padding(horizontal = 10.dp)
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .fillMaxWidth(),
+                    value = searchText,
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        color = appColors.fontPrimary
+                    ),
+                    onValueChange = {
+                        searchText = it
+                        job?.cancel()
+                        job = scope.launch {
+                            delay(200)
+                            stuffViewModel.searchStuff(searchText)
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            modifier = Modifier.clickable(
+                                interactionSource = null,
+                                indication = null
+                            ) {
+                                searchText = ""
+                                focusManager.clearFocus()
+                                stuffViewModel.getStuff()
+                            },
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = "Search Icon",
+                            tint = appColors.fontPrimary
+                        )
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = appColors.bgPrimary,
+                        focusedIndicatorColor = appColors.primary,
+                        focusedTextColor = appColors.fontPrimary,
+
+                        unfocusedContainerColor = appColors.bgPrimary,
+                        unfocusedIndicatorColor = appColors.greyLight,
+                        unfocusedTextColor = appColors.fontSecondary,
+
+                        cursorColor = appColors.primary
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    trailingIcon = {
+                        if (searchText.isNotEmpty()) {
+                            IconButton(onClick = {
+                                searchText = ""
+                                stuffViewModel.getStuff()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Clear,
+                                    contentDescription = "Clear Icon",
+                                    tint = appColors.fontPrimary
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
             }
         }
     }
@@ -84,7 +236,8 @@ fun StuffScreen(
 @Composable
 fun StuffCard(
     stuffDTO: StuffDTO,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLocation: (String) -> Unit,
 ) {
     val appColors = AppColors.current
     val stuff = stuffDTO.stuff
@@ -136,7 +289,7 @@ fun StuffCard(
                             interactionSource = null,
                             indication = null
                         ) {
-
+                            onLocation(stuff.location)
                         },
                     verticalAlignment = Alignment.CenterVertically
                 ) {

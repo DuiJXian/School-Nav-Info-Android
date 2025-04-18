@@ -29,4 +29,8 @@ class StuffRepositoryImpl @Inject constructor(
     override suspend fun getStuffById(id: String): BaseResponse<StuffDTO> {
         return stuffApi.getStuffById(id)
     }
+
+    override suspend fun searchStuffList(text: String): BaseResponse<List<StuffDTO>> {
+        return stuffApi.searchStuffList(text)
+    }
 }

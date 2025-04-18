@@ -17,7 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xz.schoolnavinfo.common.event.NetExceptionEvent
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
-import com.xz.schoolnavinfo.presentation.TestScreen
+import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.campus.detail.ArticleDetailScreen
 import com.xz.schoolnavinfo.presentation.campus.publish.PublishArticleViewModel
@@ -48,10 +48,10 @@ fun NavScreen(
 
     var articlePubMenu by remember { mutableStateOf<CampusMenu?>(null) }
 
-    var articleDetailMenu by remember { mutableStateOf<CampusMenu?>(null) }
+    var articleDetailType by remember { mutableStateOf<ArticleType?>(null) }
 
     //全局路由
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         commonViewModel.navEventFlow.collectLatest {
             when (it) {
                 is NavEvent.LoginOrRegister -> {
@@ -80,7 +80,7 @@ fun NavScreen(
 
                 is NavEvent.ArticleDetail -> {
                     articleDTO = it.articleDTO
-                    articleDetailMenu = it.campusMenu
+                    articleDetailType = it.articleType
                     navController.navigate(Screen.ArticleDetail.route)
                 }
 
@@ -100,7 +100,7 @@ fun NavScreen(
         }
     }
     //网络错误代码
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         commonViewModel.globalFlow.netErrFlow.collectLatest {
             when (it) {
                 is NetExceptionEvent.Code401 -> {
@@ -108,7 +108,6 @@ fun NavScreen(
 
                     }
                 }
-
                 else -> {
                     showSnackBarMsg(it.msg, snackBarHostState)
                 }
@@ -116,18 +115,11 @@ fun NavScreen(
         }
     }
     //全局消息提心
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         commonViewModel.globalFlow.snackBarFlow.collectLatest {
             showSnackBarMsg(it, snackBarHostState)
         }
     }
-    //获取个人信息
-    LaunchedEffect(
-        true
-    ) {
-
-    }
-
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) }
@@ -135,7 +127,6 @@ fun NavScreen(
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route
-//            startDestination = "test"
         ) {
             composable(route = Screen.Login.route) {
                 LoginOrRegisterScreen(navController = navController)
@@ -155,10 +146,6 @@ fun NavScreen(
                 }
 
             }
-
-            composable(route = "test") {
-                TestScreen()
-            }
             composable(route = Screen.ImagePreview.route) {
                 ImagePreview(
                     imageList = commonViewModel.imageUrlState.list,
@@ -170,10 +157,10 @@ fun NavScreen(
             composable(
                 route = Screen.ArticleDetail.route
             ) {
-                articleDetailMenu?.let { menu ->
+                articleDetailType?.let { menu ->
                     ArticleDetailScreen(
                         articleDTO = articleDTO,
-                        campusMenu = menu,
+                        articleType = menu,
                         commonViewModel = commonViewModel
                     )
                 }

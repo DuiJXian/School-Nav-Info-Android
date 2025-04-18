@@ -28,4 +28,8 @@ class StuffUseCases @Inject constructor(
     suspend fun getStuffById(id: String): BaseResponse<StuffDTO> {
         return stuffRepository.getStuffById(id)
     }
+
+    suspend fun searchStuffList(text: String): BaseResponse<List<StuffDTO>>{
+        return stuffRepository.searchStuffList(text)
+    }
 }

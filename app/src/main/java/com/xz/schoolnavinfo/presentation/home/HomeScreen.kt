@@ -8,7 +8,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,6 +18,8 @@ import com.xz.schoolnavinfo.presentation.campus.CampusScreen
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.home.components.BottomNav
 import com.xz.schoolnavinfo.presentation.map.MapScreen
+import com.xz.schoolnavinfo.presentation.my.MyScreen
+import kotlinx.coroutines.flow.collectLatest
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -29,11 +30,18 @@ fun HomeScreen(
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val selectBtMenuIndex by homeViewModel.selectedBtMenuIndex
-    val pagerState = rememberPagerState(initialPage = 1) { HomeMenuItems.items.size }
+    val pagerState = rememberPagerState(initialPage = 0) { HomeMenuItems.items.size }
 
 
     LaunchedEffect(selectBtMenuIndex) {
         pagerState.animateScrollToPage(selectBtMenuIndex)
+    }
+
+    LaunchedEffect(Unit) {
+        commonViewModel.homePageFlow.collectLatest {
+            pagerState.scrollToPage(it)
+            homeViewModel.changeBTMenu(it)
+        }
     }
 
     Scaffold(
@@ -52,13 +60,12 @@ fun HomeScreen(
 
             ) { page ->
                 when (page) {
-                    0 -> MapScreen()
+                    0 -> MapScreen(commonViewModel = commonViewModel)
                     1 -> CampusScreen(commonViewModel)
-                    2 -> Column { Text("我") }
+                    2 -> MyScreen(commonViewModel = commonViewModel)
                 }
             }
-            BottomNav()
-
+            BottomNav(homeViewModel = homeViewModel)
         }
     }
 

@@ -11,15 +11,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
+import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.CommentDTO
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -43,24 +48,21 @@ fun CommentCard(
                 .background(appColor.greyLight)
         )
         Spacer(modifier = Modifier.height(10.dp))
-        Row {
-            if (userInfo.avatarUrl != null) {
-                Image(
-                    modifier = Modifier
-                        .padding(start = 10.dp)
-                        .size(40.dp),
-                    painter = rememberAsyncImagePainter(userInfo.avatarUrl),
-                    contentDescription = "头像",
-                )
-            } else {
-                Image(
-                    modifier = Modifier
-                        .padding(start = 10.dp)
-                        .size(40.dp),
-                    painter = painterResource(R.drawable.heard_image),
-                    contentDescription = "头像",
-                )
-            }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                modifier = Modifier
+                    .padding(start = 10.dp)
+                    .size(40.dp)
+                    .clip(CircleShape),
+                painter = if (userInfo.avatarUrl.isNullOrBlank())
+                    painterResource(R.drawable.heard_image) else
+                    rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)),
+                contentScale = ContentScale.Crop,
+                contentDescription = "头像",
+            )
+
             Column(
                 modifier = Modifier
                     .padding(start = 10.dp),
@@ -70,7 +72,7 @@ fun CommentCard(
                     text = userInfo.nickname,
                     style = TextStyle(
                         fontSize = 14.sp,
-                        color = appColor.fontPrimary
+                        color = appColor.fontSecondary
                     )
                 )
 

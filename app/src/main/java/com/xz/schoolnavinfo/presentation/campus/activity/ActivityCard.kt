@@ -32,7 +32,8 @@ import com.xz.schoolnavinfo.presentation.theme.AppColors
 @Composable
 fun ActivityCard(
     articleDTO: ArticleDTO,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    onLocation: (String) -> Unit,
 ) {
     val appColors = AppColors.current
     val article = articleDTO.article
@@ -101,7 +102,7 @@ fun ActivityCard(
                         interactionSource = null,
                         indication = null
                     ) {
-
+                        article.location?.let { onLocation(it) }
                     },
                 verticalAlignment = Alignment.CenterVertically
             ) {

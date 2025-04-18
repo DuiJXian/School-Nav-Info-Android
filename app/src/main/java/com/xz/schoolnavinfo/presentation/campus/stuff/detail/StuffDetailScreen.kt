@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,7 +47,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,10 +57,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.common.utils.DensityUtil
-import com.xz.schoolnavinfo.domain.data.entity.UserInfo
-import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -76,6 +79,7 @@ fun StuffDetailScreen(
     val appColors = AppColors.current
     val stuff = stuffDetailViewModel.stuffDTO?.stuff
     val userInfo = stuffDetailViewModel.stuffDTO?.userInfo
+    val myUserInfo by commonViewModel.userInfo.collectAsState()
     val context = LocalContext.current
 
 
@@ -145,10 +149,10 @@ fun StuffDetailScreen(
                                 )
                             }
                             TextButton(onClick = {
-                                if (dialogType ==0){
+                                if (dialogType == 0) {
                                     stuffDetailViewModel.deleteStuff(id)
                                     commonViewModel.onNavEvent(NavEvent.BackPage)
-                                }else{
+                                } else {
                                     stuffDetailViewModel.updateStatus(id)
                                     stuffDetailViewModel.getStuffById(id);
                                 }
@@ -175,7 +179,7 @@ fun StuffDetailScreen(
                 .verticalScroll(scrollState)
         ) {
             //顶部
-            if (userInfo?.id !=null && userInfo.id == stuff.publisherId){
+            if (userInfo?.id != null && userInfo.id == stuff.publisherId) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -184,65 +188,105 @@ fun StuffDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        modifier = Modifier.clickable(
-                            indication = null,
-                            interactionSource = null
-                        ) {
-                            commonViewModel.onNavEvent(NavEvent.BackPage)
-                        },
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null,
-                        tint = appColors.fontPrimary
-                    )
-                    Row(Modifier.padding(end = 10.dp)) {
-                        Box(
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            modifier = Modifier.clickable(
+                                indication = null,
+                                interactionSource = null
+                            ) {
+                                commonViewModel.onNavEvent(NavEvent.BackPage)
+                            },
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = appColors.fontPrimary
+                        )
+                        Image(
                             modifier = Modifier
-                                .padding(end = 5.dp)
-                                .shadow(3.dp, RoundedCornerShape(10.dp))
-                                .background(appColors.err)
-                                .clip(RoundedCornerShape(10.dp))
-                                .width(60.dp)
-                                .height(30.dp)
-                                .clickable {
-                                    if (stuff.id != null) {
-                                        dialogType = 0
-                                        showDialog = true
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
+                                .padding(start = 10.dp)
+                                .size(40.dp)
+                                .clip(CircleShape),
+                            painter = if (userInfo.avatarUrl.isNullOrBlank())
+                                painterResource(R.drawable.heard_image) else
+                                rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)),
+                            contentDescription = "头像",
+                            contentScale = ContentScale.Crop
+                        )
+                        Column {
                             Text(
-                                "删除",
+                                modifier = Modifier
+                                    .padding(start = 5.dp),
+                                text = userInfo.nickname,
                                 style = TextStyle(
-                                    color = appColors.onButtonColor,
+                                    fontSize = 16.sp,
+                                    color = appColors.fontPrimary,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
+                            Text(
+                                modifier = Modifier
+                                    .padding(start = 5.dp),
+                                text = if (stuff.createTime != null)
+                                    TimeUtils.formatTimeDifference(stuff.createTime) else
+                                    "err",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    color = appColors.greyMedium,
+                                )
+                            )
                         }
-                        if (!stuff.status) {
+                    }
+                    if (stuff.publisherId == myUserInfo.id){
+                        Row(Modifier.padding(end = 10.dp)) {
                             Box(
                                 modifier = Modifier
+                                    .padding(end = 5.dp)
                                     .shadow(3.dp, RoundedCornerShape(10.dp))
-                                    .background(appColors.primary)
+                                    .background(appColors.err)
                                     .clip(RoundedCornerShape(10.dp))
                                     .width(60.dp)
                                     .height(30.dp)
                                     .clickable {
                                         if (stuff.id != null) {
-                                            dialogType = 1
+                                            dialogType = 0
                                             showDialog = true
                                         }
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "完成",
+                                    "删除",
                                     style = TextStyle(
                                         color = appColors.onButtonColor,
                                         fontWeight = FontWeight.Bold
                                     )
                                 )
+                            }
+                            if (!stuff.status) {
+                                Box(
+                                    modifier = Modifier
+                                        .shadow(3.dp, RoundedCornerShape(10.dp))
+                                        .background(appColors.primary)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .width(60.dp)
+                                        .height(30.dp)
+                                        .clickable {
+                                            if (stuff.id != null) {
+                                                dialogType = 1
+                                                showDialog = true
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        "完成",
+                                        style = TextStyle(
+                                            color = appColors.onButtonColor,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    )
+                                }
                             }
                         }
                     }

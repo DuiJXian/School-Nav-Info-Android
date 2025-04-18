@@ -1,11 +1,13 @@
 package com.xz.schoolnavinfo.presentation.common.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.baidu.mapapi.model.LatLng
 import com.google.gson.Gson
 import com.xz.schoolnavinfo.common.event.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
@@ -27,7 +29,6 @@ class CommonViewModel @Inject constructor(
     val globalFlow: GlobalFlow,
     private val userUseCases: UserUseCases,
     private val netExceptionManager: NetExceptionManager,
-    private val application: Application
 ) : ViewModel() {
 
     private val gson = Gson()
@@ -44,9 +45,28 @@ class CommonViewModel @Inject constructor(
     private val _selectLocationFlow = MutableSharedFlow<LocationState?>(replay = 1)
     val selectLocationFlow: SharedFlow<LocationState?> = _selectLocationFlow
 
+    private val _routePlanFlow = MutableSharedFlow<LatLng>(replay = 1)
+    val routePlanFlow: SharedFlow<LatLng> = _routePlanFlow
+
+    private val _homePageFlow = MutableSharedFlow<Int>()
+    val homePageFlow: SharedFlow<Int> = _homePageFlow
+
     init {
         viewModelScope.launch {
             getUserInfo()
+        }
+    }
+
+    fun onHomePage(page: Int) {
+        viewModelScope.launch {
+            _homePageFlow.emit(page)
+        }
+    }
+
+    fun onRoutePlan(json: String) {
+        val location = gson.fromJson(json, LatLng::class.java)
+        viewModelScope.launch {
+            _routePlanFlow.emit(location)
         }
     }
 
@@ -57,20 +77,20 @@ class CommonViewModel @Inject constructor(
     }
 
 
-    private suspend fun getUserInfo() {
-        val token = DataStoreUtils.getData(application, DataStoreUtils.Keys.TOKEN, "")
-        val json = parseJwtPayload(token)
-        try {
-            _userInfo.value = gson.fromJson(json.toString(), UserInfo::class.java)
-        } catch (e: Exception) {
-            onNavEvent(NavEvent.LoginOrRegister)
-        }
-//        netExceptionManager.safeApiCall {
-//            val resp = userUseCases.getUserInfo()
-//            if (resp.code == "success") {
-//                _userInfo.value = resp.data
-//            }
+    suspend fun getUserInfo() {
+//        val token = DataStoreUtils.getData(application, DataStoreUtils.Keys.TOKEN, "")
+//        val json = parseJwtPayload(token)
+//        try {
+//            _userInfo.value = gson.fromJson(json.toString(), UserInfo::class.java)
+//        } catch (e: Exception) {
+//            onNavEvent(NavEvent.LoginOrRegister)
 //        }
+        netExceptionManager.safeApiCall {
+            val resp = userUseCases.getUserInfo()
+            if (resp.code == "success") {
+                _userInfo.value = resp.data
+            }
+        }
     }
 
     fun onGetUserInfoEvent() {
@@ -109,7 +129,7 @@ class CommonViewModel @Inject constructor(
                 }
 
                 is NavEvent.ArticleDetail -> {
-                    _navEventFlow.emit(NavEvent.ArticleDetail(event.articleDTO, event.campusMenu))
+                    _navEventFlow.emit(NavEvent.ArticleDetail(event.articleDTO, event.articleType))
                 }
 
                 NavEvent.MapLocationSelect -> {

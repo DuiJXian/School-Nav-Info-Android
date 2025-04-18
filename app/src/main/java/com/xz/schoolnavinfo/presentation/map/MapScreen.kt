@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,6 +36,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.baidu.mapapi.map.BaiduMap.OnMapClickListener
 import com.baidu.mapapi.map.MapPoi
+import com.baidu.mapapi.map.MapView
 import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
@@ -52,6 +52,7 @@ import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.DemoGuideActi
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.WNaviGuideActivity
 import com.xz.schoolnavinfo.presentation.common.compose.CheckGps
 import com.xz.schoolnavinfo.presentation.common.compose.CheckPermission
+import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.map.components.FavoriteItemEdit
 import com.xz.schoolnavinfo.presentation.map.components.LocateNow
 import com.xz.schoolnavinfo.presentation.map.components.PoiDetailCard
@@ -62,12 +63,11 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 
-val TAG = "MapScreen"
-
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MapScreen(
     locationMapViewModel: LocateViewModel = hiltViewModel(),
+    commonViewModel: CommonViewModel,
     mapViewModel: MapViewModel = hiltViewModel(),
 ) {
     //设备状态
@@ -96,6 +96,18 @@ fun MapScreen(
     //检查定位和权限
     ManageLifeCycle()
 
+    LaunchedEffect(Unit) {
+        commonViewModel.routePlanFlow.collectLatest {
+            isShowQuickVia = false
+            drawRouteOverlay(
+                mapViewModel = mapViewModel,
+                mapView = mapView,
+                startPoint = deviceState.locationPoint,
+                endPoint = it
+            )
+        }
+    }
+
     LaunchedEffect(deviceState) {
         mapViewModel.onPoiEvent(PoiEvent.CenterPointChange(deviceState.locationPoint))
         MapControl.saveLocation(context, deviceState.locationPoint)
@@ -110,28 +122,22 @@ fun MapScreen(
         )
     }
 
-
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         MapControl.setConfig(mapView)
-        if (!mapViewModel.isSignalMarker) {
-            mapViewModel.onMarkerChange(true)
-        }
         //先加载本地保存的位置
-        MapControl.setMapWindow(mapView, MapControl.loadLocation(context), type = 0)
         MapControl.setStyle(mapView, context, isDark)
         //开始定位
         locationMapViewModel.startLocation()
         //点击事件
         MapControl.setOnMapClickListener(object : OnMapClickListener {
             override fun onMapClick(point: LatLng?) {}
-            override fun onMapPoiClick(poi: MapPoi?) {
-                if (poi != null) {
-                    mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(poi.uid))
-                    mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(poi.uid))
-                }
-
+            override fun onMapPoiClick(poi: MapPoi) {
+                mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(poi.uid))
+                mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(poi.uid))
             }
         }, mapView)
+        //移动地图
+        MapControl.moveMapView(mapView, MapControl.loadLocation(context), animate = false)
         //导航消息
         mapViewModel.navEvent.collectLatest { event ->
             when (event) {
@@ -190,7 +196,7 @@ fun MapScreen(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) {
-                        MapControl.setMapWindow(mapView, deviceState.locationPoint)
+                        MapControl.moveMapView(mapView, deviceState.locationPoint)
                     }
             )
             //快速访问
@@ -213,7 +219,7 @@ fun MapScreen(
                 isShowQuickVia = false
                 val poiDetailInfo = poiState.poiDetailInfo
                 poiDetailInfo.image = localPoiState.favoritePoi?.iconPic
-                MapControl.setMapWindow(mapView, poiDetailInfo.location)
+                MapControl.moveMapView(mapView, poiDetailInfo.location)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -231,23 +237,12 @@ fun MapScreen(
                             mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
                         },
                         onRoute = {
-                            mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
-                            MapControl.preRoutePlan(
-                                startLocation = deviceState.locationPoint,
-                                endLocation = poiDetailInfo.location,
+                            drawRouteOverlay(
+                                mapViewModel = mapViewModel,
+                                startPoint = deviceState.locationPoint,
+                                endPoint = poiDetailInfo.location,
                                 mapView = mapView
-                            ) { distance, duration ->
-                                mapViewModel.onRouteEvent(
-                                    RouteEvent.DisAndDurChange(
-                                        distance,
-                                        duration
-                                    )
-                                )
-                                mapViewModel.onRouteEvent(RouteEvent.IsShowChange(true))
-                            }
-                            MapControl.startRoutePlan(RoutePlanType.Walking)
-                            MapControl.setMapWindow(mapView, poiDetailInfo.location, 14f)
-                            mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
+                            )
                         },
                         onCall = {
                             val intent = Intent(Intent.ACTION_DIAL).apply {
@@ -257,7 +252,6 @@ fun MapScreen(
                                 PackageManager.FEATURE_TELEPHONY
                             )
                             if (hasTelephony) {
-                                Log.e(TAG, "MapScreen: $it")
                                 context.startActivity(intent)
                             } else {
                                 Toast.makeText(
@@ -288,13 +282,13 @@ fun MapScreen(
                 RoutePlan(
                     onCancel = {
                         isShowQuickVia = true
-                        mapViewModel.onRouteEvent(RouteEvent.IsShowChange(false))
-                        mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(true))
+                        mapViewModel.onRouteEvent(RouteEvent.whowRouteMenu(false))
+                        mapViewModel.onPoiEvent(PoiEvent.ShowSearchPoi(true))
                         MapControl.removeOverlay()
                         routePlanType = RoutePlanType.Walking
                     },
                     onRoutePlanType = {
-                        mapViewModel.onPoiEvent(PoiEvent.IsShowSearchPoi(false))
+                        mapViewModel.onPoiEvent(PoiEvent.ShowSearchPoi(false))
                         routePlanType = it
                         MapControl.startRoutePlan(it)
                     },
@@ -333,6 +327,31 @@ fun MapScreen(
             }
         }
     }
+}
+
+private fun drawRouteOverlay(
+    mapViewModel: MapViewModel,
+    startPoint: LatLng,
+    endPoint: LatLng,
+    mapView: MapView
+){
+    mapViewModel.onPoiEvent(PoiEvent.ShowSearchPoi(false))
+    MapControl.preRoutePlan(
+        startLocation = startPoint,
+        endLocation = endPoint,
+        mapView = mapView
+    ) { distance, duration ->
+        mapViewModel.onRouteEvent(
+            RouteEvent.DisAndDurChange(
+                distance,
+                duration
+            )
+        )
+        mapViewModel.onRouteEvent(RouteEvent.whowRouteMenu(true))
+    }
+    MapControl.startRoutePlan(RoutePlanType.Walking)
+    MapControl.moveMapView(mapView, endPoint, 14f)
+    mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
 }
 
 @Composable

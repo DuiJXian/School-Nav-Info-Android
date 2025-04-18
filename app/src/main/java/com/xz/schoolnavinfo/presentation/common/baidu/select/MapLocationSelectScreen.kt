@@ -98,13 +98,10 @@ fun MapLocationSelectScreen(
         }
     }
 
-//    val bitmap = remember { BitmapFactory.decodeResource(context.resources, R.drawable.target) }
-//    val newBitmap = remember { Bitmap.createScaledBitmap(bitmap, 56, 56, true) }
     var outerBoxHeightPx by remember { mutableIntStateOf(0) }
     LaunchedEffect(true) {
-        MapControl.setMapWindow(mapVew, point, type = 0)
+        MapControl.moveMapView(mapVew, point, animate = false)
         mapSelectViewModel.getPoiInfoListEvent(point)
-//        MapControl.addMarker(mapVew, point, newBitmap) {}
         mapVew.map.setOnMapStatusChangeListener(object : OnMapStatusChangeListener {
             override fun onMapStatusChangeStart(status: MapStatus?) {
             }
@@ -168,7 +165,7 @@ fun MapLocationSelectScreen(
                     interactionSource = null,
                     indication = null
                 ) {
-                    MapControl.setMapWindow(mapVew, point)
+                    MapControl.moveMapView(mapVew, point)
                 }
         )
 
@@ -290,7 +287,7 @@ fun MapLocationSelectScreen(
                                 indication = null
                             ) {
                                 locateText = item.name
-                                MapControl.setMapWindow(mapVew, item.location)
+                                MapControl.moveMapView(mapVew, item.location)
                                 mapSelectViewModel.onStateChangeEvent(
                                     LocationState(
                                         item.name,

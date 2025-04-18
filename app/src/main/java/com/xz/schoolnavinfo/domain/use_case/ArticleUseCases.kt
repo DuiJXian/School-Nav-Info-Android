@@ -35,4 +35,8 @@ class ArticleUseCases(private val articleRepository: ArticleRepository) {
     suspend fun deleteActivityArticle(articleId: String): BaseResponse<Unit> {
         return articleRepository.deleteActivityArticle(articleId)
     }
+
+    suspend fun searchActivityArticleList(text: String): BaseResponse<List<ArticleDTO>> {
+        return articleRepository.searchActivityArticleList(text)
+    }
 }

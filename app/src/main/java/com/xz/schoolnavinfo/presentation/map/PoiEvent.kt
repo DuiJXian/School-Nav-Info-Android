@@ -11,5 +11,5 @@ sealed class PoiEvent {
     data class GetPoiDetailInfo(val poiUid: String) : PoiEvent()
     data object CloseDetailCard: PoiEvent()
     data class CenterPointChange(val centerPoint: LatLng): PoiEvent()
-    data class IsShowSearchPoi(val isShow: Boolean): PoiEvent()
+    data class ShowSearchPoi(val isShow: Boolean): PoiEvent()
 }

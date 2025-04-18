@@ -61,12 +61,8 @@ fun RoutePlan(
                         onRoutePlanType(RoutePlanType.Walking)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = routePlanTypeColor(
-                            selectedType = routePlanType,
-                            RoutePlanType.Walking,
-                            appColors.primary,
-                            appColors.greyHeavy
-                        )
+                        containerColor = if (routePlanType == RoutePlanType.Walking)
+                            appColors.primary else appColors.greyHeavy
                     ),
                     shape = RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp)
                 ) {
@@ -76,7 +72,7 @@ fun RoutePlan(
                         Icon(
                             modifier = Modifier.size(18.dp),
                             painter = painterResource(R.drawable.directions_walk_24px),
-                            contentDescription = "取消"
+                            contentDescription = "步行"
                         )
                         Text("步行", style = TextStyle(color = appColors.bgPrimary))
                     }
@@ -88,12 +84,8 @@ fun RoutePlan(
                         onRoutePlanType(RoutePlanType.Biking)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = routePlanTypeColor(
-                            selectedType = routePlanType,
-                            lightType = RoutePlanType.Biking,
-                            selectColor = appColors.primary,
-                            unselectColor = appColors.greyHeavy
-                        )
+                        containerColor = if (routePlanType == RoutePlanType.Biking)
+                            appColors.primary else appColors.greyHeavy
                     ),
                     shape = RoundedCornerShape(0.dp)
                 ) {
@@ -114,12 +106,8 @@ fun RoutePlan(
                         onRoutePlanType(RoutePlanType.Driving)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = routePlanTypeColor(
-                            selectedType = routePlanType,
-                            lightType = RoutePlanType.Driving,
-                            selectColor = appColors.primary,
-                            unselectColor = appColors.greyHeavy
-                        )
+                        containerColor = if (routePlanType == RoutePlanType.Driving)
+                            appColors.primary else appColors.greyHeavy
                     ),
                     shape = RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp)
                 ) {
@@ -161,6 +149,7 @@ fun RoutePlan(
             Row(
                 modifier = Modifier
                     .width(200.dp)
+                    .padding(bottom = 10.dp)
             ) {
                 Button(
                     modifier = Modifier.weight(1f),
@@ -208,15 +197,6 @@ fun RoutePlan(
             }
         }
     }
-}
-
-fun routePlanTypeColor(
-    selectedType: RoutePlanType,
-    lightType: RoutePlanType,
-    selectColor: Color,
-    unselectColor: Color
-): Color {
-    return if (selectedType::class == lightType::class) selectColor else unselectColor
 }
 
 @Preview

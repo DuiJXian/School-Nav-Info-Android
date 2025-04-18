@@ -59,7 +59,7 @@ fun CampusScreen(
     commonViewModel: CommonViewModel
 ) {
     val tabTitles = listOf(CampusMenu.Activity, CampusMenu.Discuss, CampusMenu.Stuff)
-    val pagerState = rememberPagerState(initialPage = 2) { tabTitles.size }
+    val pagerState = rememberPagerState(initialPage = 1) { tabTitles.size }
     val coroutineScope = rememberCoroutineScope()
     val appColors = AppColors.current
     val userInfo by commonViewModel.userInfo.collectAsState()

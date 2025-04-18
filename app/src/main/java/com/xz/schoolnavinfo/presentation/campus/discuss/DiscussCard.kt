@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -36,7 +37,8 @@ import com.xz.schoolnavinfo.presentation.theme.AppColors
 @Composable
 fun DiscussCard(
     articleDTO: ArticleDTO,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    onLocation: (String) -> Unit,
 ) {
     val appColors = AppColors.current
     val article = articleDTO.article
@@ -51,11 +53,16 @@ fun DiscussCard(
     ) {
         //用户信息区域
         Row {
+
             Image(
                 modifier = Modifier
-                    .size(46.dp),
-                painter = painterResource(R.drawable.heard_image),
-                contentDescription = "头像"
+                    .size(46.dp)
+                    .clip(CircleShape),
+                painter = if (userInfo?.avatarUrl?.isNotBlank() == true)
+                    rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)) else
+                    painterResource(R.drawable.heard_image),
+                contentDescription = "头像",
+                contentScale = ContentScale.Crop
             )
             Column(
                 modifier = Modifier
@@ -129,7 +136,7 @@ fun DiscussCard(
 
         }
         //位置区域
-        if(article?.address?.isNotBlank() == true){
+        if (article?.address?.isNotBlank() == true) {
             Row(
                 modifier = Modifier
                     .padding(top = 10.dp)
@@ -139,7 +146,7 @@ fun DiscussCard(
                         interactionSource = null,
                         indication = null
                     ) {
-
+                        article.location?.let { onLocation(it) }
                     },
                 verticalAlignment = Alignment.CenterVertically
             ) {

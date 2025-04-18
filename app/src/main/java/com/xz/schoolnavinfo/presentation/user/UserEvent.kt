@@ -5,4 +5,5 @@ sealed class UserEvent {
     data class ChangeUsername(val username: String) : UserEvent()
     data class ChangePassword(val password: String) : UserEvent()
     data object Login: UserEvent()
+    data object Register: UserEvent()
 }

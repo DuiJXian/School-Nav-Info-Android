@@ -7,15 +7,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor() : ViewModel() {
-    private val _selectedBtMenuIndex = mutableIntStateOf(1)
+    private val _selectedBtMenuIndex = mutableIntStateOf(0)
     val selectedBtMenuIndex = _selectedBtMenuIndex
 
-
-    fun onEvent(event: HomeEvent) {
-        when (event) {
-            is HomeEvent.ChangeBTMenu -> {
-                _selectedBtMenuIndex.intValue = event.selectedMenuIndex
-            }
-        }
+    fun changeBTMenu(page: Int) {
+        _selectedBtMenuIndex.intValue = page
     }
 }

@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.xz.schoolnavinfo.presentation.home.HomeEvent
 import com.xz.schoolnavinfo.presentation.home.HomeViewModel
 import com.xz.schoolnavinfo.presentation.home.HomeMenuItems
@@ -27,6 +26,7 @@ import com.xz.schoolnavinfo.presentation.home.HomeMenuItems
 @Composable
 fun BottomNav(
     modifier: Modifier = Modifier,
+    homeViewModel: HomeViewModel,
 ) {
     val currentColor = AppColors.current
     Row(
@@ -40,15 +40,15 @@ fun BottomNav(
             BNTabItem(
                 modifier = Modifier.weight(1f),
                 menuItem = item,
-
-                )
+                homeViewModel = homeViewModel
+            )
         }
     }
 }
 
 @Composable
 fun BNTabItem(
-    homeViewModel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel,
     modifier: Modifier,
     menuItem: HomeMenuItems.MenuItem,
 ) {
@@ -63,7 +63,7 @@ fun BNTabItem(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) {
-                homeViewModel.onEvent(HomeEvent.ChangeBTMenu(menuItem.index))
+                homeViewModel.changeBTMenu(menuItem.index)
             }
     ) {
         Column(

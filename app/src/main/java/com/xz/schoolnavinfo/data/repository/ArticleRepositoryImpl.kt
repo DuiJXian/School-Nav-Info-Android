@@ -39,4 +39,8 @@ class ArticleRepositoryImpl @Inject constructor(
     override suspend fun deleteActivityArticle(articleId: String): BaseResponse<Unit> {
         return articleApi.deleteActivityArticle(articleId)
     }
+
+    override suspend fun searchActivityArticleList(text: String): BaseResponse<List<ArticleDTO>> {
+        return articleApi.searchActivityArticleList(text)
+    }
 }

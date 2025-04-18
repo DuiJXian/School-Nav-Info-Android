@@ -17,16 +17,6 @@ import com.baidu.mapapi.overlayutil.BikingRouteOverlay
 import com.baidu.mapapi.overlayutil.DrivingRouteOverlay
 import com.baidu.mapapi.overlayutil.OverlayManager
 import com.baidu.mapapi.overlayutil.WalkingRouteOverlay
-import com.baidu.mapapi.search.core.PoiDetailInfo
-import com.baidu.mapapi.search.core.PoiInfo
-import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener
-import com.baidu.mapapi.search.poi.PoiDetailResult
-import com.baidu.mapapi.search.poi.PoiDetailSearchOption
-import com.baidu.mapapi.search.poi.PoiDetailSearchResult
-import com.baidu.mapapi.search.poi.PoiIndoorResult
-import com.baidu.mapapi.search.poi.PoiNearbySearchOption
-import com.baidu.mapapi.search.poi.PoiResult
-import com.baidu.mapapi.search.poi.PoiSearch
 import com.baidu.mapapi.search.route.BikingRoutePlanOption
 import com.baidu.mapapi.search.route.BikingRouteResult
 import com.baidu.mapapi.search.route.DrivingRoutePlanOption
@@ -40,7 +30,6 @@ import com.baidu.mapapi.search.route.RoutePlanSearch
 import com.baidu.mapapi.search.route.TransitRouteResult
 import com.baidu.mapapi.search.route.WalkingRoutePlanOption
 import com.baidu.mapapi.search.route.WalkingRouteResult
-import com.baidu.mapapi.utils.DistanceUtil
 import com.xz.schoolnavinfo.common.utils.DataStoreUtils
 import com.xz.schoolnavinfo.common.utils.LocateUtils
 import com.xz.schoolnavinfo.common.utils.TimeUtils
@@ -238,16 +227,16 @@ object MapControl {
     }
 
     //移动地图窗口
-    fun setMapWindow(mapView: MapView, latLng: LatLng, zoom: Float = 18f, type: Int = 1) {
-        if (type == 0) {
-            mapView.map.setMapStatus(
+    fun moveMapView(mapView: MapView, latLng: LatLng, zoom: Float = 18f, animate: Boolean = true) {
+        if (animate) {
+            mapView.map.animateMapStatus(
                 MapStatusUpdateFactory.newLatLngZoom(
                     latLng,
                     zoom
                 )
             )
         } else {
-            mapView.map.animateMapStatus(
+            mapView.map.setMapStatus(
                 MapStatusUpdateFactory.newLatLngZoom(
                     latLng,
                     zoom

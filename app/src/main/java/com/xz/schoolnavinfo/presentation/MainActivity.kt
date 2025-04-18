@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
-import androidx.core.view.WindowCompat
 import com.xz.schoolnavinfo.presentation.home.NavScreen
 import com.xz.schoolnavinfo.presentation.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,7 +20,6 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
         setContent {
             MaterialTheme(

@@ -1,6 +1,7 @@
 package com.xz.schoolnavinfo.presentation.campus.detail
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,26 +24,33 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -57,18 +65,22 @@ import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.montageCompleteUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
+import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.domain.data.type.RoleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.compose.ImageHorizontalScroll
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UseOfNonLambdaOffsetOverload")
 @Composable
 fun ArticleDetailScreen(
     articleDTO: ArticleDTO,
-    campusMenu: CampusMenu,
+    articleType: ArticleType,
     articleDetailViewModel: ArticleDetailViewModel = hiltViewModel(),
     commonViewModel: CommonViewModel,
 ) {
@@ -94,11 +106,78 @@ fun ArticleDetailScreen(
     var isFocused by remember { mutableStateOf(false) }
     val systemPadding = WindowInsets.systemBars
 
+    var showDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(true) {
         article?.id?.let { articleDetailViewModel.onGetComments(it) }
     }
 
 
+    if (showDialog) {
+        BasicAlertDialog(onDismissRequest = {}) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .width(280.dp)
+                ) {
+                    Text(
+                        text = "提醒",
+                        style = TextStyle(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = appColors.primary
+                        )
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "确认删除",
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                        )
+
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = {
+                            showDialog = false
+                        }) {
+                            Text(
+                                text = "取消",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                )
+                            )
+                        }
+                        TextButton(onClick = {
+                            article?.id?.let {
+                                articleDetailViewModel.onDeleteArticle(it, articleType)
+                                commonViewModel.onNavEvent(NavEvent.BackPage)
+                                scope.launch {
+                                    commonViewModel.globalFlow.onRefreshDataEvent(if (articleType == ArticleType.Discuss) CampusMenu.Discuss else CampusMenu.Activity)
+                                    delay(300)
+                                    showDialog = false
+                                }
+                            }
+                        }) {
+                            Text(
+                                text = "确定",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -107,14 +186,17 @@ fun ArticleDetailScreen(
             .offset(x = 0.dp, y = -animatedOffset)
     ) {
 
+        //顶部
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
+                .height(46.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     modifier = Modifier
                         .padding(start = 10.dp)
@@ -128,15 +210,17 @@ fun ArticleDetailScreen(
                     contentDescription = "返回",
                     tint = appColors.fontSecondary
                 )
-                if (campusMenu == CampusMenu.Discuss) {
+                if (articleType == ArticleType.Discuss) {
                     Image(
                         modifier = Modifier
                             .padding(start = 10.dp)
-                            .size(40.dp),
+                            .size(40.dp)
+                            .clip(CircleShape),
                         painter = if (userInfo?.avatarUrl != null)
-                            rememberAsyncImagePainter(userInfo.avatarUrl) else
+                            rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)) else
                             painterResource(R.drawable.heard_image),
                         contentDescription = "头像",
+                        contentScale = ContentScale.Crop
                     )
                     Column {
                         Text(
@@ -164,7 +248,8 @@ fun ArticleDetailScreen(
                 }
             }
 
-            if ((article!!.userId == userInfo!!.id) || (campusMenu == CampusMenu.Activity && userInfo.role == RoleType.ADMIN.name))
+
+            if ((article!!.userId == userInfo!!.id) && (articleType == ArticleType.Activity && userInfo.role == RoleType.ADMIN.name))
                 Row(Modifier.padding(end = 10.dp)) {
                     Box(
                         modifier = Modifier
@@ -175,7 +260,7 @@ fun ArticleDetailScreen(
                             .width(60.dp)
                             .height(30.dp)
                             .clickable {
-
+                                showDialog = true
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -190,14 +275,13 @@ fun ArticleDetailScreen(
                 }
         }
 
+
         Column(
             modifier = Modifier
-                .padding(top = 86.dp, bottom = 56.dp)
+                .padding(top = 46.dp, bottom = 56.dp)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-
-
             //图片区域
             Row {
                 val contentImageList =
@@ -242,8 +326,7 @@ fun ArticleDetailScreen(
                         text = article.content,
                         overflow = TextOverflow.Ellipsis,
                         style = TextStyle(
-                            color = appColors.fontPrimary,
-                            fontWeight = FontWeight.Bold,
+                            color = appColors.fontSecondary,
                             fontSize = 18.sp,
                         )
 
@@ -259,7 +342,7 @@ fun ArticleDetailScreen(
             )
 
 
-            if (campusMenu != CampusMenu.Activity && commentDTOList.isNotEmpty()) {
+            if (articleType != ArticleType.Activity && commentDTOList.isNotEmpty()) {
                 Row(
                     modifier = Modifier
                         .padding(start = 10.dp, top = 10.dp, bottom = 10.dp)
@@ -285,20 +368,20 @@ fun ArticleDetailScreen(
         }
 
 
-        if (campusMenu != CampusMenu.Activity) {
+        if (articleType != ArticleType.Activity) {
             Column(
                 modifier = Modifier
-                    .background(appColors.bgPrimary)
                     .align(Alignment.BottomCenter)
                     .padding(start = 10.dp, end = 10.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
+                        .background(appColors.bgPrimary)
                         .height(48.dp)
                         .border(
                             1.dp,
-                            if (isFocused) appColors.primary else appColors.greyLight,
+                            if (isFocused) appColors.primary else appColors.greyMedium.copy(.5f),
                             RoundedCornerShape(16.dp)
                         )
                         .fillMaxWidth(),

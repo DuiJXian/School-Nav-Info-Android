@@ -24,7 +24,18 @@ class StuffViewModel @Inject constructor(
         getStuff()
     }
 
-     fun getStuff() {
+    fun searchStuff(text:String){
+        viewModelScope.launch {
+            netExceptionManager.safeApiCall {
+                val resp = stuffUseCases.searchStuffList(text)
+                if (resp.code == "success") {
+                    _stuffList.value = resp.data
+                }
+            }
+        }
+    }
+
+    fun getStuff() {
         viewModelScope.launch {
             netExceptionManager.safeApiCall {
                 val resp = stuffUseCases.getStuffList()

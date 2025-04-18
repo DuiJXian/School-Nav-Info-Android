@@ -24,4 +24,7 @@ interface StuffApi {
 
     @POST("/api/stuff/getById")
     suspend fun getStuffById(@Body id: String): BaseResponse<StuffDTO>
+
+    @POST("/api/stuff/search")
+    suspend fun searchStuffList(@Body text: String): BaseResponse<List<StuffDTO>>
 }

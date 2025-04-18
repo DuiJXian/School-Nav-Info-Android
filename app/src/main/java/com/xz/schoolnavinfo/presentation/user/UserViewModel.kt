@@ -1,12 +1,9 @@
 package com.xz.schoolnavinfo.presentation.user
 
-import android.util.Log
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xz.schoolnavinfo.common.event.GlobalFlow
 import com.xz.schoolnavinfo.common.model.BaseResponse
 import com.xz.schoolnavinfo.common.net.AuthInterceptor
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
@@ -14,20 +11,21 @@ import com.xz.schoolnavinfo.data.dao.remote.request.LoginRequest
 import com.xz.schoolnavinfo.domain.use_case.UserUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 @HiltViewModel
 class UserViewModel @Inject constructor(
     private val authInterceptor: AuthInterceptor,
-    private val authUseCase: UserUseCases,
+    private val userUseCases: UserUseCases,
     private val netErrManager: NetExceptionManager,
 ) : ViewModel() {
 
     private val _loginOrRegisterState =
-        mutableStateOf(LoginOrRegisterState(username = "admin", password = "admin1"))
-    val loginOrRegisterState: State<LoginOrRegisterState> = _loginOrRegisterState
+        mutableStateOf(LoginOrRegisterState(username = "", password = ""))
+    val loginOrRegisterState get() = _loginOrRegisterState.value
 
     private var _loginOrRegister = mutableIntStateOf(0) //0登录 1注册
     var loginOrRegister = _loginOrRegister
@@ -35,25 +33,28 @@ class UserViewModel @Inject constructor(
     private var _loginRes = mutableStateOf(BaseResponse("fail", "null", "null"))
     var loginRes = _loginRes
 
+    private val _errMessage = mutableStateOf("")
+    val errMessage get() = _errMessage.value
+
+
+    fun onErrMessage(txt: String) {
+        _errMessage.value = txt
+    }
 
     fun onEvent(event: UserEvent) {
         when (event) {
             is UserEvent.ChangeLoginRegister -> {
-                if (_loginOrRegister.intValue == 0) {
-                    _loginOrRegister.intValue = 1
-                } else {
-                    _loginOrRegister.intValue = 0
-                }
+                _loginOrRegister.intValue = abs(loginOrRegister.intValue - 1)
             }
 
             is UserEvent.ChangeUsername -> {
-                _loginOrRegisterState.value = loginOrRegisterState.value.copy(
+                _loginOrRegisterState.value = loginOrRegisterState.copy(
                     username = event.username
                 )
             }
 
             is UserEvent.ChangePassword -> {
-                _loginOrRegisterState.value = loginOrRegisterState.value.copy(
+                _loginOrRegisterState.value = loginOrRegisterState.copy(
                     password = event.password
                 )
             }
@@ -61,22 +62,40 @@ class UserViewModel @Inject constructor(
             is UserEvent.Login -> {
                 viewModelScope.launch {
                     netErrManager.safeApiCall {
-                        val resp = authUseCase.login(
+                        val resp = userUseCases.login(
                             LoginRequest(
-                                loginOrRegisterState.value.username,
-                                loginOrRegisterState.value.password
+                                loginOrRegisterState.username,
+                                loginOrRegisterState.password
                             )
                         )
                         _loginRes.value = BaseResponse(resp.code, resp.message, resp.data)
                         if (resp.code == "success") {
-                            Log.e("TAG", "onEvent: success")
                             val data = resp.data
                             authInterceptor.setToken(data)
+                        } else {
+                            _errMessage.value = resp.message
                         }
                     }
                 }
             }
 
+            UserEvent.Register -> {
+                viewModelScope.launch {
+                    netErrManager.safeApiCall {
+                        val resp = userUseCases.register(
+                            mutableMapOf(
+                                "username" to loginOrRegisterState.username,
+                                "password" to loginOrRegisterState.password
+                            )
+                        )
+                        if (resp.code == "success") {
+                            _loginOrRegister.intValue = abs(loginOrRegister.intValue - 1)
+                        } else {
+                            _errMessage.value = resp.message
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -17,7 +17,7 @@ interface ArticleApi {
     @POST("/api/article/discuss/insert")
     suspend fun createDiscussArticle(@Body articleDTO: ArticleDTO): BaseResponse<Unit>
 
-    @GET("/api/article/discuss/del")
+    @POST("/api/article/discuss/del")
     suspend fun deleteDiscussArticle(@Body articleId: String): BaseResponse<Unit>
 
 
@@ -30,8 +30,11 @@ interface ArticleApi {
     @POST("/api/article/activity/insert")
     suspend fun createActivityArticle(@Body articleDTO: ArticleDTO): BaseResponse<Unit>
 
-    @GET("/api/article/activity/del")
+    @POST("/api/article/activity/del")
     suspend fun deleteActivityArticle(@Body articleId: String): BaseResponse<Unit>
+
+    @POST("/api/article/discuss/search")
+    suspend fun searchActivityArticleList(@Body text: String): BaseResponse<List<ArticleDTO>>
 
 //    @GET("/article/getArticleById")
 //    suspend fun getArticleById() : ApiResponse

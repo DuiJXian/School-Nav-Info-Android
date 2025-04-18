@@ -15,4 +15,13 @@ interface UserApi {
 
     @GET("/api/user/getUserInfo")
     suspend fun getUserInfo() : BaseResponse<UserInfo>
+
+    @POST("/user/register")
+    suspend fun register(@Body body: MutableMap<String, Any>): BaseResponse<Unit>
+
+    @POST("/api/user/changePassword")
+    suspend fun changePassword(@Body body: MutableMap<String, Any>): BaseResponse<Unit>
+
+    @POST("/api/user/changeNicknameAndAvatar")
+    suspend fun changeNicknameAndAvatar(@Body body: MutableMap<String, Any>): BaseResponse<Unit>
 }

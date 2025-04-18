@@ -40,6 +40,8 @@ class ActivityViewModel @Inject constructor(
 
     fun onGetActivityEvent() {
         discussRequest.pageNum = 1
+        addedArticleIds.clear()
+        _bannerList.clear()
         getActivity(discussRequest)
     }
 
