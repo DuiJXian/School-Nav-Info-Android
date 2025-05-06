@@ -1,8 +1,8 @@
 package com.xz.schoolnavinfo.common.net
 
 import android.util.Log
-import com.xz.schoolnavinfo.common.event.GlobalFlow
-import com.xz.schoolnavinfo.common.event.NetExceptionEvent
+import com.xz.schoolnavinfo.common.flow.GlobalFlow
+import com.xz.schoolnavinfo.common.exception.NetExceptionEvent
 import retrofit2.HttpException
 import java.io.IOException
 

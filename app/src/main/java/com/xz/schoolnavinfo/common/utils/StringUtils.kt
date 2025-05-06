@@ -7,8 +7,8 @@ object StringUtils {
         maxLength: Int,
         suffix: String = ".."
     ): String {
-        if (text.length <= maxLength) return text
-        return text.take(maxLength) + suffix
+        return if (text.length <= maxLength) text
+        else text.take(maxLength) + suffix
     }
 
 }

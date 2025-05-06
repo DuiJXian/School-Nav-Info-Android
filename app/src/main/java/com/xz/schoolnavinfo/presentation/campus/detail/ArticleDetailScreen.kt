@@ -1,7 +1,6 @@
 package com.xz.schoolnavinfo.presentation.campus.detail
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -50,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -62,13 +62,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.common.net.montageCompleteUrl
+import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.domain.data.type.RoleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
-import com.xz.schoolnavinfo.presentation.common.compose.ImageHorizontalScroll
+import com.xz.schoolnavinfo.presentation.common.components.ImageHorizontalScroll
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -85,7 +85,7 @@ fun ArticleDetailScreen(
     commonViewModel: CommonViewModel,
 ) {
 
-    val imageList = articleDTO.imageList?.map { montageCompleteUrl(it) }
+    val imageList = articleDTO.imageList?.map { getImagesUrl(it) }
     val article = articleDTO.article
     val userInfo = articleDTO.userInfo
 
@@ -100,7 +100,7 @@ fun ArticleDetailScreen(
     val commentDTOList by articleDetailViewModel.commentDTOList.collectAsState()
 
     val animatedOffset by animateDpAsState(targetValue = with(LocalDensity.current) {
-        if (imeBottom.toDp() > 10.dp) imeBottom.toDp() - 10.dp else imeBottom.toDp()
+        imeBottom.toDp()
     })
 
     var isFocused by remember { mutableStateOf(false) }
@@ -217,7 +217,7 @@ fun ArticleDetailScreen(
                             .size(40.dp)
                             .clip(CircleShape),
                         painter = if (userInfo?.avatarUrl != null)
-                            rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)) else
+                            rememberAsyncImagePainter(getImagesUrl(userInfo.avatarUrl)) else
                             painterResource(R.drawable.heard_image),
                         contentDescription = "头像",
                         contentScale = ContentScale.Crop
@@ -372,7 +372,7 @@ fun ArticleDetailScreen(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(start = 10.dp, end = 10.dp)
+                    .padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -397,11 +397,13 @@ fun ArticleDetailScreen(
                             .fillMaxWidth(),
                         value = commentText,
                         textStyle = TextStyle(
-                            fontSize = 18.sp
+                            fontSize = 18.sp,
+                            color = appColors.fontPrimary
                         ),
                         onValueChange = {
                             commentText = it
                         },
+                        cursorBrush = SolidColor(appColors.primary),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                     )
                     Box(

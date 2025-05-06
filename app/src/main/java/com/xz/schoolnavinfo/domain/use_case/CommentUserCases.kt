@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.domain.use_case
 
-import com.xz.schoolnavinfo.common.model.BaseResponse
+import com.xz.schoolnavinfo.domain.data.resp.BaseResponse
 import com.xz.schoolnavinfo.domain.data.dto.CommentDTO
 import com.xz.schoolnavinfo.domain.data.entity.Comment
 import com.xz.schoolnavinfo.domain.repository.CommentRepository

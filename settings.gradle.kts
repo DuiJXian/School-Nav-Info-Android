@@ -18,8 +18,13 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        maven {
+            url = uri("F:/SoftProjects/androidStudio/SchoolNavInfo/flutter_module/build/host/outputs/repo")
+        }
+        maven {
+            url = uri("https://storage.googleapis.com/download.flutter.io")
+        }
         maven { setUrl("https://jitpack.io") }
         maven { setUrl("https://maven.aliyun.com/repository/central") }
         maven { setUrl("https://maven.aliyun.com/repository/jcenter") }
@@ -36,3 +41,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "SchoolNavInfo"
 include(":app")
+includeBuild("flutter_module")

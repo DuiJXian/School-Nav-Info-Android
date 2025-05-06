@@ -1,7 +1,7 @@
 package com.xz.schoolnavinfo.common.net
 
-const val BASE_URL = "http://192.168.1.105:8080"
+const val BASE_URL = "http://8.134.62.230:8080"
 
-fun montageCompleteUrl(path: String):String{
-    return "$BASE_URL/uploads/$path"
+fun getImagesUrl(path: String):String{
+    return "$BASE_URL/images/$path"
 }

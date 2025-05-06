@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.presentation.campus.stuff
 
-import android.util.Log
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -53,12 +52,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
-import com.xz.schoolnavinfo.common.net.montageCompleteUrl
+import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.common.utils.StringUtils
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.StuffDTO
@@ -94,6 +94,7 @@ fun StuffScreen(
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                gridState.lastScrolledForward
                 if (gridState.canScrollForward){
                     val delta = available.y
                     searchHeightOffset += delta
@@ -104,10 +105,7 @@ fun StuffScreen(
         }
     }
 
-
-
     var boxHeight by remember { mutableIntStateOf(0) }
-    var gridHeight by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(true) {
         stuffViewModel.getStuff()
@@ -131,7 +129,8 @@ fun StuffScreen(
             contentPadding = PaddingValues(
                 top = searchHeight + 10.dp,
                 start = 10.dp,
-                end = 10.dp
+                end = 10.dp,
+                bottom = 10.dp
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -243,7 +242,6 @@ fun StuffCard(
     val stuff = stuffDTO.stuff
     Box(
         modifier = Modifier
-            .shadow(3.dp, RoundedCornerShape(10.dp))
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(appColors.bgPrimary)
@@ -257,12 +255,14 @@ fun StuffCard(
                     .fillMaxWidth()
                     .height(250.dp),
                 contentScale = ContentScale.Crop,
-                painter = rememberAsyncImagePainter(montageCompleteUrl(stuff.imageUrl)),
+                painter = rememberAsyncImagePainter(getImagesUrl(stuff.imageUrl)),
                 contentDescription = null,
             )
             //描述
             Row(
-                modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
+                modifier = Modifier
+                    .height(56.dp)
+                    .padding(start = 10.dp, end = 10.dp, top = 10.dp),
             ) {
                 Text(
                     text = stuff.desc,
@@ -270,7 +270,9 @@ fun StuffCard(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = appColors.fontPrimary
-                    )
+                    ),
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2
                 )
             }
             //地址
@@ -308,6 +310,7 @@ fun StuffCard(
                                 .padding(end = 10.dp),
                             text = StringUtils.truncateText(stuff.address, 20),
                             maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             style = TextStyle(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,

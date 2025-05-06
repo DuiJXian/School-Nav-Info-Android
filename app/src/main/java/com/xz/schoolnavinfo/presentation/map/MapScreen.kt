@@ -1,17 +1,16 @@
 package com.xz.schoolnavinfo.presentation.map
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.widget.Toast
-import androidx.compose.foundation.background
+import android.view.Gravity
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -19,359 +18,233 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.baidu.mapapi.map.BaiduMap.OnMapClickListener
-import com.baidu.mapapi.map.MapPoi
-import com.baidu.mapapi.map.MapView
-import com.baidu.mapapi.map.MyLocationData
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.baidu.mapapi.model.LatLng
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
-import com.xz.schoolnavinfo.common.utils.LocateUtils
-import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
-import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateEvent
+import com.xz.schoolnavinfo.common.utils.LocationUtils
 import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateViewModel
-import com.xz.schoolnavinfo.presentation.common.baidu.map.MapControl
 import com.xz.schoolnavinfo.presentation.common.baidu.map.MapViewScreen
-import com.xz.schoolnavinfo.presentation.common.baidu.map.RoutePlanType
+import com.xz.schoolnavinfo.presentation.common.baidu.map.scrollMapView
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.BNaviGuideActivity
-import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.DemoGuideActivity
+import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.DrivingActivity
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.WNaviGuideActivity
-import com.xz.schoolnavinfo.presentation.common.compose.CheckGps
-import com.xz.schoolnavinfo.presentation.common.compose.CheckPermission
+import com.xz.schoolnavinfo.presentation.common.components.CheckPermission
+import com.xz.schoolnavinfo.presentation.common.components.OpeGpsDialog
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.map.components.FavoriteItemEdit
-import com.xz.schoolnavinfo.presentation.map.components.LocateNow
-import com.xz.schoolnavinfo.presentation.map.components.PoiDetailCard
-import com.xz.schoolnavinfo.presentation.map.components.PoiSearch
-import com.xz.schoolnavinfo.presentation.map.components.QuickViaItem
-import com.xz.schoolnavinfo.presentation.map.components.RoutePlan
+import com.xz.schoolnavinfo.presentation.map.composable.PoiDetailSection
+import com.xz.schoolnavinfo.presentation.map.composable.PoiSearchSection
+import com.xz.schoolnavinfo.presentation.map.composable.QuickViaSection
+import com.xz.schoolnavinfo.presentation.map.composable.RoutePlan
+import com.xz.schoolnavinfo.presentation.map.composable.ScrollMapIcon
+import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MapScreen(
-    locationMapViewModel: LocateViewModel = hiltViewModel(),
+    locateViewModel: LocateViewModel = hiltViewModel(),
     commonViewModel: CommonViewModel,
     mapViewModel: MapViewModel = hiltViewModel(),
 ) {
-    //设备状态
-    val deviceState by locationMapViewModel.deviceState.collectAsState()
-    //poi状态
-    val poiState by mapViewModel.poiState.collectAsState()
-    //路线规划类型
-    var routePlanType: RoutePlanType by remember { mutableStateOf(RoutePlanType.Walking) }
-    //是否显示快速访问
-    var isShowQuickVia by remember { mutableStateOf(true) }
-    //路线状态
-    val routeState by mapViewModel.routeState
-    //收藏编辑
-    var isShowEditFavorite by remember { mutableStateOf(false) }
-    var mPoiInfo by remember { mutableStateOf<LocalPoiInfo?>(null) }
-    val localPoiState by mapViewModel.localPoiState.collectAsState()
 
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val isDark = isSystemInDarkTheme()
+    val deviceState by locateViewModel.deviceState.collectAsStateWithLifecycle()
+    val dataState by mapViewModel.dataState.collectAsStateWithLifecycle()
+    val showState by mapViewModel.showState.collectAsStateWithLifecycle()
 
+    val snackBarHostState = remember { SnackbarHostState() }
 
-    val mapView = mapViewModel.map
-
-    //检查定位和权限
-    ManageLifeCycle()
-
-    LaunchedEffect(Unit) {
-        commonViewModel.routePlanFlow.collectLatest {
-            isShowQuickVia = false
-            drawRouteOverlay(
-                mapViewModel = mapViewModel,
-                mapView = mapView,
-                startPoint = deviceState.locationPoint,
-                endPoint = it
-            )
-        }
-    }
-
-    LaunchedEffect(deviceState) {
-        mapViewModel.onPoiEvent(PoiEvent.CenterPointChange(deviceState.locationPoint))
-        MapControl.saveLocation(context, deviceState.locationPoint)
-        MapControl.setMyLocationData(
-            myLocationData = MyLocationData
-                .Builder()
-                .latitude(deviceState.locationPoint.latitude)
-                .longitude(deviceState.locationPoint.longitude)
-                .direction(deviceState.direction)
-                .build(),
-            mapView = mapView
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackBarHostState)
+        },
+    ) {
+        MapViewContent(
+            mapViewModel = mapViewModel,
+            deviceLocation = deviceState.locationPoint,
+            dataUiState = dataState,
+            showUiState = showState
         )
     }
 
+    ManageLifeCycle()
+    RunCoroutine(mapViewModel, commonViewModel, locateViewModel, snackBarHostState)
+}
+
+@Composable
+fun RunCoroutine(
+    mapViewModel: MapViewModel,
+    commonViewModel: CommonViewModel,
+    locateViewModel: LocateViewModel,
+    snackBarHostState: SnackbarHostState
+) {
+    val mapView = mapViewModel.mapView
+    val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
+    val deviceState by locateViewModel.deviceState.collectAsStateWithLifecycle()
+
     LaunchedEffect(Unit) {
-        MapControl.setConfig(mapView)
-        //先加载本地保存的位置
-        MapControl.setStyle(mapView, context, isDark)
-        //开始定位
-        locationMapViewModel.startLocation()
-        //点击事件
-        MapControl.setOnMapClickListener(object : OnMapClickListener {
-            override fun onMapClick(point: LatLng?) {}
-            override fun onMapPoiClick(poi: MapPoi) {
-                mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(poi.uid))
-                mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(poi.uid))
-            }
-        }, mapView)
-        //移动地图
-        MapControl.moveMapView(mapView, MapControl.loadLocation(context), animate = false)
-        //导航消息
-        mapViewModel.navEvent.collectLatest { event ->
+        commonViewModel.routePlanFlow.collectLatest {
+            mapViewModel.startRoutePlan(
+                RouteType.Walking,
+                deviceState.locationPoint,
+                it
+            )
+        }
+    }
+    LaunchedEffect(Unit) {
+        locateViewModel.startLocation()
+        mapViewModel.composableOver(isDark,LocationUtils.loadLocation(context))
+        locateViewModel.firstScrollMap.collectLatest {
+            mapView.map.scrollMapView(deviceState.locationPoint)
+        }
+    }
+    LaunchedEffect(Unit) {
+        mapViewModel.uiEvent.collectLatest { event ->
             when (event) {
-                is NavMsgEvent.CalculateMsg -> {
-                    snackbarHostState.showSnackbar(
-                        message = event.msg,
-                        duration = SnackbarDuration.Short
+                is MapViewUiEvent.CalculateMsg -> {
+                    snackBarHostState.showSnackbar(
+                        message = event.msg, duration = SnackbarDuration.Short
                     )
                 }
 
-                is NavMsgEvent.EnterNav -> {
-                    val intent = when (event.routePlanType) {
-                        is RoutePlanType.Walking -> Intent(context, WNaviGuideActivity::class.java)
-                        is RoutePlanType.Biking -> Intent(context, BNaviGuideActivity::class.java)
-                        is RoutePlanType.Driving -> {
-                            //开启导航的定位
-                            BaiduNaviManagerFactory.getBaiduNaviManager().stopLocationMonitor()
-                            Intent(context, DemoGuideActivity::class.java)
+                is MapViewUiEvent.EnterNav -> {
+                    val intent = when (event.routeType) {
+                        RouteType.Walking -> Intent(context, WNaviGuideActivity::class.java)
+                        RouteType.Biking -> Intent(context, BNaviGuideActivity::class.java)
+                        RouteType.Driving -> {
+                            BaiduNaviManagerFactory.getBaiduNaviManager().startLocationMonitor()
+                            Intent(context, DrivingActivity::class.java)
                         }
                     }
                     context.startActivity(intent)
                 }
-
             }
         }
     }
-
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState)
-        },
-    ) {
-        Box {
-            //地图
-            MapViewScreen(mapView = mapView)
-
-            //搜索
-            if (poiState.isShowSearch) {
-                PoiSearch(
-                    onTextChange = {
-                        mapViewModel.onPoiEvent(PoiEvent.SearchTextChange(it))
-                    }, onClose = {
-                        mapViewModel.onPoiEvent(PoiEvent.ClearSearchText)
-                    }, onClickItem = {
-                        mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                        mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
-                    }
-                )
-            }
-            //定位
-            LocateNow(
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(bottom = 100.dp, end = 10.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        MapControl.moveMapView(mapView, deviceState.locationPoint)
-                    }
-            )
-            //快速访问
-            if (isShowQuickVia) {
-                QuickViaItem(
-                    modifier = Modifier.align(Alignment.BottomStart),
-                    localPoiInfos = localPoiState.localPoiInfos,
-                    onClickItem = {
-                        mapViewModel.onPoiEvent(PoiEvent.GetPoiDetailInfo(it.uid))
-                        mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.GetMPoiInfoByUid(it.uid))
-                    },
-                    onLongClickItem = {
-                        isShowEditFavorite = true
-                        mPoiInfo = it
-                    }
-                )
-            }
-            //poi详情
-            if (poiState.isShowDetailCard) {
-                isShowQuickVia = false
-                val poiDetailInfo = poiState.poiDetailInfo
-                poiDetailInfo.image = localPoiState.favoritePoi?.iconPic
-                MapControl.moveMapView(mapView, poiDetailInfo.location)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f)) // 半透明背景
-                        .clickable(enabled = false) { }
-                        .padding(10.dp)
-                        .align(Alignment.Center)
-                ) {
-                    PoiDetailCard(
-                        modifier = Modifier.align(Alignment.Center),
-                        poiDetailInfo = poiDetailInfo,
-                        isFavorite = localPoiState.isFavoritePoi,
-                        onCancel = {
-                            isShowQuickVia = true
-                            mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
-                        },
-                        onRoute = {
-                            drawRouteOverlay(
-                                mapViewModel = mapViewModel,
-                                startPoint = deviceState.locationPoint,
-                                endPoint = poiDetailInfo.location,
-                                mapView = mapView
-                            )
-                        },
-                        onCall = {
-                            val intent = Intent(Intent.ACTION_DIAL).apply {
-                                data = Uri.parse("tel:$it")
-                            }
-                            val hasTelephony = context.packageManager.hasSystemFeature(
-                                PackageManager.FEATURE_TELEPHONY
-                            )
-                            if (hasTelephony) {
-                                context.startActivity(intent)
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "当前设备不支持拨号功能",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        onFavorite = {
-                            val item = LocalPoiInfo(
-                                uid = poiDetailInfo.uid,
-                                name = poiDetailInfo.name,
-                                order = localPoiState.localPoiInfos.size + 1,
-                                iconPic = "",
-                                address = poiDetailInfo.address,
-                                telephone = poiDetailInfo.telephone
-                            )
-                            scope.launch {
-                                mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.InsertMPoiInfo(item))
-                            }
-                        }
-                    )
-                }
-            }
-            //路线规划
-            if (routeState.isShowRoutePlan) {
-                RoutePlan(
-                    onCancel = {
-                        isShowQuickVia = true
-                        mapViewModel.onRouteEvent(RouteEvent.whowRouteMenu(false))
-                        mapViewModel.onPoiEvent(PoiEvent.ShowSearchPoi(true))
-                        MapControl.removeOverlay()
-                        routePlanType = RoutePlanType.Walking
-                    },
-                    onRoutePlanType = {
-                        mapViewModel.onPoiEvent(PoiEvent.ShowSearchPoi(false))
-                        routePlanType = it
-                        MapControl.startRoutePlan(it)
-                    },
-                    onNavi = {
-                        mapViewModel.onGoNavEvent(
-                            stPoint = deviceState.locationPoint,
-                            endPoint = poiState.poiDetailInfo.location,
-                            routePlanType = routePlanType
-                        )
-
-                    },
-                    distance = routeState.routeDistance,
-                    duration = routeState.routeDuration,
-                    routePlanType = routePlanType
-                )
-            }
-            //编辑收藏
-            if (isShowEditFavorite) {
-                mPoiInfo?.let { info ->
-                    FavoriteItemEdit(
-                        modifier = Modifier.align(Alignment.Center),
-                        mPoiInfo = info,
-                        onDelete = {
-                            isShowEditFavorite = false
-                            mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.DeleteMPoiInfo(info))
-                        },
-                        onCancel = {
-                            isShowEditFavorite = false
-                        },
-                        onConfirm = {
-                            isShowEditFavorite = false
-                            mapViewModel.onLocalPoiInfoEvent(LocalInfoEvent.UpdateMPoiInfo(it))
-                        }
-                    )
-                }
-            }
-        }
+    LaunchedEffect(deviceState) {
+        mapViewModel.updateMapViewLocation(deviceState.locationPoint, deviceState.direction)
     }
-}
-
-private fun drawRouteOverlay(
-    mapViewModel: MapViewModel,
-    startPoint: LatLng,
-    endPoint: LatLng,
-    mapView: MapView
-){
-    mapViewModel.onPoiEvent(PoiEvent.ShowSearchPoi(false))
-    MapControl.preRoutePlan(
-        startLocation = startPoint,
-        endLocation = endPoint,
-        mapView = mapView
-    ) { distance, duration ->
-        mapViewModel.onRouteEvent(
-            RouteEvent.DisAndDurChange(
-                distance,
-                duration
-            )
-        )
-        mapViewModel.onRouteEvent(RouteEvent.whowRouteMenu(true))
-    }
-    MapControl.startRoutePlan(RoutePlanType.Walking)
-    MapControl.moveMapView(mapView, endPoint, 14f)
-    mapViewModel.onPoiEvent(PoiEvent.CloseDetailCard)
 }
 
 @Composable
-private fun ManageLifeCycle(viewModel: LocateViewModel = hiltViewModel()) {
+fun MapViewContent(
+    mapViewModel: MapViewModel,
+    deviceLocation: LatLng,
+    dataUiState: MapViewDataUiState,
+    showUiState: MapViewShowUiState,
+) {
+
     val context = LocalContext.current
+    Box {
+        MapViewScreen(mapView = mapViewModel.mapView)
+
+
+        PoiSearchSection(
+            onTextChange = { text, location -> mapViewModel.searchTextChange(text, location) },
+            onClearSearchText = { mapViewModel.clearSearchText() },
+            onFocusChange = { mapViewModel.searchTextFocusChange(it) },
+            onClickItem = { location, uid -> mapViewModel.clickSearchItem(location, uid) },
+            searchText = dataUiState.searchText,
+            showTextField = !showUiState.showRoutePlan,
+            showSearchRes = showUiState.showPoiSearchData,
+            deviceLocation = deviceLocation,
+            searchPoiInfos = dataUiState.searchPoiInfos
+        )
+
+        ScrollMapIcon(Modifier
+            .align(Alignment.BottomEnd)
+            .padding(bottom = 100.dp, end = 10.dp)
+            .shadow(5.dp, CircleShape)
+            .clickable { mapViewModel.scrollMap(deviceLocation, true) })
+
+        QuickViaSection(
+            showQuickBar = !showUiState.showRoutePlan,
+            showQuickEdit = showUiState.showQuickEdit,
+            selectUid = dataUiState.currentPoiUid,
+            localPoiInfos = dataUiState.localPoiInfos,
+            onClickItem = { mapViewModel.clickQuickViaItem(deviceLocation, it) },
+            onLongClickItem = { mapViewModel.longClickQuickViaItem(it) },
+            onDelete = { mapViewModel.deleteLocalPoiInfo(it) },
+            onConfirm = { mapViewModel.updateLocalPoiInfo(it) },
+            onCancel = { mapViewModel.setShowQuickEdit(false) }
+        )
+
+        PoiDetailSection(
+            showPoiDetailSection = showUiState.showPoiDetail,
+            isFavorite = dataUiState.localPoiInfo != null,
+            poiDetailInfo = dataUiState.poiDetailInfo,
+            onCancel = { mapViewModel.setShowPoiDetail(false) },
+            onRoute = {
+                mapViewModel.startRoutePlan(
+                    RouteType.Walking,
+                    deviceLocation,
+                    dataUiState.poiDetailInfo.location
+                )
+            },
+            onCall = { onCall(it, context) },
+            onFavorite = { mapViewModel.addOrRemoveQuickViaItem() }
+        )
+
+        RoutePlan(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            visible = showUiState.showRoutePlan,
+            distance = dataUiState.routeDistance,
+            duration = dataUiState.routeDuration,
+            routeType = dataUiState.routeType,
+            onCancel = { mapViewModel.closeRoutePlan() },
+            onRouteTypeChange = {
+                mapViewModel.startRoutePlan(
+                    it, deviceLocation, dataUiState.poiDetailInfo.location
+                )
+            },
+            onNavi = {
+                mapViewModel.onNavEvent(deviceLocation, dataUiState.poiDetailInfo.location)
+            },
+        )
+    }
+}
+
+private fun onCall(it: String, context: Context) {
+    val intent = Intent(Intent.ACTION_DIAL).apply {
+        data = Uri.parse("tel:$it")
+    }
+    val hasTelephony = context.packageManager.hasSystemFeature(
+        PackageManager.FEATURE_TELEPHONY
+    )
+    if (hasTelephony) {
+        context.startActivity(intent)
+    } else {
+        StyleableToast.Builder(context).text("当前设备不支持拨号功能")
+            .textColor(Color.White.toArgb())
+            .backgroundColor(Color(0xFF0091EA).toArgb()).cornerRadius(36)
+            .gravity(Gravity.TOP).show()
+    }
+}
+
+@Composable
+private fun ManageLifeCycle(locateViewModel: LocateViewModel = hiltViewModel()) {
     val lifecycleOwner = LocalLifecycleOwner.current
-    CheckGps()
+    OpeGpsDialog()
     CheckPermission()
     DisposableEffect(lifecycleOwner) {
         val lifecycleObserver = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> {
-                    val isOpenGps = LocateUtils.isGpsEnabled(context)
-                    val isGrantedPermission = LocateUtils.isGrantedLocationPermission(context)
-                    viewModel.locateEvent(LocateEvent.GpsChange(isOpenGps))
-                    viewModel.locateEvent(LocateEvent.PermissionChange(isGrantedPermission))
-                }
-
-                Lifecycle.Event.ON_DESTROY -> {
-                    viewModel.stopLocation()
+                Lifecycle.Event.ON_PAUSE -> {
+                    locateViewModel.stopLocation()
                 }
 
                 else -> Unit
@@ -383,7 +256,3 @@ private fun ManageLifeCycle(viewModel: LocateViewModel = hiltViewModel()) {
         }
     }
 }
-
-
-
-

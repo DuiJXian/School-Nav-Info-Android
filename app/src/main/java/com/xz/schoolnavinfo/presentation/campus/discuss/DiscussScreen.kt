@@ -1,6 +1,5 @@
 package com.xz.schoolnavinfo.presentation.campus.discuss
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -43,7 +42,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xz.schoolnavinfo.common.net.montageCompleteUrl
+import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
@@ -142,7 +141,7 @@ fun DiscussScreen(
                             if (item.imageList != null) {
                                 val startIndex = item.imageList.indexOf(it)
                                 commonViewModel.onLoadImageUrlEvent(
-                                    item.imageList.map { url -> montageCompleteUrl(url) },
+                                    item.imageList.map { url -> getImagesUrl(url) },
                                     startIndex,
                                     0.dp
                                 )

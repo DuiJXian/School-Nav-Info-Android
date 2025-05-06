@@ -23,46 +23,33 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
 
+data class LocationState(
+    val direction: Float = 0f,
+    val locationPoint: LatLng = LatLng(39.5427, 116.2317)
+)
 @HiltViewModel
 class LocateViewModel @Inject constructor(application: Application) :
     AndroidViewModel(application), SensorEventListener {
-    private val _deviceState = MutableStateFlow(DeviceState())
-    val deviceState: StateFlow<DeviceState> = _deviceState
+    private val _deviceState = MutableStateFlow(LocationState())
+    val deviceState: StateFlow<LocationState> = _deviceState
 
     private val sensorManager =
         application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val rotationSensor: Sensor? =
         sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
-    private val _moveMap = MutableSharedFlow<Unit>()
-    val moveMap:SharedFlow<Unit> = _moveMap.asSharedFlow()
+    private val _firstScrollMap = MutableSharedFlow<Unit>()
+    val firstScrollMap:SharedFlow<Unit> = _firstScrollMap.asSharedFlow()
 
     init {
         startListening()
-    }
-
-
-    fun locateEvent(event: LocateEvent) {
-        when (event) {
-            is LocateEvent.GpsChange -> {
-                _deviceState.value = deviceState.value.copy(
-                    isOpenGps = event.res
-                )
-            }
-
-            is LocateEvent.PermissionChange -> {
-                _deviceState.value = deviceState.value.copy(
-                    isGrantedPermission = event.res
-                )
-            }
-        }
     }
 
     //差值 减少重组
     private var prePoint = LatLng(0.0, 0.0)
     private val pointDiff = 0.00001
     private val locationListener = object : BDAbstractLocationListener() {
-        private var flag = true;
+        private var firstFlag = true;
         override fun onReceiveLocation(location: BDLocation?) {
             location?.addrStr?.let {
                 val latLng = LatLng(location.latitude, location.longitude)
@@ -76,10 +63,10 @@ class LocateViewModel @Inject constructor(application: Application) :
                 }
                 prePoint = LatLng(location.latitude, location.longitude)
 
-                if (flag){
-                    flag = false
+                if (firstFlag){
+                    firstFlag = false
                     viewModelScope.launch {
-                        _moveMap.emit(Unit)
+                        _firstScrollMap.emit(Unit)
                     }
                 }
             }

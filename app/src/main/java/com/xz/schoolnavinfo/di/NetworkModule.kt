@@ -1,7 +1,7 @@
 package com.xz.schoolnavinfo.di
 
 import android.app.Application
-import com.xz.schoolnavinfo.common.event.GlobalFlow
+import com.xz.schoolnavinfo.common.flow.GlobalFlow
 import com.xz.schoolnavinfo.common.net.AuthInterceptor
 import com.xz.schoolnavinfo.common.net.BASE_URL
 import com.xz.schoolnavinfo.common.net.NetExceptionManager

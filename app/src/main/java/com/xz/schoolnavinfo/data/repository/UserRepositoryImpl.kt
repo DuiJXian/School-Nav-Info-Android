@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.data.repository
 
-import com.xz.schoolnavinfo.common.model.BaseResponse
+import com.xz.schoolnavinfo.domain.data.resp.BaseResponse
 import com.xz.schoolnavinfo.data.dao.remote.request.LoginRequest
 import com.xz.schoolnavinfo.data.dao.remote.UserApi
 import com.xz.schoolnavinfo.domain.data.entity.UserInfo

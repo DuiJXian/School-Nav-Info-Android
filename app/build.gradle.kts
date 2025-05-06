@@ -38,6 +38,9 @@ android {
                 "proguard-rules.pro"
             )
         }
+        create("profile") {
+            initWith(getByName("debug"))
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -49,6 +52,7 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
@@ -73,6 +77,15 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    //flutter
+//    implementation(project(":flutter"))
+//    add("debugImplementation", "com.example.flutter_module:flutter_debug:1.0")
+//    add("profileImplementation", "com.example.flutter_module:flutter_profile:1.0")
+//    add("releaseImplementation", "com.example.flutter_module:flutter_release:1.0")
+
+    implementation("com.example.flutter_module:flutter_release:1.0")
+
 
     //百度地图
     implementation(files("libs/onsdk_all.aar"))
@@ -104,11 +117,11 @@ dependencies {
     //图片压缩
     implementation("top.zibin:Luban:1.1.8")
 
-    val version = "1.1.0-alpha.6"
     // 图片浏览库
-    implementation("com.jvziyaoyao.scale:image-viewer:$version")
-
+    implementation("com.jvziyaoyao.scale:image-viewer:1.1.0-alpha.6")
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+
+    implementation("io.github.muddz:styleabletoast:2.4.0")
 
 }
 

@@ -2,7 +2,7 @@ package com.xz.schoolnavinfo.data.repository
 
 import android.content.Context
 import android.webkit.MimeTypeMap
-import com.xz.schoolnavinfo.common.model.BaseResponse
+import com.xz.schoolnavinfo.domain.data.resp.BaseResponse
 import com.xz.schoolnavinfo.data.dao.remote.FileApi
 import com.xz.schoolnavinfo.domain.repository.FileRepository
 import okhttp3.MediaType.Companion.toMediaType

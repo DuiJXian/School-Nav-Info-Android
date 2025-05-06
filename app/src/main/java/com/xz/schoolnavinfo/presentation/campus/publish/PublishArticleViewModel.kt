@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esafirm.imagepicker.model.Image
 import com.google.gson.Gson
-import com.xz.schoolnavinfo.common.event.GlobalFlow
+import com.xz.schoolnavinfo.common.flow.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.data.entity.Article

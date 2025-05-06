@@ -1,7 +1,7 @@
 package com.xz.schoolnavinfo.presentation.campus.stuff.pub
 
 import android.app.Activity
-import android.util.Log
+import android.view.Gravity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -58,6 +58,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -70,12 +72,12 @@ import coil.compose.rememberAsyncImagePainter
 import com.esafirm.imagepicker.features.ImagePicker
 import com.esafirm.imagepicker.features.ImagePickerConfig
 import com.esafirm.imagepicker.features.createImagePickerIntent
-import com.esafirm.imagepicker.model.Image
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.presentation.common.compose.LoadingDialog
+import com.xz.schoolnavinfo.presentation.common.components.LoadingDialog
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
+import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
 import java.time.Instant
 import java.time.ZoneId
@@ -170,6 +172,15 @@ fun PublishStuffScreen(
                             .width(60.dp)
                             .height(30.dp)
                             .clickable {
+                                if (publishStuffViewModel.pubStuff.desc.isBlank()){
+                                    StyleableToast.Builder(context)
+                                        .text("请输入描述")
+                                        .textColor(Color.White.toArgb())
+                                        .backgroundColor(Color(0xFF0091EA).toArgb())
+                                        .cornerRadius(36)
+                                        .gravity(Gravity.TOP)
+                                        .show()
+                                }
                                 publishStuffViewModel.onEvent(PublishStuffEvent.PubStuff)
                             },
                         contentAlignment = Alignment.Center

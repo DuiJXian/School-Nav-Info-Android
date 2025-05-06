@@ -16,7 +16,6 @@ import com.baidu.mapapi.search.poi.PoiIndoorResult
 import com.baidu.mapapi.search.poi.PoiNearbySearchOption
 import com.baidu.mapapi.search.poi.PoiResult
 import com.baidu.mapapi.search.poi.PoiSearch
-import com.xz.schoolnavinfo.presentation.common.baidu.map.MapControl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,6 +76,6 @@ class MapSelectViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        MapControl.onDestroy(mapView)
+        mapView.onDestroy()
     }
 }

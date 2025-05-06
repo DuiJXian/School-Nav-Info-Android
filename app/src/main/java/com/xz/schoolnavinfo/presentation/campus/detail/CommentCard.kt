@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.common.net.montageCompleteUrl
+import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.CommentDTO
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -58,7 +58,7 @@ fun CommentCard(
                     .clip(CircleShape),
                 painter = if (userInfo.avatarUrl.isNullOrBlank())
                     painterResource(R.drawable.heard_image) else
-                    rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)),
+                    rememberAsyncImagePainter(getImagesUrl(userInfo.avatarUrl)),
                 contentScale = ContentScale.Crop,
                 contentDescription = "头像",
             )

@@ -28,7 +28,7 @@ import static com.baidu.mapapi.map.BaiduMap.OnMarkerClickListener;
  */
 public abstract class OverlayManager implements OnMarkerClickListener, OnPolylineClickListener {
 
-    BaiduMap mBaiduMap = null;
+    BaiduMap mBaiduMap;
     private List<OverlayOptions> mOverlayOptionList = null;
 
     List<Overlay> mOverlayList = null;
@@ -101,16 +101,17 @@ public abstract class OverlayManager implements OnMarkerClickListener, OnPolylin
         if (mBaiduMap == null) {
             return;
         }
-        if (mOverlayList.size() > 0) {
+        if (!mOverlayList.isEmpty()) {
             LatLngBounds.Builder builder = new LatLngBounds.Builder();
             for (Overlay overlay : mOverlayList) {
-                // polyline 中的点可能太多，只按marker 缩放
                 if (overlay instanceof Marker) {
                     builder.include(((Marker) overlay).getPosition());
                 }
             }
             mBaiduMap.setMapStatus(MapStatusUpdateFactory
                     .newLatLngBounds(builder.build()));
+
+
         }
     }
 

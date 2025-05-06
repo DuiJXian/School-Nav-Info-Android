@@ -15,15 +15,15 @@ class LocalPoiInfoUseCases(
         return mPoiInfoRepository.getLocalPoiInfoByUid(uid)
     }
 
-    suspend fun insertMPoiInfo(mPoiInfo: LocalPoiInfo) {
-        return mPoiInfoRepository.insertLocalPoiInfo(mPoiInfo)
+    suspend fun insertMPoiInfo(localPoiInfo: LocalPoiInfo) {
+        return mPoiInfoRepository.insertLocalPoiInfo(localPoiInfo)
     }
 
-    suspend fun deleteMPoiInfo(mPoiInfo: LocalPoiInfo) {
-        return mPoiInfoRepository.deleteLocalPoiInfo(mPoiInfo)
+    suspend fun deleteMPoiInfo(localPoiInfo: LocalPoiInfo) {
+        return mPoiInfoRepository.deleteLocalPoiInfo(localPoiInfo)
     }
 
-    suspend fun updateMPoiInfo(mPoiInfo: LocalPoiInfo){
-        return mPoiInfoRepository.updateLocalPoiInfo(mPoiInfo)
+    suspend fun updateLocalPoiInfo(localPoiInfo: LocalPoiInfo){
+        return mPoiInfoRepository.updateLocalPoiInfo(localPoiInfo)
     }
 }

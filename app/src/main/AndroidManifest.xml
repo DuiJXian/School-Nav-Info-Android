@@ -44,8 +44,11 @@
             android:enabled="true"
             android:process=":remote"></service>
 
+        <activity android:name="io.flutter.embedding.android.FlutterActivity"
+            android:exported="true"/>
+
         <activity
-            android:name=".presentation.common.baidu.nav.activity.DemoGuideActivity"
+            android:name=".presentation.common.baidu.nav.activity.DrivingActivity"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden"
             android:label="驾车导航"
             android:theme="@android:style/Theme.NoTitleBar" />

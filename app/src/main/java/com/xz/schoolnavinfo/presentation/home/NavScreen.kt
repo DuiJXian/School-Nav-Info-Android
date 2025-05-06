@@ -15,7 +15,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.xz.schoolnavinfo.common.event.NetExceptionEvent
+import com.xz.schoolnavinfo.common.exception.NetExceptionEvent
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
@@ -26,7 +26,7 @@ import com.xz.schoolnavinfo.presentation.campus.stuff.detail.StuffDetailScreen
 import com.xz.schoolnavinfo.presentation.campus.stuff.pub.PublishStuffScreen
 import com.xz.schoolnavinfo.presentation.common.Screen
 import com.xz.schoolnavinfo.presentation.common.baidu.select.MapLocationSelectScreen
-import com.xz.schoolnavinfo.presentation.common.compose.ImagePreview
+import com.xz.schoolnavinfo.presentation.common.components.ImagePreview
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.user.LoginOrRegisterScreen
@@ -84,11 +84,11 @@ fun NavScreen(
                     navController.navigate(Screen.ArticleDetail.route)
                 }
 
-                NavEvent.MapLocationSelect -> {
+                is NavEvent.MapLocationSelect -> {
                     navController.navigate(Screen.MapLocationSelect.route)
                 }
 
-                NavEvent.PublishStuff -> {
+                is NavEvent.PublishStuff -> {
                     navController.navigate(Screen.PublishStuff.route)
                 }
 

@@ -2,7 +2,7 @@ package com.xz.schoolnavinfo.presentation.campus.publish
 
 import android.app.Activity
 import android.util.Log
-import android.widget.Toast
+import android.view.Gravity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -47,7 +47,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -62,11 +64,12 @@ import com.esafirm.imagepicker.features.createImagePickerIntent
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
-import com.xz.schoolnavinfo.presentation.common.compose.CustomCheckbox
-import com.xz.schoolnavinfo.presentation.common.compose.LoadingDialog
+import com.xz.schoolnavinfo.presentation.common.components.CustomCheckbox
+import com.xz.schoolnavinfo.presentation.common.components.LoadingDialog
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
+import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
 
 
@@ -220,18 +223,22 @@ fun PublishDiscussScreen(
                                 val selectImageList =
                                     if (campusMenu == CampusMenu.Activity) activityImages else discussImages
                                 if (addBanner && bannerImage == null) {
-                                    Toast.makeText(
-                                        context,
-                                        "请选择轮播图",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    StyleableToast.Builder(context)
+                                        .text("请选择轮播图")
+                                        .textColor(Color.White.toArgb())
+                                        .backgroundColor(Color(0xFF0091EA).toArgb())
+                                        .cornerRadius(36)
+                                        .gravity(Gravity.TOP)
+                                        .show()
                                 } else {
                                     if (articleInfo.title.isBlank() && articleInfo.content.isBlank() && selectImageList.isEmpty()) {
-                                        Toast.makeText(
-                                            context,
-                                            "标题、内容、图片不能全为空",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        StyleableToast.Builder(context)
+                                            .text("标题、内容、图片不能全为空")
+                                            .textColor(Color.White.toArgb())
+                                            .backgroundColor(Color(0xFF0091EA).toArgb())
+                                            .cornerRadius(36)
+                                            .gravity(Gravity.TOP)
+                                            .show()
                                     } else {
                                         publishArticleViewModel.onEvent(
                                             PublishArticleEvent.PublishArticle(

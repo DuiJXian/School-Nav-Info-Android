@@ -8,7 +8,7 @@ data class LocalPoiInfo(
     @PrimaryKey val uid: String,            // uid
     val name: String,           // Poi名称
     val order: Int,             // 序号
-    val iconPic: String,        // 图标
+    val iconPic: String = "",        // 图标
     val address: String,        // 地址
     val telephone: String,      // 联系电话
 )

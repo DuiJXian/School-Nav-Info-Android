@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.data.dao.remote
 
-import com.xz.schoolnavinfo.common.model.BaseResponse
+import com.xz.schoolnavinfo.domain.data.resp.BaseResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Multipart

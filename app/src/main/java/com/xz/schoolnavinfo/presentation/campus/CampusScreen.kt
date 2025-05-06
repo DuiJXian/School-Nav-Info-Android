@@ -66,8 +66,6 @@ fun CampusScreen(
 
     val lifecycle = LocalLifecycleOwner.current
 
-    val systemPadding = WindowInsets.systemBars
-
     DisposableEffect(lifecycle) {
         val lifecycleObserver = LifecycleEventObserver { _, event ->
             when (event) {

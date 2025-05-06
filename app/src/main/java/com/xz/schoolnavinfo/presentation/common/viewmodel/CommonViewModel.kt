@@ -1,18 +1,13 @@
 package com.xz.schoolnavinfo.presentation.common.viewmodel
 
-import android.app.Application
-import android.util.Log
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.baidu.mapapi.model.LatLng
 import com.google.gson.Gson
-import com.xz.schoolnavinfo.common.event.GlobalFlow
+import com.xz.schoolnavinfo.common.flow.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
-import com.xz.schoolnavinfo.common.utils.DataStoreUtils
-import com.xz.schoolnavinfo.common.utils.parseJwtPayload
 import com.xz.schoolnavinfo.domain.data.entity.UserInfo
 import com.xz.schoolnavinfo.domain.use_case.UserUseCases
 import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationState
@@ -48,8 +43,8 @@ class CommonViewModel @Inject constructor(
     private val _routePlanFlow = MutableSharedFlow<LatLng>(replay = 1)
     val routePlanFlow: SharedFlow<LatLng> = _routePlanFlow
 
-    private val _homePageFlow = MutableSharedFlow<Int>()
-    val homePageFlow: SharedFlow<Int> = _homePageFlow
+    private val _homePageChange = MutableSharedFlow<Int>()
+    val homePageChange: SharedFlow<Int> = _homePageChange
 
     init {
         viewModelScope.launch {
@@ -59,7 +54,7 @@ class CommonViewModel @Inject constructor(
 
     fun onHomePage(page: Int) {
         viewModelScope.launch {
-            _homePageFlow.emit(page)
+            _homePageChange.emit(page)
         }
     }
 

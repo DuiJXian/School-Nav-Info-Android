@@ -58,7 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.common.net.montageCompleteUrl
+import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.common.utils.DensityUtil
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
@@ -101,8 +101,8 @@ fun StuffDetailScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(statusBarPadding)
             .background(appColors.bgPrimary)
+            .padding(statusBarPadding)
     ) {
         if (showDialog) {
             BasicAlertDialog(onDismissRequest = {}) {
@@ -209,7 +209,7 @@ fun StuffDetailScreen(
                                 .clip(CircleShape),
                             painter = if (userInfo.avatarUrl.isNullOrBlank())
                                 painterResource(R.drawable.heard_image) else
-                                rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)),
+                                rememberAsyncImagePainter(getImagesUrl(userInfo.avatarUrl)),
                             contentDescription = "头像",
                             contentScale = ContentScale.Crop
                         )
@@ -306,7 +306,7 @@ fun StuffDetailScreen(
                         .clip(RoundedCornerShape(10.dp)),
                     painter = rememberAsyncImagePainter(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(montageCompleteUrl(stuff.imageUrl))
+                            .data(getImagesUrl(stuff.imageUrl))
                             .listener(
                                 onSuccess = { _, result ->
                                     val drawable = result.drawable

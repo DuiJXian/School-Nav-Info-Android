@@ -2,7 +2,7 @@ package com.xz.schoolnavinfo.presentation.my
 
 import android.app.Activity
 import android.util.Log
-import android.widget.Toast
+import android.view.Gravity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -58,11 +59,11 @@ import com.esafirm.imagepicker.features.ImagePicker
 import com.esafirm.imagepicker.features.ImagePickerConfig
 import com.esafirm.imagepicker.features.createImagePickerIntent
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.common.net.montageCompleteUrl
-import com.xz.schoolnavinfo.presentation.campus.stuff.pub.PublishStuffEvent
+import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
+import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -113,11 +114,13 @@ fun MyScreen(
             if (it.code == "success") {
                 commonViewModel.getUserInfo()
             }
-            Toast.makeText(
-                context,
-                it.message,
-                Toast.LENGTH_SHORT
-            ).show()
+            StyleableToast.Builder(context)
+                .text(it.message)
+                .textColor(Color.White.toArgb())
+                .backgroundColor(Color(0xFF0091EA).toArgb())
+                .cornerRadius(36)
+                .gravity(Gravity.TOP)
+                .show()
         }
     }
 
@@ -184,7 +187,7 @@ fun MyScreen(
                         },
                     painter = if (userInfo.avatarUrl.isNullOrBlank())
                         painterResource(R.drawable.heard_image)
-                    else rememberAsyncImagePainter(montageCompleteUrl(userInfo.avatarUrl)),
+                    else rememberAsyncImagePainter(getImagesUrl(userInfo.avatarUrl)),
                     contentDescription = "头像",
                     contentScale = ContentScale.Crop
                 )

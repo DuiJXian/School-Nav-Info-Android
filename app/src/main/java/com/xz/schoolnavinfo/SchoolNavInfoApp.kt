@@ -18,13 +18,17 @@ class SchoolNavInfoApp : Application() {
     private var ttsHelper: TTSHelper? = null
     override fun onCreate() {
         super.onCreate()
-        //设置隐私协议
-        SDKInitializer.setAgreePrivacy(applicationContext, true)
-        SDKInitializer.initialize(applicationContext)
-        LocationClient.setAgreePrivacy(true)
+        setPrivacy()
         ttsHelper = TTSHelper(applicationContext)
         initNavi()
         initTTs()
+    }
+
+
+    private fun setPrivacy() {
+        SDKInitializer.setAgreePrivacy(applicationContext, true)
+        SDKInitializer.initialize(applicationContext)
+        LocationClient.setAgreePrivacy(true)
     }
 
     private fun initTTs() {

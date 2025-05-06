@@ -18,8 +18,6 @@ import com.baidu.mapapi.map.MapView
 import com.baidu.mapapi.model.LatLng
 import com.xz.schoolnavinfo.common.utils.DataStoreUtils
 
-val TAG = "MapViewScreen"
-
 @Composable
 fun MapViewScreen(
     modifier: Modifier = Modifier,
@@ -37,7 +35,6 @@ fun MapViewScreen(
 
 @Composable
 private fun MapLifeCycle(mapView: MapView) {
-    rememberCoroutineScope()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, context) {

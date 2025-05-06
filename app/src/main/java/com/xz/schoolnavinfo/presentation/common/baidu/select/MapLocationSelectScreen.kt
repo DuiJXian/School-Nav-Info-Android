@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.presentation.common.baidu.select
 
-import android.widget.Toast
+import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +35,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -49,13 +51,15 @@ import com.baidu.mapapi.map.MapStatus
 import com.baidu.mapapi.utils.DistanceUtil
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.DensityUtil
-import com.xz.schoolnavinfo.common.utils.LocateUtils
-import com.xz.schoolnavinfo.presentation.common.baidu.map.MapControl
+import com.xz.schoolnavinfo.common.utils.LocationUtils
+import com.xz.schoolnavinfo.common.utils.UnitCovertUtils
 import com.xz.schoolnavinfo.presentation.common.baidu.map.MapViewScreen
+import com.xz.schoolnavinfo.presentation.common.baidu.map.scrollMapView
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
-import com.xz.schoolnavinfo.presentation.map.components.LocateNow
+import com.xz.schoolnavinfo.presentation.map.composable.ScrollMapIcon
 import com.xz.schoolnavinfo.presentation.theme.AppColors
+import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -80,7 +84,7 @@ fun MapLocationSelectScreen(
 
     val point = remember {
         runBlocking {
-            MapControl.loadLocation(context)
+            LocationUtils.loadLocation(context)
         }
     }
 
@@ -100,27 +104,22 @@ fun MapLocationSelectScreen(
 
     var outerBoxHeightPx by remember { mutableIntStateOf(0) }
     LaunchedEffect(true) {
-        MapControl.moveMapView(mapVew, point, animate = false)
+        mapVew.map.scrollMapView(point, animate = false)
         mapSelectViewModel.getPoiInfoListEvent(point)
         mapVew.map.setOnMapStatusChangeListener(object : OnMapStatusChangeListener {
             override fun onMapStatusChangeStart(status: MapStatus?) {
             }
-
             override fun onMapStatusChangeStart(p0: MapStatus?, reason: Int) {
             }
-
             override fun onMapStatusChange(status: MapStatus?) {
                 debounceJob?.cancel()
                 debounceJob = scope.launch {
-                    // 延迟200ms，如果这段时间内再次触发，将取消之前的任务
                     delay(200)
-                    // 执行你想要的操作
                     status?.let {
                         mapSelectViewModel.getPoiInfoListEvent(it.target)
                     }
                 }
             }
-
             override fun onMapStatusChangeFinish(status: MapStatus?) {
             }
 
@@ -152,7 +151,7 @@ fun MapLocationSelectScreen(
                 contentDescription = null
             )
         }
-        LocateNow(
+        ScrollMapIcon(
             Modifier
                 .align(Alignment.BottomEnd)
                 .padding(
@@ -165,7 +164,7 @@ fun MapLocationSelectScreen(
                     interactionSource = null,
                     indication = null
                 ) {
-                    MapControl.moveMapView(mapVew, point)
+                    mapVew.map.scrollMapView(point)
                 }
         )
 
@@ -215,7 +214,7 @@ fun MapLocationSelectScreen(
                     modifier = Modifier
                         .padding(horizontal = 15.dp)
                         .weight(1f)
-                        .onFocusChanged { focusState ->
+                        .onFocusChanged {
                         }
                         .fillMaxWidth(),
                     value = locateText,
@@ -248,11 +247,13 @@ fun MapLocationSelectScreen(
                         ) {
                             if (locateText.isBlank()) {
                                 scope.launch {
-                                    Toast.makeText(
-                                        context,
-                                        "位置名不能为空",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    StyleableToast.Builder(context)
+                                        .text("位置名不能为空")
+                                        .textColor(Color.White.toArgb())
+                                        .backgroundColor(Color(0xFF0091EA).toArgb())
+                                        .cornerRadius(36)
+                                        .gravity(Gravity.TOP)
+                                        .show()
                                 }
                             } else {
                                 commonViewModel.onNavEvent(NavEvent.BackPage)
@@ -287,7 +288,7 @@ fun MapLocationSelectScreen(
                                 indication = null
                             ) {
                                 locateText = item.name
-                                MapControl.moveMapView(mapVew, item.location)
+                                mapVew.map.scrollMapView(item.location)
                                 mapSelectViewModel.onStateChangeEvent(
                                     LocationState(
                                         item.name,
@@ -323,7 +324,7 @@ fun MapLocationSelectScreen(
                                 )
                             }
                             Text(
-                                text = LocateUtils.metersToKilometers(
+                                text = UnitCovertUtils.metersToKilometers(
                                     DistanceUtil.getDistance(
                                         point,
                                         item.location

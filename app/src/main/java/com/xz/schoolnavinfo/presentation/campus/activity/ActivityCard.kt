@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.xz.schoolnavinfo.common.net.montageCompleteUrl
+import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 
@@ -171,7 +171,7 @@ private fun ImageRow(
         modifier = Modifier.fillMaxWidth()
     ) {
         rowImageUrlList.forEach { image ->
-            val imgUrl = montageCompleteUrl(image)
+            val imgUrl = getImagesUrl(image)
             Image(
                 modifier = Modifier
                     .clip(RoundedCornerShape(5.dp))

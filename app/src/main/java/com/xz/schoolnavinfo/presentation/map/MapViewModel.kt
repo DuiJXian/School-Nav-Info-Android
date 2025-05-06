@@ -5,7 +5,6 @@ import android.app.Application
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.baidu.mapapi.bikenavi.BikeNavigateHelper
@@ -14,9 +13,18 @@ import com.baidu.mapapi.bikenavi.adapter.IBRoutePlanListener
 import com.baidu.mapapi.bikenavi.model.BikeRoutePlanError
 import com.baidu.mapapi.bikenavi.params.BikeNaviLaunchParam
 import com.baidu.mapapi.bikenavi.params.BikeRouteNodeInfo
+import com.baidu.mapapi.map.BaiduMap.OnMapClickListener
 import com.baidu.mapapi.map.BaiduMapOptions
+import com.baidu.mapapi.map.MapPoi
 import com.baidu.mapapi.map.MapView
+import com.baidu.mapapi.map.MyLocationConfiguration
+import com.baidu.mapapi.map.MyLocationData
 import com.baidu.mapapi.model.LatLng
+import com.baidu.mapapi.overlayutil.BikingRouteOverlay
+import com.baidu.mapapi.overlayutil.DrivingRouteOverlay
+import com.baidu.mapapi.overlayutil.OverlayManager
+import com.baidu.mapapi.overlayutil.WalkingRouteOverlay
+import com.baidu.mapapi.search.core.PoiDetailInfo
 import com.baidu.mapapi.search.core.PoiInfo
 import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener
 import com.baidu.mapapi.search.poi.PoiDetailResult
@@ -26,6 +34,19 @@ import com.baidu.mapapi.search.poi.PoiIndoorResult
 import com.baidu.mapapi.search.poi.PoiNearbySearchOption
 import com.baidu.mapapi.search.poi.PoiResult
 import com.baidu.mapapi.search.poi.PoiSearch
+import com.baidu.mapapi.search.route.BikingRoutePlanOption
+import com.baidu.mapapi.search.route.BikingRouteResult
+import com.baidu.mapapi.search.route.DrivingRoutePlanOption
+import com.baidu.mapapi.search.route.DrivingRouteResult
+import com.baidu.mapapi.search.route.IndoorRouteResult
+import com.baidu.mapapi.search.route.IntegralRouteResult
+import com.baidu.mapapi.search.route.MassTransitRouteResult
+import com.baidu.mapapi.search.route.OnGetRoutePlanResultListener
+import com.baidu.mapapi.search.route.PlanNode
+import com.baidu.mapapi.search.route.RoutePlanSearch
+import com.baidu.mapapi.search.route.TransitRouteResult
+import com.baidu.mapapi.search.route.WalkingRoutePlanOption
+import com.baidu.mapapi.search.route.WalkingRouteResult
 import com.baidu.mapapi.utils.DistanceUtil
 import com.baidu.mapapi.walknavi.WalkNavigateHelper
 import com.baidu.mapapi.walknavi.adapter.IWEngineInitListener
@@ -36,8 +57,13 @@ import com.baidu.mapapi.walknavi.params.WalkRouteNodeInfo
 import com.baidu.navisdk.adapter.BNRoutePlanNode
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
 import com.baidu.navisdk.adapter.IBNRoutePlanManager
+import com.xz.schoolnavinfo.common.utils.LocationUtils
+import com.xz.schoolnavinfo.common.utils.defaultLocation
+import com.xz.schoolnavinfo.domain.data.entity.LocalPoiInfo
 import com.xz.schoolnavinfo.domain.use_case.LocalPoiInfoUseCases
-import com.xz.schoolnavinfo.presentation.common.baidu.map.RoutePlanType
+import com.xz.schoolnavinfo.presentation.common.baidu.map.adjustMapZoom
+import com.xz.schoolnavinfo.presentation.common.baidu.map.scrollMapView
+import com.xz.schoolnavinfo.presentation.common.baidu.map.setStyle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,81 +71,174 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
+enum class RouteType(val title: String) {
+    Walking("步行"), Biking("骑行"), Driving("驾车")
+}
+
+data class MapViewDataUiState(
+    val searchPoiInfos: List<PoiInfo> = emptyList(),
+    val poiDetailInfo: PoiDetailInfo = PoiDetailInfo(),
+    val localPoiInfos: List<LocalPoiInfo> = emptyList(),
+    val localPoiInfo: LocalPoiInfo? = null,
+    val routeType: RouteType = RouteType.Walking,
+    val searchText: String = "",
+    val routeDistance: String = "0",
+    val routeDuration: String = "0",
+    val currentPoiUid: String = "0",
+)
+
+data class MapViewShowUiState(
+    val showPoiSearchData: Boolean = false,
+    val showRoutePlan: Boolean = false,
+    val showPoiDetail: Boolean = false,
+    val showQuickEdit: Boolean = false
+)
+
+sealed class MapViewUiEvent {
+    data class CalculateMsg(val msg: String) : MapViewUiEvent()
+    data class EnterNav(val routeType: RouteType) : MapViewUiEvent()
+}
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val localPoiInfoUseCases: LocalPoiInfoUseCases,
     private val application: Application
 ) : AndroidViewModel(application) {
-
     @SuppressLint("StaticFieldLeak")
-    private val _map = MapView(application, BaiduMapOptions().apply {
+    private val _mapView = MapView(application, BaiduMapOptions().apply {
         zoomControlsEnabled(false)
     })
-    val map get() = _map
-
-    private val _poiState = MutableStateFlow(PoiState())
-    val poiState: StateFlow<PoiState> = _poiState
-
-    private val _routeState = mutableStateOf(RouteState())
-    val routeState = _routeState
+    val mapView get() = _mapView
+    private val baiduMap = mapView.map
 
     private var getLocalPoiInfoJob: Job? = null
 
-    private val _localPoiState = MutableStateFlow(LocalPoiState())
-    val localPoiState: StateFlow<LocalPoiState> = _localPoiState
+    private val _dataState = MutableStateFlow(MapViewDataUiState())
+    val dataState: StateFlow<MapViewDataUiState> = _dataState.asStateFlow()
 
-    private val _navEvent = MutableSharedFlow<NavMsgEvent>()
-    val navEvent: SharedFlow<NavMsgEvent> = _navEvent.asSharedFlow()
+    private val _showState = MutableStateFlow(MapViewShowUiState())
+    val showState: StateFlow<MapViewShowUiState> = _showState
 
+    private val _uiEvent = MutableSharedFlow<MapViewUiEvent>()
+    val uiEvent: SharedFlow<MapViewUiEvent> = _uiEvent.asSharedFlow()
+
+    private var overlayManager: OverlayManager? = null
+    private var centerLocation: LatLng = defaultLocation
 
     init {
         getLocalPoiInfos()
-        viewModelScope.launch {
-            _poiState.collectLatest {
-                if (it.searchText.isBlank()) {
-                    clearPoiInfoList()
+        initMap()
+    }
+
+    private fun initMap() {
+        baiduMap.isMyLocationEnabled = true
+        baiduMap.setMyLocationConfiguration(
+            MyLocationConfiguration.Builder(MyLocationConfiguration.LocationMode.NORMAL, true)
+                .build()
+        )
+
+        baiduMap.setOnMapClickListener(object : OnMapClickListener {
+            override fun onMapClick(point: LatLng?) {}
+            override fun onMapPoiClick(poi: MapPoi) {
+                searchPoiDetail(poi.uid)
+                _dataState.update {
+                    it.copy(currentPoiUid = poi.uid)
                 }
             }
+        })
+    }
+
+    fun composableOver(isDark: Boolean, location: LatLng){
+        mapView.setStyle(application, isDark)
+        scrollMap(location, false)
+        setCenterLocation(location)
+    }
+
+
+    fun setCenterLocation(location: LatLng) {
+        centerLocation = location
+    }
+
+    fun searchTextChange(text: String, location: LatLng) {
+        _dataState.update { it.copy(searchText = text) }
+        _showState.update { it.copy(showPoiSearchData = text.isNotBlank()) }
+        poiSearch.searchNearby(
+            PoiNearbySearchOption().location(location).radius(15000).keyword(text)
+        )
+    }
+
+    fun clearSearchText() {
+        _dataState.update {
+            it.copy(searchPoiInfos = emptyList())
         }
     }
 
-    private val handler = object : Handler(Looper.getMainLooper()) {
-        override fun handleMessage(msg: Message) {
-            viewModelScope.launch {
-                when (msg.what) {
-                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_START -> {
-                        _navEvent.emit(NavMsgEvent.CalculateMsg("算路开始"))
-                    }
+    fun searchTextFocusChange(isFocus: Boolean) {
+        _showState.update { it.copy(showPoiSearchData = isFocus) }
+    }
 
-                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_SUCCESS -> {
-                        _navEvent.emit(NavMsgEvent.CalculateMsg("算路成功"))
-                    }
+    fun clickSearchItem(location: LatLng, uid: String) {
+        setCenterLocation(location)
+        searchPoiDetail(uid)
+    }
 
-                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_FAILED -> {
-                        _navEvent.emit(NavMsgEvent.CalculateMsg("算路失败"))
-                    }
+    fun clickQuickViaItem(location: LatLng, uid: String) {
+        searchPoiDetail(uid)
+        setCenterLocation(location)
+    }
 
-                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_TO_NAVI -> {
-                        _navEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Driving))
-                    }
-
-                    else -> {}
-                }
-            }
+    fun longClickQuickViaItem(uid: String) {
+        _showState.update { it.copy(showQuickEdit = true) }
+        _dataState.update {
+            it.copy(
+                currentPoiUid = uid,
+                localPoiInfo = _dataState.value.localPoiInfos.find { res -> res.uid == uid })
         }
+    }
+
+    fun setShowQuickEdit(value: Boolean) {
+        _showState.update { it.copy(showQuickEdit = value) }
+    }
+
+    fun scrollMap(location: LatLng, animate: Boolean = false) {
+        mapView.map.scrollMapView(location, animate = animate)
+    }
+
+    fun updateMapViewLocation(location: LatLng, direction: Float) {
+        viewModelScope.launch { LocationUtils.saveLocation(application, location) }
+        mapView.map.setMyLocationData(
+            MyLocationData.Builder().latitude(location.latitude)
+                .longitude(location.longitude).direction(direction)
+                .build()
+        )
+    }
+
+    fun searchPoiDetail(poiUid: String) {
+        poiSearch.searchPoiDetail(PoiDetailSearchOption().poiUids(poiUid))
+    }
+
+    fun setShowPoiDetail(show: Boolean) {
+        _showState.update { it.copy(showPoiDetail = show) }
+    }
+
+    fun closeRoutePlan(){
+        _showState.update { it.copy(showRoutePlan = false) }
+        overlayManager?.removeFromMap()
+        _dataState.update { it.copy(routeType = RouteType.Walking) }
     }
 
     //导航事件
-    fun onGoNavEvent(stPoint: LatLng, endPoint: LatLng, routePlanType: RoutePlanType) {
-        when (routePlanType) {
-            is RoutePlanType.Walking -> {
+    fun onNavEvent(stPoint: LatLng, endPoint: LatLng) {
+        when (_dataState.value.routeType) {
+            RouteType.Walking -> {
                 if (BikeNavigateHelper.getInstance().isInitEngine) {
                     BikeNavigateHelper.getInstance().unInitNaviEngine()
                 }
@@ -143,7 +262,7 @@ class MapViewModel @Inject constructor(
 
                                     override fun onRoutePlanSuccess() {
                                         viewModelScope.launch {
-                                            _navEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Walking))
+                                            _uiEvent.emit(MapViewUiEvent.EnterNav(RouteType.Walking))
                                         }
                                     }
 
@@ -157,7 +276,7 @@ class MapViewModel @Inject constructor(
                     })
             }
 
-            is RoutePlanType.Biking -> {
+            RouteType.Biking -> {
                 if (WalkNavigateHelper.getInstance().isInitEngine) {
                     WalkNavigateHelper.getInstance().unInitNaviEngine()
                 }
@@ -183,7 +302,7 @@ class MapViewModel @Inject constructor(
 
                                     override fun onRoutePlanSuccess() {
                                         viewModelScope.launch {
-                                            _navEvent.emit(NavMsgEvent.EnterNav(RoutePlanType.Biking))
+                                            _uiEvent.emit(MapViewUiEvent.EnterNav(RouteType.Biking))
                                         }
                                     }
 
@@ -199,7 +318,7 @@ class MapViewModel @Inject constructor(
 
             }
 
-            is RoutePlanType.Driving -> {
+            RouteType.Driving -> {
                 val list: MutableList<BNRoutePlanNode> = mutableListOf(
                     BNRoutePlanNode.Builder()
                         .longitude(stPoint.longitude)
@@ -224,188 +343,216 @@ class MapViewModel @Inject constructor(
     private fun getLocalPoiInfos() {
         getLocalPoiInfoJob?.cancel()
         getLocalPoiInfoJob = localPoiInfoUseCases.getMPoiInfos()
-            .onEach { localPoiInfos ->
-                _localPoiState.value = localPoiState.value.copy(
-                    localPoiInfos = localPoiInfos
-                )
+            .onEach { items ->
+                _dataState.update {
+                    it.copy(localPoiInfos = items)
+                }
             }.launchIn(viewModelScope)
     }
 
-    //本地兴趣点事件
-    fun onLocalPoiInfoEvent(event: LocalInfoEvent) {
-        when (event) {
-            is LocalInfoEvent.DeleteMPoiInfo -> {
-                viewModelScope.launch {
-                    localPoiInfoUseCases.deleteMPoiInfo(event.mPoiInfo)
-                }
-            }
-
-            is LocalInfoEvent.InsertMPoiInfo -> {
-                viewModelScope.launch {
-                    localPoiInfoUseCases.insertMPoiInfo(event.mPoiInfo)
-                    _localPoiState.value = localPoiState.value.copy(
-                        isFavoritePoi = true
-                    )
-                }
-            }
-
-            is LocalInfoEvent.GetMPoiInfoByUid -> {
-                getMPoiInfoByUid(event.uid)
-            }
-
-            is LocalInfoEvent.UpdateMPoiInfo -> {
-                viewModelScope.launch {
-                    localPoiInfoUseCases.updateMPoiInfo(event.mPoiInfo)
-                }
-            }
+    fun deleteLocalPoiInfo(localPoiInfo: LocalPoiInfo) {
+        viewModelScope.launch {
+            localPoiInfoUseCases.deleteMPoiInfo(localPoiInfo)
+            setShowQuickEdit(false)
         }
     }
 
-    //通过UID获取兴趣点
-    private fun getMPoiInfoByUid(uid: String) {
+    fun updateLocalPoiInfo(localPoiInfo: LocalPoiInfo) {
         viewModelScope.launch {
-            _localPoiState.value = localPoiState.value.copy(
-                favoritePoi = localPoiInfoUseCases.getMPoiInfoByUid(uid)
+            localPoiInfoUseCases.updateLocalPoiInfo(localPoiInfo)
+            setShowQuickEdit(false)
+        }
+    }
+
+    fun addOrRemoveQuickViaItem() {
+        val localPoiInfo = _dataState.value.localPoiInfo
+        if (_dataState.value.localPoiInfos.find { it.uid == localPoiInfo?.uid } == null) {
+            viewModelScope.launch {
+                val poiInfo = LocalPoiInfo(
+                    uid = _dataState.value.poiDetailInfo.uid,
+                    name = _dataState.value.poiDetailInfo.name,
+                    order = _dataState.value.localPoiInfos.size + 1,
+                    address = _dataState.value.poiDetailInfo.address,
+                    telephone = _dataState.value.poiDetailInfo.telephone
+                )
+                localPoiInfoUseCases.insertMPoiInfo(poiInfo)
+                _dataState.update { it.copy(localPoiInfo = poiInfo) }
+            }
+        } else if (localPoiInfo != null) {
+            deleteLocalPoiInfo(localPoiInfo)
+            _dataState.update { it.copy(localPoiInfo = null) }
+        }
+    }
+
+    fun startRoutePlan(routeType: RouteType, startLocation: LatLng, endLocation: LatLng) {
+        _dataState.update { it.copy(routeType = routeType) }
+        val routeStartNode: PlanNode = PlanNode.withLocation(startLocation)
+        val routeEndNode: PlanNode = PlanNode.withLocation(endLocation)
+        when (routeType) {
+            RouteType.Walking -> {
+                routePlanSearch.walkingSearch(
+                    WalkingRoutePlanOption()
+                        .from(routeStartNode)
+                        .to(routeEndNode)
+                )
+            }
+
+            RouteType.Biking -> {
+                routePlanSearch.bikingSearch(
+                    BikingRoutePlanOption()
+                        .from(routeStartNode)
+                        .to(routeEndNode)
+                )
+            }
+
+            RouteType.Driving -> {
+                routePlanSearch.drivingSearch(
+                    DrivingRoutePlanOption()
+                        .from(routeStartNode)
+                        .to(routeEndNode)
+                )
+            }
+        }
+        setShowPoiDetail(false)
+    }
+
+    private fun dealRouteRes(
+        routeType: RouteType,
+        walkingRouteResult: WalkingRouteResult? = null,
+        bikingRouteResult: BikingRouteResult? = null,
+        drivingRouteResult: DrivingRouteResult? = null
+    ) {
+        var distance = "0"
+        var duration = "0"
+        overlayManager?.removeFromMap()
+        when (routeType) {
+            RouteType.Walking -> {
+                val overlay = WalkingRouteOverlay(mapView.map)
+                overlayManager = overlay
+                if (walkingRouteResult != null && walkingRouteResult.routeLines.size > 0) {
+                    val routeLine = walkingRouteResult.routeLines[0]
+                    overlay.setData(routeLine)
+                    distance = routeLine.distance.toString()
+                    duration = routeLine.duration.toString()
+                }
+            }
+
+            RouteType.Biking -> {
+                val overlay = BikingRouteOverlay(mapView.map)
+                overlayManager = overlay
+                if (bikingRouteResult != null && bikingRouteResult.routeLines.size > 0) {
+                    val routeLine = bikingRouteResult.routeLines[0]
+                    overlay.setData(routeLine)
+                    distance = routeLine.distance.toString()
+                    duration = routeLine.duration.toString()
+                }
+            }
+
+            RouteType.Driving -> {
+                val overlay = DrivingRouteOverlay(mapView.map)
+                overlayManager = overlay
+                if (drivingRouteResult != null && drivingRouteResult.routeLines.size > 0) {
+                    val routeLine = drivingRouteResult.routeLines[0]
+                    overlay.setData(routeLine)
+                    distance = routeLine.distance.toString()
+                    duration = routeLine.duration.toString()
+                }
+            }
+        }
+        overlayManager?.addToMap()
+        overlayManager?.zoomToSpan()
+        baiduMap.adjustMapZoom(-0.5f)
+        _dataState.update {
+            it.copy(
+                routeDistance = distance,
+                routeDuration = duration,
             )
         }
-        _localPoiState.value = localPoiState.value.copy(
-            isFavoritePoi = localPoiState.value.localPoiInfos.any { localPoiInfo ->
-                localPoiInfo.uid == uid
-            }
-        )
+        _showState.update { it.copy(showRoutePlan = true) }
     }
 
+    private val routePlanListener = object : OnGetRoutePlanResultListener {
+        override fun onGetWalkingRouteResult(res: WalkingRouteResult) {
+            dealRouteRes(routeType = RouteType.Walking, walkingRouteResult = res)
+        }
 
-    //兴趣点检索事件
-    fun onPoiEvent(event: PoiEvent) {
-        when (event) {
-            is PoiEvent.SearchTextChange -> {
-                _poiState.value = poiState.value.copy(
-                    searchText = event.text
-                )
-                getPoiInfoList(event.text)
-            }
+        override fun onGetTransitRouteResult(p0: TransitRouteResult?) {}
+        override fun onGetMassTransitRouteResult(p0: MassTransitRouteResult?) {}
+        override fun onGetDrivingRouteResult(res: DrivingRouteResult) {
+            dealRouteRes(routeType = RouteType.Driving, drivingRouteResult = res)
+        }
 
-            is PoiEvent.ClearSearchText -> {
-                _poiState.value = poiState.value.copy(
-                    searchText = ""
-                )
-            }
+        override fun onGetIndoorRouteResult(p0: IndoorRouteResult?) {}
+        override fun onGetBikingRouteResult(res: BikingRouteResult) {
+            dealRouteRes(routeType = RouteType.Biking, bikingRouteResult = res)
+        }
 
-            is PoiEvent.ClearInfoList -> {
-                clearPoiInfoList()
-            }
+        override fun onGetIntegralRouteResult(p0: IntegralRouteResult?) {}
+    }
 
-            is PoiEvent.DestroyPoiSearch -> {
-                poiSearch.destroy()
-            }
+    private val handler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
+            viewModelScope.launch {
+                when (msg.what) {
+                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_START -> {
+                        _uiEvent.emit(MapViewUiEvent.CalculateMsg("算路开始"))
+                    }
 
-            is PoiEvent.GetPoiDetailInfo -> {
-                getMPoiInfoByUid(event.poiUid)
-                getPoiDetail(event.poiUid)
-            }
+                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_SUCCESS -> {
+                        _uiEvent.emit(MapViewUiEvent.CalculateMsg("算路成功"))
+                    }
 
-            is PoiEvent.CloseDetailCard -> {
-                _poiState.value = poiState.value.copy(
-                    isShowDetailCard = false
-                )
-            }
+                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_FAILED -> {
+                        _uiEvent.emit(MapViewUiEvent.CalculateMsg("算路失败"))
+                    }
 
-            is PoiEvent.CenterPointChange -> {
-                _poiState.value = poiState.value.copy(
-                    centerPoint = event.centerPoint
-                )
-            }
+                    IBNRoutePlanManager.MSG_NAVI_ROUTE_PLAN_TO_NAVI -> {
+                        _uiEvent.emit(MapViewUiEvent.EnterNav(RouteType.Driving))
+                    }
 
-            is PoiEvent.FocusedChange -> {
-                _poiState.value = poiState.value.copy(
-                    isFocused = event.isFocused
-                )
-            }
-
-            is PoiEvent.ShowSearchPoi -> {
-                _poiState.value = poiState.value.copy(
-                    isShowSearch = event.isShow
-                )
+                    else -> {}
+                }
             }
         }
     }
 
-    //导航事件
-    fun onRouteEvent(event: RouteEvent) {
-        when (event) {
-            is RouteEvent.DisAndDurChange -> {
-                _routeState.value = routeState.value.copy(
-                    routeDistance = event.distance,
-                    routeDuration = event.duration
-                )
-            }
-
-            is RouteEvent.whowRouteMenu -> {
-                _routeState.value = routeState.value.copy(
-                    isShowRoutePlan = event.isShow
-                )
-            }
-        }
+    private val routePlanSearch: RoutePlanSearch = RoutePlanSearch.newInstance().apply {
+        setOnGetRoutePlanResultListener(routePlanListener)
     }
-
 
     private val poiSearchListener = object : OnGetPoiSearchResultListener {
         override fun onGetPoiResult(result: PoiResult) {
-            val poiList: MutableList<PoiInfo> = mutableListOf()
             if (result.allPoi != null) {
-                for (poi in result.allPoi) {
-                    poi.distance = DistanceUtil
-                        .getDistance(_poiState.value.centerPoint, poi.location)
-                        .toInt()
-                    poiList.add(poi)
-                }
-                _poiState.value = poiState.value.copy(
-                    poiInfoList = poiList
-                )
+                _dataState.update { it.copy(searchPoiInfos = result.allPoi) }
             }
         }
 
-        override fun onGetPoiDetailResult(result: PoiDetailResult) {}
+        @Deprecated("Deprecated in Java")
+        override fun onGetPoiDetailResult(p0: PoiDetailResult?) {}
+
         override fun onGetPoiDetailResult(result: PoiDetailSearchResult?) {
             if (result != null) {
                 for (item in result.poiDetailInfoList) {
-                    item.distance = DistanceUtil
-                        .getDistance(_poiState.value.centerPoint, item.location)
-                        .toInt()
-                    _poiState.value = poiState.value.copy(
-                        poiDetailInfo = item,
-                        isShowDetailCard = true
-                    )
+                    val localPoiInfo = _dataState.value.localPoiInfos.find { it.uid == item.uid }
+                    item.image = localPoiInfo?.iconPic
+                    item.distance = DistanceUtil.getDistance(centerLocation, item.location).toInt()
+
+                    _dataState.update { it.copy(poiDetailInfo = item, localPoiInfo = localPoiInfo) }
+                    setShowPoiDetail(true)
                 }
             }
         }
 
         override fun onGetPoiIndoorResult(result: PoiIndoorResult) {}
     }
+
     private val poiSearch = PoiSearch.newInstance().apply {
         setOnGetPoiSearchResultListener(poiSearchListener)
     }
 
-    private fun getPoiInfoList(keyword: String) {
-        poiSearch.searchNearby(
-            PoiNearbySearchOption().location(_poiState.value.centerPoint).radius(15000)
-                .keyword(keyword)
-        )
-    }
-
-    private fun getPoiDetail(poiUid: String) {
-        poiSearch.searchPoiDetail(PoiDetailSearchOption().poiUids(poiUid))
-    }
-
-    private fun clearPoiInfoList() {
-        _poiState.value = poiState.value.copy(
-            poiInfoList = emptyList()
-        )
-    }
 
     override fun onCleared() {
         super.onCleared()
-        map.onDestroy()
+        mapView.onDestroy()
     }
 }

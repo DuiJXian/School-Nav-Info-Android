@@ -2,7 +2,7 @@ package com.xz.schoolnavinfo.presentation.my
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xz.schoolnavinfo.common.model.BaseResponse
+import com.xz.schoolnavinfo.domain.data.resp.BaseResponse
 import com.xz.schoolnavinfo.common.net.AuthInterceptor
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
 import com.xz.schoolnavinfo.domain.use_case.FileUseCases

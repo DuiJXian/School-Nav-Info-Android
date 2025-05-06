@@ -3,7 +3,7 @@ package com.xz.schoolnavinfo.presentation.campus.stuff.detail
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xz.schoolnavinfo.common.event.GlobalFlow
+import com.xz.schoolnavinfo.common.flow.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
 import com.xz.schoolnavinfo.domain.data.dto.StuffDTO
 import com.xz.schoolnavinfo.domain.use_case.StuffUseCases

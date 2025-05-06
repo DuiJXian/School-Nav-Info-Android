@@ -1,6 +1,6 @@
 package com.xz.schoolnavinfo.domain.use_case
 
-import com.xz.schoolnavinfo.common.model.BaseResponse
+import com.xz.schoolnavinfo.domain.data.resp.BaseResponse
 import com.xz.schoolnavinfo.domain.data.dto.StuffDTO
 import com.xz.schoolnavinfo.domain.data.entity.Stuff
 import com.xz.schoolnavinfo.domain.repository.StuffRepository
@@ -29,7 +29,7 @@ class StuffUseCases @Inject constructor(
         return stuffRepository.getStuffById(id)
     }
 
-    suspend fun searchStuffList(text: String): BaseResponse<List<StuffDTO>>{
+    suspend fun searchStuffList(text: String): BaseResponse<List<StuffDTO>> {
         return stuffRepository.searchStuffList(text)
     }
 }
