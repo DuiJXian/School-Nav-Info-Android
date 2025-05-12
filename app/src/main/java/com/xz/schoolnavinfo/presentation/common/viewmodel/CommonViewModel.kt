@@ -52,15 +52,10 @@ class CommonViewModel @Inject constructor(
         }
     }
 
-    fun onHomePage(page: Int) {
-        viewModelScope.launch {
-            _homePageChange.emit(page)
-        }
-    }
-
     fun onRoutePlan(json: String) {
         val location = gson.fromJson(json, LatLng::class.java)
         viewModelScope.launch {
+            _homePageChange.emit(0)
             _routePlanFlow.emit(location)
         }
     }
@@ -112,7 +107,7 @@ class CommonViewModel @Inject constructor(
                 }
 
                 is NavEvent.PublishArticle -> {
-                    _navEventFlow.emit(NavEvent.PublishArticle(event.campusMenu))
+                    _navEventFlow.emit(NavEvent.PublishArticle(event.articleType))
                 }
 
                 is NavEvent.BackPage -> {

@@ -35,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -246,6 +247,7 @@ fun QuickViaBarPoiEdit(
     val context = LocalContext.current
     var imagePath by remember { mutableStateOf(localPoiInfo.iconPic) }
     var poiName by remember { mutableStateOf(localPoiInfo.name) }
+    var editText by remember { mutableStateOf(poiName) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
@@ -296,14 +298,23 @@ fun QuickViaBarPoiEdit(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 CustomTextFiled(
-                    borderColor = appColors.greyMedium,
-                    containerColor = appColors.bgPrimary,
-                    defaultText = localPoiInfo.name,
-                    onFocusContainerColor = appColors.bgPrimary,
-                    alpha = 0.5f,
-                    height = 46.dp,
-                    icon = Icons.Default.Edit
+                    Modifier
+                        .fillMaxWidth()
+                        .height(42.dp)
+                        .border(1.dp, appColors.greyMedium.copy(.5f), RoundedCornerShape(10.dp)),
+                    text = editText,
+                    leftSection = {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(22.dp),
+                            tint = appColors.greyMedium
+                        )
+                    }
                 ) {
+                    editText = it
                     poiName = it
                 }
 

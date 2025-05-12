@@ -1,6 +1,5 @@
 package com.xz.schoolnavinfo.presentation.campus.activity
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
@@ -8,9 +7,18 @@ import com.xz.schoolnavinfo.data.dao.remote.request.ArticleRequest
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.use_case.ArticleUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ActivityUiState(
+    val activities: List<ArticleDTO> = emptyList(),
+    val banners: List<ArticleDTO> = emptyList(),
+    val isRefreshing: Boolean = false
+)
 
 @HiltViewModel
 class ActivityViewModel @Inject constructor(
@@ -19,37 +27,42 @@ class ActivityViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    private val _activityList = mutableStateListOf<ArticleDTO>()
-    val activityList = _activityList
+    private val _uiState = MutableStateFlow(ActivityUiState())
+    val uiState: StateFlow<ActivityUiState> = _uiState.asStateFlow()
 
-    private val _bannerList = mutableStateListOf<ArticleDTO>()
-    val bannerList = _bannerList
+    private var activityRequest = ArticleRequest()
 
-    private var discussRequest = ArticleRequest()
-    var hasMore = true
+    private var hasMore = true
     private val addedArticleIds = mutableSetOf<String>()
 
     init {
-        getActivity(discussRequest)
-        getBanner()
+        refreshData()
     }
 
-    fun onGetBannerEvent(){
-        getBanner()
-    }
-
-    fun onGetActivityEvent() {
-        discussRequest.pageNum = 1
-        addedArticleIds.clear()
-        _bannerList.clear()
-        getActivity(discussRequest)
-    }
-
-    fun onGetMoreActivityEvent() {
-        if (hasMore) {
-            discussRequest.pageNum++
-            getActivity(discussRequest)
+    fun refreshData() {
+        _uiState.update {
+            it.copy(
+                activities = emptyList(),
+                banners = emptyList(),
+                isRefreshing = true
+            )
         }
+        firstGetActivityArticles()
+        getBanner()
+    }
+
+    private fun firstGetActivityArticles() {
+        _uiState.update { it.copy(activities = emptyList()) }
+        activityRequest.pageNum = 1
+        addedArticleIds.clear()
+        getActivityArticles()
+    }
+
+    fun getMoreActivityArticles() {
+        if (hasMore) {
+            activityRequest.pageNum++
+        }
+        getActivityArticles()
     }
 
     private fun getBanner() {
@@ -57,32 +70,34 @@ class ActivityViewModel @Inject constructor(
             netExceptionManager.safeApiCall {
                 val resp = articleUseCases.getActivityBanner()
                 if (resp.code == "success") {
-                    _bannerList.clear()
-                    _bannerList.addAll(resp.data)
+                    _uiState.update { it.copy(banners = resp.data) }
                 }
             }
 
         }
     }
 
-    private fun getActivity(request: ArticleRequest) {
+    private fun getActivityArticles() {
         viewModelScope.launch {
             netExceptionManager.safeApiCall {
-                val data = articleUseCases.getActivityArticleList(request).data
-                val newDataList =
-                    if (request.pageNum == 1) data.list.reversed() else data.list //始终将最新数据放到前面
-                for (item in newDataList) {
-                    if ((item.article?.id?.isNotBlank() == true) && addedArticleIds.add(item.article.id)) {
-                        if (data.pageNum == 1) {
-                            _activityList.add(0, item) // 刷新时，直接将新的数据添加到头部
-                        } else {
-                            _activityList.add(item) // 添加到尾部
-                        }
+                val respData = articleUseCases.getActivityArticleList(activityRequest).data
+
+                val addArticles: MutableList<ArticleDTO> = mutableListOf()
+                respData.list.map {
+                    if (!addedArticleIds.contains(it.article?.id) && it.article?.id != null) {
+                        addArticles.add(it)
+                        addedArticleIds.add(it.article.id)
                     }
                 }
-                if (data.pageNum * data.pageSize >= data.total) {
-                    hasMore = false
+
+                _uiState.update {
+                    it.copy(
+                        activities = uiState.value.activities + addArticles,
+                        isRefreshing = false
+                    )
                 }
+
+                hasMore = (respData.pageNum * respData.pageSize < respData.total)
             }
         }
     }

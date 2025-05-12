@@ -18,8 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import com.xz.schoolnavinfo.common.exception.NetExceptionEvent
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
-import com.xz.schoolnavinfo.presentation.campus.CampusMenu
-import com.xz.schoolnavinfo.presentation.campus.detail.ArticleDetailScreen
+import com.xz.schoolnavinfo.presentation.campus.article.ArticleDetailScreen
 import com.xz.schoolnavinfo.presentation.campus.publish.PublishArticleViewModel
 import com.xz.schoolnavinfo.presentation.campus.publish.PublishDiscussScreen
 import com.xz.schoolnavinfo.presentation.campus.stuff.detail.StuffDetailScreen
@@ -46,7 +45,7 @@ fun NavScreen(
 
     var stuffDetailId by remember { mutableStateOf("") }
 
-    var articlePubMenu by remember { mutableStateOf<CampusMenu?>(null) }
+    var articleType by remember { mutableStateOf<ArticleType>(ArticleType.Discuss) }
 
     var articleDetailType by remember { mutableStateOf<ArticleType?>(null) }
 
@@ -59,7 +58,7 @@ fun NavScreen(
                 }
 
                 is NavEvent.PublishArticle -> {
-                    articlePubMenu = it.campusMenu
+                    articleType = it.articleType
                     navController.navigate(Screen.PublishArticle.route)
                 }
 
@@ -108,6 +107,7 @@ fun NavScreen(
 
                     }
                 }
+
                 else -> {
                     showSnackBarMsg(it.msg, snackBarHostState)
                 }
@@ -137,14 +137,11 @@ fun NavScreen(
             composable(
                 route = Screen.PublishArticle.route,
             ) {
-                articlePubMenu?.let {
-                    PublishDiscussScreen(
-                        commonViewModel = commonViewModel,
-                        publishArticleViewModel = publishArticleViewModel,
-                        campusMenu = it
-                    )
-                }
-
+                PublishDiscussScreen(
+                    commonViewModel = commonViewModel,
+                    publishArticleViewModel = publishArticleViewModel,
+                    articleType = articleType
+                )
             }
             composable(route = Screen.ImagePreview.route) {
                 ImagePreview(

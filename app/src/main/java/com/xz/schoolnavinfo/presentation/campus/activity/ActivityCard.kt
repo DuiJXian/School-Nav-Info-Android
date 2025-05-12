@@ -6,9 +6,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -26,11 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.common.net.getImagesUrl
+import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 
 @Composable
 fun ActivityCard(
+    modifier: Modifier = Modifier,
     articleDTO: ArticleDTO,
     onImageClick: (String) -> Unit,
     onLocation: (String) -> Unit,
@@ -39,71 +44,51 @@ fun ActivityCard(
     val article = articleDTO.article
     val imageList = articleDTO.imageList
     Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
+        modifier = modifier
             .background(appColors.bgPrimary)
             .fillMaxWidth()
             .padding(10.dp),
     ) {
+        //标题
         if (article?.title?.isNotBlank() == true) {
-            Row(
-                modifier = Modifier
-                    .padding(top = 5.dp)
-            ) {
-                Text(
-                    text = article.title,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(
-                        color = appColors.fontPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
+            Text(
+                text = article.title,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(
+                    color = appColors.fontPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
                 )
-            }
 
+            )
         }
-
+        //正文
         if (article?.content?.isNotBlank() == true) {
-            Row(
-                modifier = Modifier
-                    .padding(top = 3.dp)
-            ) {
-                Text(
-                    text = article.content,
-                    maxLines = 5,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(
-                        color = appColors.fontPrimary,
-                        fontSize = 16.sp,
-                    )
+            Text(
+                text = article.content,
+                maxLines = 5,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(
+                    color = appColors.fontPrimary,
+                    fontSize = 16.sp,
                 )
-            }
+            )
         }
+        //图片
         if (!imageList.isNullOrEmpty()) {
-            Row(
-                modifier = Modifier
-                    .padding(top = 5.dp)
-            ) {
-                ImageGrid(imageList = imageList.filterNot { it.contains("banner") }) {
-                    onImageClick(it)
-                }
+            Spacer(Modifier.height(3.dp))
+            ImageGrid(imageList = imageList.filterNot { it.contains("banner") }) {
+                onImageClick(it)
             }
         }
-
-        //位置
-        if(article?.address?.isNotBlank() == true){
+        //地址
+        if (article?.address?.isNotBlank() == true) {
+            Spacer(Modifier.height(5.dp))
             Row(
                 modifier = Modifier
-                    .padding(top = 10.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(appColors.greyMedium.copy(.5f))
-                    .clickable(
-                        interactionSource = null,
-                        indication = null
-                    ) {
-                        article.location?.let { onLocation(it) }
-                    },
+                    .clickable { article.location?.let { onLocation(it) } },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -126,6 +111,19 @@ fun ActivityCard(
                     )
                 )
             }
+        }
+
+        Spacer(Modifier.height(5.dp))
+        Row {
+            Text(
+                "${articleDTO.userInfo?.nickname}",
+                style = TextStyle(color = appColors.greyMedium)
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "${article?.createTime?.let { TimeUtils.formatTimeDifference(it) }}",
+                style = TextStyle(color = appColors.greyMedium)
+            )
         }
     }
 }

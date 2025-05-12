@@ -5,14 +5,12 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
@@ -32,8 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +41,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.presentation.campus.activity.ActivityScreen
 import com.xz.schoolnavinfo.presentation.campus.discuss.DiscussScreen
 import com.xz.schoolnavinfo.presentation.campus.stuff.StuffScreen
@@ -70,9 +67,9 @@ fun CampusScreen(
         val lifecycleObserver = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    Log.e("TAG", "CampusScreen: onGetUserInfoEvent")
                     commonViewModel.onGetUserInfoEvent()
                 }
+
                 else -> Unit
             }
         }
@@ -84,18 +81,17 @@ fun CampusScreen(
 
     Scaffold(
         floatingActionButton = {
-            if (pagerState.currentPage == 1 ||
-                pagerState.currentPage == 2 ||
+            if (pagerState.currentPage != 0 ||
                 (pagerState.currentPage == 0 && userInfo.role == "ADMIN")
             ) {
                 FloatingActionButton(
                     modifier = Modifier
                         .size(46.dp),
                     onClick = {
-                        if (pagerState.currentPage == 0 || pagerState.currentPage ==1){
-                            commonViewModel.onNavEvent(NavEvent.PublishArticle(tabTitles[pagerState.currentPage]))
-                        }else{
-                            commonViewModel.onNavEvent(NavEvent.PublishStuff)
+                        when(pagerState.currentPage){
+                            0 -> { commonViewModel.onNavEvent(NavEvent.PublishArticle(ArticleType.Activity)) }
+                            1 -> { commonViewModel.onNavEvent(NavEvent.PublishArticle(ArticleType.Discuss)) }
+                            2 -> { commonViewModel.onNavEvent(NavEvent.PublishStuff) }
                         }
                     },
                     shape = CircleShape,
@@ -186,7 +182,7 @@ fun CampusScreen(
                 modifier = Modifier
                     .fillMaxSize(),
                 state = pagerState,
-                beyondViewportPageCount = 2,
+                beyondViewportPageCount = 3,
             ) { page ->
                 when (page) {
                     0 -> ActivityScreen(commonViewModel = commonViewModel)

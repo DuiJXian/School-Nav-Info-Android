@@ -1,9 +1,8 @@
 package com.xz.schoolnavinfo.presentation.campus.publish
 
-import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.baidu.mapapi.model.LatLng
 import com.esafirm.imagepicker.model.Image
 import com.google.gson.Gson
 import com.xz.schoolnavinfo.common.flow.GlobalFlow
@@ -16,11 +15,53 @@ import com.xz.schoolnavinfo.domain.use_case.FileUseCases
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+
+sealed interface PublishArticleUiState {
+    val title: String
+    val content: String
+    val address: String
+    val location: LatLng?
+    val images: List<Image>
+    val isLoading: Boolean
+
+    data class Discuss(
+        override val title: String = "",
+        override val content: String = "",
+        override val address: String = "",
+        override val location: LatLng?,
+        override val images: List<Image> = emptyList(),
+        override val isLoading: Boolean = false
+
+    ) : PublishArticleUiState
+
+    data class Activity(
+        val banner: Image?,
+        val isAddBanner: Boolean = false,
+        override val title: String = "",
+        override val content: String = "",
+        override val address: String = "",
+        override val location: LatLng?,
+        override val images: List<Image> = emptyList(),
+        override val isLoading: Boolean = false
+    ) : PublishArticleUiState
+}
+
+inline fun <T> PublishArticleUiState.ifActivity(block: (PublishArticleUiState.Activity) -> T): T? {
+    return if (this is PublishArticleUiState.Activity) block(this) else null
+}
+
 
 @HiltViewModel
 class PublishArticleViewModel @Inject constructor(
@@ -29,165 +70,192 @@ class PublishArticleViewModel @Inject constructor(
     private val netExceptionManager: NetExceptionManager,
     private val globalFlow: GlobalFlow
 ) : ViewModel() {
-    private val _articleInfo = mutableStateOf(ArticleState(location = null))
-    val articleInfo get() = _articleInfo.value
 
-    private val _discussImages = mutableStateOf<List<Image>>(emptyList())
-    val discussImages = _discussImages
+    private val activityUiState = MutableStateFlow(
+        PublishArticleUiState.Activity(banner = null, location = null)
+    )
+    private val discussUiState = MutableStateFlow(
+        PublishArticleUiState.Discuss(location = null)
+    )
 
-    private val _activityImages = mutableStateOf<List<Image>>(emptyList())
-    val activityImages = _activityImages
+    private val articleType: MutableStateFlow<ArticleType> = MutableStateFlow(ArticleType.Discuss)
+
+    private val _publishOver = MutableSharedFlow<Unit>()
+    val publishOver = _publishOver.asSharedFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<PublishArticleUiState> = articleType
+        .flatMapLatest {
+            when (it) {
+                is ArticleType.Discuss -> discussUiState
+                is ArticleType.Activity -> activityUiState
+            }
+        }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            discussUiState.value
+        )
+
+    fun switchArticleType(newType: ArticleType) {
+        articleType.update { newType }
+    }
 
 
-    private val _imageBanner = mutableStateOf<Image?>(null)
-    val imageBanner get() = _imageBanner.value
+    private fun updateCurrentUiState(transform: (PublishArticleUiState) -> PublishArticleUiState) {
+        when (articleType.value) {
+            ArticleType.Discuss -> discussUiState.update {
+                transform(it) as PublishArticleUiState.Discuss
+            }
 
-    private val _addBanner = mutableStateOf(false)
-    val addBanner get() = _addBanner.value
+            ArticleType.Activity -> activityUiState.update {
+                transform(it) as PublishArticleUiState.Activity
+            }
+        }
+    }
 
-    private val _isShowLoading = mutableStateOf(false)
-    val isShowLoading = _isShowLoading
+    fun setTitle(title: String) {
+        updateCurrentUiState { state ->
+            when (state) {
+                is PublishArticleUiState.Discuss -> state.copy(title = title)
+                is PublishArticleUiState.Activity -> state.copy(title = title)
+            }
+        }
+    }
 
-    private val _netOver = MutableSharedFlow<Unit>()
-    val netOver: SharedFlow<Unit> get() = _netOver.asSharedFlow()
+    fun setContent(content: String) {
+        updateCurrentUiState { state ->
+            when (state) {
+                is PublishArticleUiState.Discuss -> state.copy(content = content)
+                is PublishArticleUiState.Activity -> state.copy(content = content)
+            }
+        }
+    }
+
+
+    fun setAddress(address: String) {
+        updateCurrentUiState { state ->
+            when (state) {
+                is PublishArticleUiState.Discuss -> state.copy(address = address)
+                is PublishArticleUiState.Activity -> state.copy(address = address)
+            }
+        }
+    }
+
+    fun setLocation(locationState: LocationState?) {
+        if (locationState == null) return
+        updateCurrentUiState { state ->
+            when (state) {
+                is PublishArticleUiState.Discuss -> state.copy(
+                    location = locationState.location,
+                    address = locationState.address
+                )
+                is PublishArticleUiState.Activity -> state.copy(
+                    location = locationState.location,
+                    address = locationState.address
+                )
+            }
+        }
+    }
+
+    fun setImageUrls(urls: List<Image>) {
+        updateCurrentUiState { state ->
+            when (state) {
+                is PublishArticleUiState.Discuss -> state.copy(images = urls)
+                is PublishArticleUiState.Activity -> state.copy(images = urls)
+            }
+        }
+    }
+
+    private fun setLoading(isLoading: Boolean) {
+        updateCurrentUiState { state ->
+            when (state) {
+                is PublishArticleUiState.Discuss -> state.copy(isLoading = isLoading)
+                is PublishArticleUiState.Activity -> state.copy(isLoading = isLoading)
+            }
+        }
+    }
+
+    fun setBanner(banner: Image) {
+        updateCurrentUiState { state ->
+            if (state is PublishArticleUiState.Activity) {
+                state.copy(banner = banner)
+            } else state
+        }
+    }
+
+    fun setAddBanner(isAdd: Boolean) {
+        updateCurrentUiState { state ->
+            if (state is PublishArticleUiState.Activity) {
+                state.copy(isAddBanner = isAdd)
+            } else state
+        }
+    }
+
+    fun publishArticle() {
+        setLoading(true)
+        viewModelScope.launch {
+            val imageUrls = mutableListOf<String>()
+            uiState.value.ifActivity {
+                if (it.banner != null && it.isAddBanner) {
+                    netExceptionManager.safeApiCall {
+                        val resp = fileUseCases.uploadImage(it.banner.path, "banner")
+                        imageUrls.add(resp.data)
+                    }
+                }
+            }
+            for (image in uiState.value.images) {
+                netExceptionManager.safeApiCall {
+                    val resp = fileUseCases.uploadImage(image.path, "normal")
+                    imageUrls.add(resp.data)
+                }
+            }
+
+            val article = Article(
+                title = uiState.value.title,
+                content = uiState.value.content,
+                address = uiState.value.address,
+                location = gson.toJson(uiState.value.location),
+                banner = (uiState.value is PublishArticleUiState.Activity)
+            )
+
+            val articleDTO = ArticleDTO(
+                article = article,
+                imageList = imageUrls.map { it }
+            )
+
+            when (articleType.value) {
+                is ArticleType.Discuss -> {
+                    netExceptionManager.safeApiCall {
+                        val resp = articleUseCases.createDiscussArticle(articleDTO)
+                        if (resp.code == "success") {
+                            activityUiState.update {
+                                PublishArticleUiState.Activity(
+                                    banner = null,
+                                    location = null
+                                )
+                            }
+                            globalFlow.onRefreshDataEvent(CampusMenu.Discuss)
+                        }
+                    }
+                }
+
+                ArticleType.Activity -> {
+                    netExceptionManager.safeApiCall {
+                        val resp = articleUseCases.createActivityArticle(articleDTO)
+                        if (resp.code == "success") {
+                            discussUiState.update { PublishArticleUiState.Discuss(location = null) }
+                            globalFlow.onRefreshDataEvent(CampusMenu.Activity)
+                        }
+                    }
+                }
+            }
+            setLoading(false)
+            _publishOver.emit(Unit)
+        }
+    }
 
     private val gson = Gson()
 
-    fun onEvent(event: PublishArticleEvent) {
-        when (event) {
-            is PublishArticleEvent.ContentChange -> {
-                _articleInfo.value = articleInfo.copy(
-                    content = event.content
-                )
-            }
 
-            is PublishArticleEvent.ActivityImagesAdd -> {
-                _activityImages.value = activityImages.value + event.images
-            }
-
-            is PublishArticleEvent.ImagesRemove -> {
-                if (event.type == "活动") {
-                    _activityImages.value = _activityImages.value.filterNot { it == event.image }
-                } else {
-                    _discussImages.value = _discussImages.value.filterNot { it == event.image }
-                }
-
-            }
-
-            is PublishArticleEvent.TitleChange -> {
-                _articleInfo.value = articleInfo.copy(
-                    title = event.title
-                )
-            }
-
-            is PublishArticleEvent.PublishArticle -> {
-                _isShowLoading.value = true
-                viewModelScope.launch {
-                    val imageUrls = mutableListOf<String>()
-                    val uploadImageList =
-                        if (event.articleType == ArticleType.Activity) _activityImages else _discussImages
-
-                    if (event.isBanner && imageBanner != null) {
-                        netExceptionManager.safeApiCall {
-                            val resp = fileUseCases.uploadImage(imageBanner!!.path, "banner")
-                            imageUrls.add(resp.data)
-                        }
-                    }
-                    for (image in uploadImageList.value) {
-                        netExceptionManager.safeApiCall {
-                            val resp = fileUseCases.uploadImage(image.path, "normal")
-                            imageUrls.add(resp.data)
-                        }
-                    }
-
-                    val article = Article(
-                        title = articleInfo.title,
-                        content = articleInfo.content,
-                        address = articleInfo.address,
-                        location = gson.toJson(articleInfo.location),
-                        banner = event.isBanner
-                    )
-
-                    val articleDTO = ArticleDTO(
-                        article = article,
-                        imageList = imageUrls.map { it }
-                    )
-
-                    when (event.articleType) {
-                        is ArticleType.Discuss -> {
-                            netExceptionManager.safeApiCall {
-                                val resp = articleUseCases.createDiscussArticle(articleDTO)
-                                if (resp.code == "success") {
-                                    clearPublicArticleData(CampusMenu.Discuss)
-                                    globalFlow.onRefreshDataEvent(CampusMenu.Discuss)
-                                }
-                            }
-                        }
-
-                        ArticleType.Activity -> {
-                            netExceptionManager.safeApiCall {
-                                val resp = articleUseCases.createActivityArticle(articleDTO)
-                                if (resp.code == "success") {
-                                    _addBanner.value = false
-                                    _imageBanner.value = null
-                                    clearPublicArticleData(CampusMenu.Activity)
-                                    globalFlow.onRefreshDataEvent(CampusMenu.Activity)
-                                }
-                            }
-                        }
-                    }
-                    _isShowLoading.value = false
-                    _netOver.emit(Unit)
-                }
-            }
-
-            is PublishArticleEvent.Clear -> {
-                clearPublicArticleData(event.type)
-            }
-
-            is PublishArticleEvent.ImageBanner -> {
-                _imageBanner.value = event.image
-            }
-
-            is PublishArticleEvent.DiscussImagesAdd -> {
-                _discussImages.value = discussImages.value + event.images
-            }
-
-            is PublishArticleEvent.LocationChange -> {
-                updateLocation(event.locationState)
-            }
-
-            is PublishArticleEvent.AddBanner -> {
-                _addBanner.value = event.select
-            }
-
-        }
-    }
-
-    private fun updateLocation(
-        locationState: LocationState?
-    ) {
-        if (locationState == null) return
-        _articleInfo.value = articleInfo.copy(
-            address = locationState.name + "-" + locationState.address,
-            location = locationState.location
-        )
-    }
-
-    private fun clearPublicArticleData(type: CampusMenu) {
-        Log.e("TAG", "clearPublicArticleData", )
-        _articleInfo.value = articleInfo.copy(
-            title = "",
-            content = "",
-            address = "",
-            location = null
-        )
-
-        if (type == CampusMenu.Activity) {
-            _imageBanner.value = null
-            _activityImages.value = emptyList()
-        }else{
-            _discussImages.value = emptyList()
-        }
-    }
 }

@@ -85,7 +85,7 @@ fun MapScreen(
 }
 
 @Composable
-fun RunCoroutine(
+private fun RunCoroutine(
     mapViewModel: MapViewModel,
     commonViewModel: CommonViewModel,
     locateViewModel: LocateViewModel,
@@ -141,7 +141,7 @@ fun RunCoroutine(
 }
 
 @Composable
-fun MapViewContent(
+private fun MapViewContent(
     mapViewModel: MapViewModel,
     deviceLocation: LatLng,
     dataUiState: MapViewDataUiState,
@@ -172,7 +172,7 @@ fun MapViewContent(
             .clickable { mapViewModel.scrollMap(deviceLocation, true) })
 
         QuickViaSection(
-            showQuickBar = !showUiState.showRoutePlan,
+            showQuickBar = !showUiState.showRoutePlan && dataUiState.localPoiInfos.isNotEmpty(),
             showQuickEdit = showUiState.showQuickEdit,
             selectUid = dataUiState.currentPoiUid,
             localPoiInfos = dataUiState.localPoiInfos,

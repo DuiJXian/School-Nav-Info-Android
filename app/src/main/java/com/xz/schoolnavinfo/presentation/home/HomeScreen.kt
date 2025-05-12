@@ -45,10 +45,10 @@ private val items = listOf(
 fun HomeScreen(
     commonViewModel: CommonViewModel
 ) {
-    val pagerState = rememberPagerState(initialPage = 0) { items.size }
+    val pagerState = rememberPagerState(initialPage = 1) { items.size }
 
     val (currentMenu, updateMenu) = rememberSaveable {
-        mutableStateOf(items.first().name)
+        mutableStateOf(items[1].name)
     }
 
     LaunchedEffect(currentMenu) {

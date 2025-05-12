@@ -1,5 +1,6 @@
-package com.xz.schoolnavinfo.presentation.campus.detail
+package com.xz.schoolnavinfo.presentation.campus.article
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
@@ -11,6 +12,7 @@ import com.xz.schoolnavinfo.domain.use_case.CommentUserCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,8 +23,8 @@ class ArticleDetailViewModel @Inject constructor(
     private val netExceptionManager: NetExceptionManager
 ) : ViewModel() {
 
-    private val _commentDTOList = MutableStateFlow(listOf<CommentDTO>())
-    val commentDTOList: StateFlow<List<CommentDTO>> = _commentDTOList
+    private val _commentDTOs = MutableStateFlow<List<CommentDTO>>(emptyList())
+    val commentDTOs: StateFlow<List<CommentDTO>> = _commentDTOs
 
 
     fun onGetComments(articleId: String) {
@@ -35,7 +37,7 @@ class ArticleDetailViewModel @Inject constructor(
         netExceptionManager.safeApiCall {
             val res = commentUserCases.getCommentById(articleId)
             if (res.code == "success") {
-                _commentDTOList.value = res.data
+                _commentDTOs.update { res.data }
             }
         }
     }
@@ -48,14 +50,13 @@ class ArticleDetailViewModel @Inject constructor(
                 } else {
                     articleUseCases.deleteDiscussArticle(articleId)
                 }
-                if (resp.code == "success") {
-
-                }
             }
         }
     }
 
-    fun onSendComments(articleId: String, content: String) {
+    fun onSendComments(articleId: String?, content: String) {
+        Log.e("TAG", "onSendComments: $articleId $content", )
+        if (articleId == null || content.isBlank()) return
         viewModelScope.launch {
             netExceptionManager.safeApiCall {
                 val comment = Comment(articleId, content, null)
