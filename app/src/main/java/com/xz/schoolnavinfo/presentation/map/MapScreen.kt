@@ -1,5 +1,6 @@
 package com.xz.schoolnavinfo.presentation.map
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -34,6 +36,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.baidu.mapapi.model.LatLng
 import com.baidu.navisdk.adapter.BaiduNaviManagerFactory
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.xz.schoolnavinfo.common.utils.LocationUtils
 import com.xz.schoolnavinfo.presentation.common.baidu.map.LocateViewModel
 import com.xz.schoolnavinfo.presentation.common.baidu.map.MapViewScreen
@@ -41,7 +45,6 @@ import com.xz.schoolnavinfo.presentation.common.baidu.map.scrollMapView
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.BNaviGuideActivity
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.DrivingActivity
 import com.xz.schoolnavinfo.presentation.common.baidu.nav.activity.WNaviGuideActivity
-import com.xz.schoolnavinfo.presentation.common.components.CheckPermission
 import com.xz.schoolnavinfo.presentation.common.components.OpeGpsDialog
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.map.composable.PoiDetailSection
@@ -107,7 +110,7 @@ private fun RunCoroutine(
     }
     LaunchedEffect(Unit) {
         locateViewModel.startLocation()
-        mapViewModel.composableOver(isDark,LocationUtils.loadLocation(context))
+        mapViewModel.compositionOver(isDark,LocationUtils.loadLocation(context))
         locateViewModel.firstScrollMap.collectLatest {
             mapView.map.scrollMapView(deviceState.locationPoint)
         }
@@ -168,17 +171,17 @@ private fun MapViewContent(
         ScrollMapIcon(Modifier
             .align(Alignment.BottomEnd)
             .padding(bottom = 100.dp, end = 10.dp)
-            .shadow(5.dp, CircleShape)
+            .clip(CircleShape)
             .clickable { mapViewModel.scrollMap(deviceLocation, true) })
 
         QuickViaSection(
             showQuickBar = !showUiState.showRoutePlan && dataUiState.localPoiInfos.isNotEmpty(),
             showQuickEdit = showUiState.showQuickEdit,
-            selectUid = dataUiState.currentPoiUid,
             localPoiInfos = dataUiState.localPoiInfos,
+            localPoiInfo = dataUiState.localPoiInfo,
             onClickItem = { mapViewModel.clickQuickViaItem(deviceLocation, it) },
             onLongClickItem = { mapViewModel.longClickQuickViaItem(it) },
-            onDelete = { mapViewModel.deleteLocalPoiInfo(it) },
+            onDelete = { mapViewModel.deleteLocalPoiInfo() },
             onConfirm = { mapViewModel.updateLocalPoiInfo(it) },
             onCancel = { mapViewModel.setShowQuickEdit(false) }
         )
@@ -253,6 +256,36 @@ private fun ManageLifeCycle(locateViewModel: LocateViewModel = hiltViewModel()) 
         lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+        }
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun CheckPermission() {
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    )
+    when{
+        //已授予
+        permissionsState.allPermissionsGranted -> {
+
+        }
+        //被拒绝一次
+        permissionsState.shouldShowRationale -> {
+
+        }
+        //拒绝多次
+        else -> {
+
+        }
+    }
+    if (!permissionsState.allPermissionsGranted){
+        LaunchedEffect(permissionsState) {
+            permissionsState.launchMultiplePermissionRequest()
         }
     }
 }

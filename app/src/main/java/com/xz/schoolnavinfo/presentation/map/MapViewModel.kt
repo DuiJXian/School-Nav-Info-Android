@@ -156,14 +156,14 @@ class MapViewModel @Inject constructor(
         })
     }
 
-    fun composableOver(isDark: Boolean, location: LatLng){
+    fun compositionOver(isDark: Boolean, location: LatLng) {
         mapView.setStyle(application, isDark)
         scrollMap(location, false)
         setCenterLocation(location)
     }
 
 
-    fun setCenterLocation(location: LatLng) {
+    private fun setCenterLocation(location: LatLng) {
         centerLocation = location
     }
 
@@ -177,7 +177,7 @@ class MapViewModel @Inject constructor(
 
     fun clearSearchText() {
         _dataState.update {
-            it.copy(searchPoiInfos = emptyList())
+            it.copy(searchPoiInfos = emptyList(), searchText = "")
         }
     }
 
@@ -195,13 +195,21 @@ class MapViewModel @Inject constructor(
         setCenterLocation(location)
     }
 
+    fun deleteLocalPoiInfo() {
+        viewModelScope.launch {
+            _dataState.value.localPoiInfo?.let { localPoiInfoUseCases.deleteMPoiInfo(it) }
+            setShowQuickEdit(false)
+        }
+    }
+
     fun longClickQuickViaItem(uid: String) {
-        _showState.update { it.copy(showQuickEdit = true) }
         _dataState.update {
             it.copy(
                 currentPoiUid = uid,
-                localPoiInfo = _dataState.value.localPoiInfos.find { res -> res.uid == uid })
+                localPoiInfo = _dataState.value.localPoiInfos.find { res -> res.uid == uid }
+            )
         }
+        _showState.update { it.copy(showQuickEdit = true) }
     }
 
     fun setShowQuickEdit(value: Boolean) {
@@ -229,7 +237,7 @@ class MapViewModel @Inject constructor(
         _showState.update { it.copy(showPoiDetail = show) }
     }
 
-    fun closeRoutePlan(){
+    fun closeRoutePlan() {
         _showState.update { it.copy(showRoutePlan = false) }
         overlayManager?.removeFromMap()
         _dataState.update { it.copy(routeType = RouteType.Walking) }
@@ -350,13 +358,6 @@ class MapViewModel @Inject constructor(
             }.launchIn(viewModelScope)
     }
 
-    fun deleteLocalPoiInfo(localPoiInfo: LocalPoiInfo) {
-        viewModelScope.launch {
-            localPoiInfoUseCases.deleteMPoiInfo(localPoiInfo)
-            setShowQuickEdit(false)
-        }
-    }
-
     fun updateLocalPoiInfo(localPoiInfo: LocalPoiInfo) {
         viewModelScope.launch {
             localPoiInfoUseCases.updateLocalPoiInfo(localPoiInfo)
@@ -379,7 +380,7 @@ class MapViewModel @Inject constructor(
                 _dataState.update { it.copy(localPoiInfo = poiInfo) }
             }
         } else if (localPoiInfo != null) {
-            deleteLocalPoiInfo(localPoiInfo)
+            deleteLocalPoiInfo()
             _dataState.update { it.copy(localPoiInfo = null) }
         }
     }
@@ -528,7 +529,8 @@ class MapViewModel @Inject constructor(
         }
 
         @Deprecated("Deprecated in Java")
-        override fun onGetPoiDetailResult(p0: PoiDetailResult?) {}
+        override fun onGetPoiDetailResult(p0: PoiDetailResult?) {
+        }
 
         override fun onGetPoiDetailResult(result: PoiDetailSearchResult?) {
             if (result != null) {

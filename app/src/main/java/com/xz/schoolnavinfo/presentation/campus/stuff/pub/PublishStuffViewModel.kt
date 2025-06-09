@@ -1,24 +1,38 @@
 package com.xz.schoolnavinfo.presentation.campus.stuff.pub
 
-import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esafirm.imagepicker.model.Image
-import com.google.gson.Gson
 import com.xz.schoolnavinfo.common.flow.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
+import com.xz.schoolnavinfo.common.utils.JsonUtils
 import com.xz.schoolnavinfo.domain.data.entity.Stuff
 import com.xz.schoolnavinfo.domain.use_case.FileUseCases
 import com.xz.schoolnavinfo.domain.use_case.StuffUseCases
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
+data class PublishStuffUiState(
+    val desc: String = "",
+    val image: Image? = null,
+    val location: String = "",
+    val address: String = "",
+    val happenTime: String = "",
+    val type: Boolean = false,
+    val status: Boolean = false,
+    val loading: Boolean = false,
+)
 
 @HiltViewModel
 class PublishStuffViewModel @Inject constructor(
@@ -27,85 +41,70 @@ class PublishStuffViewModel @Inject constructor(
     private val netExceptionManager: NetExceptionManager,
     private val globalFlow: GlobalFlow
 ) : ViewModel() {
-    private val gson = Gson()
 
-    private val _pubStuff = mutableStateOf(
-        Stuff(
-            desc = "",
-            location = "",
-            address = "",
-            imageUrl = "",
-            happenTime = "",
-            type = false,
-            id = null,
-            createTime = null,
-            publisherId = null,
-            finishTime = null,
-            status = false
-        )
-    )
-    val pubStuff get() = _pubStuff.value
+    private val _uiState = MutableStateFlow(PublishStuffUiState())
+    val uiState: StateFlow<PublishStuffUiState> = _uiState.asStateFlow()
 
-    private var _selectImage = mutableStateOf<Image?>(null)
-    val selectImage get() = _selectImage.value
+    private val _reqOver = MutableSharedFlow<Unit>()
+    val netOver: SharedFlow<Unit> get() = _reqOver.asSharedFlow()
 
-    private val _isShowLoading = mutableStateOf(false)
-    val isShowLoading = _isShowLoading
+    fun setDesc(desc: String) {
+        _uiState.update { it.copy(desc = desc) }
+    }
 
-    private val _netOver = MutableSharedFlow<Unit>()
-    val netOver: SharedFlow<Unit> get() = _netOver.asSharedFlow()
+    fun setImage(image: Image?) {
+        _uiState.update { it.copy(image = image) }
+    }
 
-    fun onEvent(event: PublishStuffEvent) {
-        when (event) {
-            is PublishStuffEvent.DateTimeChange -> {
-                _pubStuff.value = pubStuff.copy(
-                    happenTime = event.text
-                )
-            }
-
-            is PublishStuffEvent.DescChange -> {
-                _pubStuff.value = pubStuff.copy(
-                    desc = event.text
-                )
-            }
-
-            is PublishStuffEvent.TypeChange -> {
-                _pubStuff.value = pubStuff.copy(
-                    type = event.type
-                )
-            }
-
-            is PublishStuffEvent.LocationChange -> {
-                if (event.locationState == null) return
-                _pubStuff.value = pubStuff.copy(
-                    address = event.locationState.name + "-" + event.locationState.address,
-                    location = gson.toJson(event.locationState.location)
-                )
-            }
-
-            is PublishStuffEvent.PubStuff -> {
-                viewModelScope.launch {
-                    _isShowLoading.value = true
-                    netExceptionManager.safeApiCall {
-                        Log.e("TAG", "onEvent: ${gson.toJson(_pubStuff.value)}")
-                        val fileResp = fileUseCases.uploadImage(_selectImage.value!!.path, "normal")
-                        _pubStuff.value = pubStuff.copy(
-                            imageUrl = fileResp.data
-                        )
-                        val resp = stuffUseCases.createStuff(pubStuff)
-                        if (resp.code == "success") {
-                            _netOver.emit(Unit)
-                            globalFlow.onRefreshDataEvent(CampusMenu.Stuff)
-                        }
-                    }
-                    _isShowLoading.value = false
-                }
-            }
-
-            is PublishStuffEvent.ImageChange -> {
-                _selectImage.value = event.image
-            }
+    fun setLocation(locationInfo: LocationInfo?) {
+        if (locationInfo == null) return
+        _uiState.update {
+            it.copy(
+                location = JsonUtils.toJson(locationInfo.location),
+                address = "${locationInfo.name}-${locationInfo.address}"
+            )
         }
     }
 
+    fun setHappenTime(happenTime: String) {
+        _uiState.update { it.copy(happenTime = happenTime) }
+    }
+
+    fun setType(type: Boolean) {
+        _uiState.update { it.copy(type = type) }
+    }
+
+    fun setStatus(status: Boolean) {
+        _uiState.update { it.copy(status = status) }
+    }
+
+    fun publishStuff() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(loading = true) }
+            netExceptionManager.safeApiCall {
+                val fileResp = fileUseCases.uploadImage(_uiState.value.image!!.path, "normal")
+                val stuff = Stuff(
+                    desc = uiState.value.desc,
+                    location = uiState.value.location,
+                    address = uiState.value.address,
+                    imageUrl = fileResp.data,
+                    happenTime = uiState.value.happenTime,
+                    type = uiState.value.type,
+                    status = false
+                )
+                val resp = stuffUseCases.createStuff(stuff)
+                if (resp.code == "success") {
+                    _uiState.update { PublishStuffUiState() }
+                    _reqOver.emit(Unit)
+                    globalFlow.onRefreshDataEvent(CampusMenu.Stuff)
+                }
+            }
+            _uiState.update { it.copy(loading = false) }
+        }
+    }
+
+    fun isContentEmpty(): Boolean {
+        val stateValue = uiState.value
+        return stateValue.desc.isBlank() || stateValue.image == null || stateValue.location.isBlank() || stateValue.happenTime.isBlank()
+    }
 }

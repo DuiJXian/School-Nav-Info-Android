@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
+    kotlin("plugin.serialization") version "2.0.0"
 }
 
 android {
@@ -70,6 +71,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.runtime.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -78,11 +80,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    //flutter
-//    implementation(project(":flutter"))
-//    add("debugImplementation", "com.example.flutter_module:flutter_debug:1.0")
-//    add("profileImplementation", "com.example.flutter_module:flutter_profile:1.0")
-//    add("releaseImplementation", "com.example.flutter_module:flutter_release:1.0")
 
     implementation("com.example.flutter_module:flutter_release:1.0")
 
@@ -106,6 +103,7 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
+
     //加载异步图片
     implementation("io.coil-kt:coil-compose:2.6.0")
     //网络请求
@@ -122,6 +120,10 @@ dependencies {
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 
     implementation("io.github.muddz:styleabletoast:2.4.0")
+
+    implementation("com.github.skydoves:landscapist-glide:2.4.6")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
 }
 

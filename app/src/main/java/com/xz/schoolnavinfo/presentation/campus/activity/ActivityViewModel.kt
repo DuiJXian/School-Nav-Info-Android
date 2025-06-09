@@ -1,8 +1,10 @@
 package com.xz.schoolnavinfo.presentation.campus.activity
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
+import com.xz.schoolnavinfo.common.utils.JsonUtils
 import com.xz.schoolnavinfo.data.dao.remote.request.ArticleRequest
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.use_case.ArticleUseCases

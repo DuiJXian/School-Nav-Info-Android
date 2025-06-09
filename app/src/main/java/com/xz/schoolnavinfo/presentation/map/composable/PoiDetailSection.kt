@@ -7,7 +7,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +26,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +36,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +45,7 @@ import com.baidu.mapapi.search.core.PoiDetailInfo
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.common.utils.UnitCovertUtils
+import com.xz.schoolnavinfo.presentation.common.components.shake
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 
 @Composable
@@ -59,6 +59,7 @@ fun PoiDetailSection(
     onRoute: () -> Unit
 ) {
     val appColors = AppColors.current
+
     AnimatedVisibility(
         visible = showPoiDetailSection,
         enter = fadeIn(),
@@ -67,13 +68,13 @@ fun PoiDetailSection(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable { },
+                .shake(),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
                     .padding(horizontal = 10.dp)
-                    .border(1.dp, appColors.greyMedium.copy(0.5f), RoundedCornerShape(20.dp))
+                    .border(1.dp, appColors.bgLight, RoundedCornerShape(20.dp))
                     .clip(RoundedCornerShape(20.dp))
                     .background(appColors.bgPrimary)
                     .padding(20.dp),
@@ -88,7 +89,8 @@ fun PoiDetailSection(
                             .clip(RoundedCornerShape(10.dp))
                             .border(
                                 1.dp,
-                                appColors.greyMedium.copy(0.5f),
+                                appColors.bgLight
+                                ,
                                 RoundedCornerShape(10.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -136,23 +138,10 @@ fun PoiDetailCardTextDesc(
         Row(
             verticalAlignment = Alignment.Bottom
         ) {
-            Text(
-                text = poiDetailInfo.name,
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = appColors.fontPrimary
-                )
-            )
-            Spacer(Modifier.width(3.dp))
-
             Icon(
                 modifier = Modifier
                     .size(22.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
+                    .clickable(interactionSource = null, indication = null) {
                         onFavorite()
                     },
                 imageVector = Icons.Default.Favorite,
@@ -162,6 +151,19 @@ fun PoiDetailCardTextDesc(
                 } else {
                     appColors.greyMedium
                 }
+            )
+            Spacer(Modifier.width(3.dp))
+            Text(
+                modifier = Modifier
+                    .weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                text = poiDetailInfo.name,
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = appColors.fontPrimary
+                )
             )
         }
 

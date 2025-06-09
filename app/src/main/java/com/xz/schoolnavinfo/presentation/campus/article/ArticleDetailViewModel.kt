@@ -45,7 +45,7 @@ class ArticleDetailViewModel @Inject constructor(
     fun onDeleteArticle(articleId: String, articleType: ArticleType) {
         viewModelScope.launch {
             netExceptionManager.safeApiCall {
-                val resp = if (articleType == ArticleType.Activity) {
+                val resp = if (articleType == ArticleType.ACTIVITY) {
                     articleUseCases.deleteActivityArticle(articleId)
                 } else {
                     articleUseCases.deleteDiscussArticle(articleId)

@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -42,21 +41,21 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.common.net.getImagesUrl
-import com.xz.schoolnavinfo.common.utils.StringUtils
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.StuffDTO
+import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.Routes
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.common.components.ChangeHeightBar
 import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
-import com.xz.schoolnavinfo.presentation.common.components.VariableHeightTopBar
+import com.xz.schoolnavinfo.presentation.common.components.LocationBox
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import kotlinx.coroutines.flow.collectLatest
 import kotlin.math.min
@@ -71,8 +70,9 @@ fun StuffScreen(
     val gridState = rememberLazyGridState()
     val topHeight = 52.dp
     var searchText by remember { mutableStateOf("") }
+    val navigator = LocalAppNavigator.current
 
-    VariableHeightTopBar(
+    ChangeHeightBar(
         scrollableState = gridState,
         barHeight = topHeight,
         backgroundColor = appColors.bgPrimary,
@@ -89,7 +89,7 @@ fun StuffScreen(
                         .fillMaxWidth()
                         .height(42.dp)
                         .clip(shape = CircleShape)
-                        .background(appColors.greyLight),
+                        .background(appColors.bgLight),
                     text = searchText,
                     leftSection = {
                         Icon(
@@ -122,7 +122,7 @@ fun StuffScreen(
                         stuffDTO = item,
                         onClick = {
                             if (item.stuff.id != null) {
-                                commonViewModel.onNavEvent(NavEvent.StuffDetail(item.stuff.id))
+                                navigator.navigate(Routes.StuffDetail(item.stuff.id))
                             }
                         }
                     ) {
@@ -151,6 +151,8 @@ fun StuffCard(
 ) {
     val appColors = AppColors.current
     val stuff = stuffDTO.stuff
+    val configuration = LocalConfiguration.current
+    val isPad = configuration.smallestScreenWidthDp >= 600
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,15 +164,17 @@ fun StuffCard(
             Image(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp),
+                    .height(if (isPad) 200.dp else 140.dp),
                 contentScale = ContentScale.Crop,
                 painter = rememberAsyncImagePainter(getImagesUrl(stuff.imageUrl)),
                 contentDescription = null,
             )
-            Spacer(Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(appColors.greyLight))
+            Spacer(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(appColors.greyLight)
+            )
             Box(
                 Modifier
                     .height(56.dp)
@@ -188,35 +192,12 @@ fun StuffCard(
                     maxLines = 2
                 )
             }
-            Row(
-                Modifier
-                    .padding(horizontal = 10.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(appColors.greyMedium.copy(.5f))
-                    .clickable { onLocation(stuff.location) },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .padding(start = 5.dp)
-                        .size(20.dp),
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = appColors.fontSecondary
-                )
-                Text(
-                    modifier = Modifier
-                        .padding(vertical = 5.dp)
-                        .padding(end = 10.dp),
-                    text = StringUtils.truncateText(stuff.address, 20),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = appColors.greyHeavy
+            Box(Modifier.padding(horizontal = 10.dp)) {
+                LocationBox(stuff.address) {
+                    onLocation(
+                        stuff.location
                     )
-                )
+                }
             }
             Spacer(Modifier.height(5.dp))
             Row(

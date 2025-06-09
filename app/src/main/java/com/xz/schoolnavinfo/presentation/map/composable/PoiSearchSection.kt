@@ -17,10 +17,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
@@ -38,12 +42,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.baidu.mapapi.model.LatLng
 import com.baidu.mapapi.search.core.PoiInfo
 import com.baidu.mapapi.utils.DistanceUtil
 import com.xz.schoolnavinfo.common.utils.UnitCovertUtils
+import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 
 
@@ -52,7 +58,7 @@ fun PoiSearchSection(
     onTextChange: (String, LatLng) -> Unit,
     onClearSearchText: () -> Unit,
     onFocusChange: (Boolean) -> Unit,
-    onClickItem: (location:LatLng,uid: String) -> Unit,
+    onClickItem: (location: LatLng, uid: String) -> Unit,
     searchText: String,
     showTextField: Boolean,
     showSearchRes: Boolean,
@@ -63,10 +69,10 @@ fun PoiSearchSection(
     Column(
         modifier = Modifier
             .padding(vertical = 46.dp, horizontal = 20.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, appColors.greyMedium.copy(.5f), RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(26.dp))
+            .border(1.dp, appColors.bgLight, RoundedCornerShape(26.dp))
     ) {
-        if (showTextField){
+        if (showTextField) {
             SearchTextField(
                 searchText = searchText,
                 onTextChange = {
@@ -88,7 +94,7 @@ fun PoiSearchSection(
         ) {
             SearchResult(
                 onClickItem = {
-                    onClickItem(deviceLocation,it.uid)
+                    onClickItem(deviceLocation, it.uid)
                 },
                 poiInfoList = searchPoiInfos,
                 centerPoint = deviceLocation
@@ -103,53 +109,33 @@ fun SearchTextField(
     searchText: String,
     onTextChange: (text: String) -> Unit,
     onClearSearchText: () -> Unit,
-    onFocusChange: (Boolean)->Unit
+    onFocusChange: (Boolean) -> Unit
 ) {
     val appColors = AppColors.current
     val focusManager = LocalFocusManager.current
 
-    OutlinedTextField(
+    CustomTextFiled(
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp)
-            .onFocusChanged {
-                onFocusChange(it.isFocused)
-            },
-        value = searchText,
-        textStyle = TextStyle(
-            color = appColors.fontPrimary,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
-        ),
-        onValueChange = {
-            onTextChange(it)
-        },
-        placeholder = {
-            Text("搜地点", style = TextStyle(color = appColors.fontSecondary))
-        },
-        colors = TextFieldDefaults.colors(
-            cursorColor = appColors.primary,
-
-            unfocusedIndicatorColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-
-            unfocusedContainerColor = appColors.bgPrimary,
-            focusedContainerColor = appColors.bgPrimary,
-        ),
-        leadingIcon = {
+            .height(42.dp)
+            .background(appColors.bgPrimary),
+        text = searchText,
+        hintText = "搜地点...",
+        brushColors = appColors.primary,
+        leftSection = {
             Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = "Search Icon",
-                tint = appColors.greyHeavy,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {
-                    focusManager.clearFocus()
-                }
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+                    .size(24.dp)
+                    .clickable(interactionSource = null, indication = null) {
+                        focusManager.clearFocus()
+                    },
+                tint = appColors.greyMedium
             )
         },
-        trailingIcon = {
+        rightSection = {
             if (searchText.isNotEmpty()) {
                 IconButton(onClick = onClearSearchText) {
                     Icon(
@@ -160,8 +146,66 @@ fun SearchTextField(
                 }
             }
         },
-        singleLine = true
+        onValueChange = {
+            onTextChange(it)
+        },
+        onFocusChange = onFocusChange
     )
+
+//    OutlinedTextField(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(52.dp)
+//            .onFocusChanged {
+//                onFocusChange(it.isFocused)
+//            },
+//        value = searchText,
+//        textStyle = TextStyle(
+//            color = appColors.fontPrimary,
+//            fontSize = 16.sp,
+//            fontWeight = FontWeight.Bold
+//        ),
+//        onValueChange = {
+//            onTextChange(it)
+//        },
+//        placeholder = {
+//            Text("搜地点", style = TextStyle(color = appColors.fontSecondary))
+//        },
+//        colors = TextFieldDefaults.colors(
+//            cursorColor = appColors.primary,
+//
+//            unfocusedIndicatorColor = Color.Transparent,
+//            focusedIndicatorColor = Color.Transparent,
+//
+//            unfocusedContainerColor = appColors.bgPrimary,
+//            focusedContainerColor = appColors.bgPrimary,
+//        ),
+//        leadingIcon = {
+//            Icon(
+//                imageVector = Icons.Rounded.Search,
+//                contentDescription = "Search Icon",
+//                tint = appColors.greyHeavy,
+//                modifier = Modifier.clickable(
+//                    interactionSource = remember { MutableInteractionSource() },
+//                    indication = null
+//                ) {
+//                    focusManager.clearFocus()
+//                }
+//            )
+//        },
+//        trailingIcon = {
+//            if (searchText.isNotEmpty()) {
+//                IconButton(onClick = onClearSearchText) {
+//                    Icon(
+//                        imageVector = Icons.Rounded.Close,
+//                        contentDescription = "Clear Icon",
+//                        tint = Color.Gray
+//                    )
+//                }
+//            }
+//        },
+//        singleLine = true
+//    )
 }
 
 
@@ -203,10 +247,12 @@ fun SearchResult(
                         verticalAlignment = CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 poiInfo.name,
                                 modifier = Modifier.padding(start = 20.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 style = TextStyle(
                                     color = appColors.fontSecondary,
                                     fontSize = 14.sp,
@@ -216,6 +262,8 @@ fun SearchResult(
                             Text(
                                 poiInfo.address,
                                 modifier = Modifier.padding(start = 20.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 style = TextStyle(
                                     color = appColors.greyMedium,
                                     fontSize = 10.sp,
@@ -224,7 +272,12 @@ fun SearchResult(
                             )
                         }
                         Text(
-                            text = UnitCovertUtils.metersToKilometers(DistanceUtil.getDistance(poiInfo.location, centerPoint).toInt()),
+                            text = UnitCovertUtils.metersToKilometers(
+                                DistanceUtil.getDistance(
+                                    poiInfo.location,
+                                    centerPoint
+                                ).toInt()
+                            ),
                             modifier = Modifier.padding(end = 20.dp),
                             style = TextStyle(
                                 color = appColors.fontSecondary,

@@ -125,12 +125,12 @@ fun ImageHorizontalScroll(
                                     onSuccess = { _, result ->
                                         val drawable = result.drawable
                                         val width = ceil(
-                                            DensityUtil.px2dip(
+                                            DensityUtil.pxToDip(
                                                 context,
                                                 drawable.intrinsicWidth.toFloat()
                                             ).value
                                         )
-                                        val height = (DensityUtil.px2dip(
+                                        val height = (DensityUtil.pxToDip(
                                             context,
                                             drawable.intrinsicHeight.toFloat()
                                         ).value)

@@ -1,12 +1,10 @@
 package com.xz.schoolnavinfo.presentation.campus.article
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -29,11 +26,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -71,12 +64,16 @@ import com.xz.schoolnavinfo.domain.data.dto.CommentDTO
 import com.xz.schoolnavinfo.domain.data.entity.Article
 import com.xz.schoolnavinfo.domain.data.entity.UserInfo
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
-import com.xz.schoolnavinfo.domain.data.type.RoleType
+import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.Routes
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
+import com.xz.schoolnavinfo.presentation.common.components.ButtonType
 import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
+import com.xz.schoolnavinfo.presentation.common.components.CustomTopBar
 import com.xz.schoolnavinfo.presentation.common.components.ImageHorizontalScroll
+import com.xz.schoolnavinfo.presentation.common.components.LocationBox
+import com.xz.schoolnavinfo.presentation.common.components.MyButton
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,7 +82,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun ArticleDetailScreen(
     articleDTO: ArticleDTO,
-    articleType: ArticleType,
     articleDetailViewModel: ArticleDetailViewModel = hiltViewModel(),
     commonViewModel: CommonViewModel,
 ) {
@@ -94,7 +90,8 @@ fun ArticleDetailScreen(
     val commentDTOS by articleDetailViewModel.commentDTOs.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     var (showDialog, updateShowDialog) = rememberSaveable { mutableStateOf(false) }
-
+    val navigator = LocalAppNavigator.current
+    val articleType = ArticleType.getType(articleDTO.article!!.type!!)
     LaunchedEffect(Unit) {
         article?.id?.let { articleDetailViewModel.onGetComments(it) }
     }
@@ -107,14 +104,14 @@ fun ArticleDetailScreen(
         articleType = articleType,
         showDialog = showDialog,
         updateShowDialog = updateShowDialog,
-        onBack = { commonViewModel.onNavEvent(NavEvent.BackPage) },
-        onImage = { urls, index -> commonViewModel.onLoadImageUrlEvent(urls, index, 0.dp) },
+        onBack = { navigator.popBack() },
+        onImage = { urls, index -> },//{ urls, index -> navigator.navigate(Routes.ImagePreview(urls, index)) },
         onSend = { articleDetailViewModel.onSendComments(article?.id, it) },
         onDelete = {
             articleDetailViewModel.onDeleteArticle(it, articleType)
-            commonViewModel.onNavEvent(NavEvent.BackPage)
+            navigator.popBack()
             coroutineScope.launch {
-                commonViewModel.globalFlow.onRefreshDataEvent(if (articleType == ArticleType.Discuss) CampusMenu.Discuss else CampusMenu.Activity)
+                commonViewModel.globalFlow.onRefreshDataEvent(if (articleType == ArticleType.DISCUSS) CampusMenu.Discuss else CampusMenu.Activity)
                 delay(300)
                 showDialog = false
             }
@@ -138,15 +135,6 @@ fun ArticleDetailContent(
 ) {
     val appColors = AppColors.current
     val systemPadding = WindowInsets.systemBars.asPaddingValues()
-    val imeInsets = WindowInsets.ime
-    val imeBottom = imeInsets.getBottom(LocalDensity.current)
-    val offsetValue = if (imeBottom > 0) {
-        (imeBottom - with(LocalDensity.current) {
-            systemPadding.calculateTopPadding().toPx()
-        })
-    } else 0f
-    val animatedOffset by animateOffsetAsState(targetValue = Offset(0f, offsetValue))
-    var commentText by remember { mutableStateOf("") }
 
     DeleteDialog(
         isShow = showDialog,
@@ -168,7 +156,7 @@ fun ArticleDetailContent(
             avatarUrl = userInfo?.avatarUrl,
             createTime = article?.createTime,
             onBack = { onBack() },
-            isCanDelete = (article!!.userId == userInfo!!.id) && (articleType == ArticleType.Activity && userInfo.role == RoleType.ADMIN.name),
+            isCanDelete = (article!!.userId == userInfo!!.id),
             showDialog = updateShowDialog
         )
 
@@ -181,52 +169,73 @@ fun ArticleDetailContent(
                 commentDTOs = commentDTOs,
                 onImage = onImage
             )
-            if (articleType == ArticleType.Discuss) {
-                Box(Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
-                    .background(Color.Transparent)
-                    .offset { IntOffset(x = 0, y = -animatedOffset.y.toInt()) }) {
-                    CustomTextFiled(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(42.dp)
-                            .clip(shape = CircleShape)
-                            .background(appColors.greyLight),
-                        text = commentText,
-                        contentPaddingValues = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                        rightSection = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(
-                                    Modifier
-                                        .width(2.dp)
-                                        .clip(CircleShape)
-                                        .height(16.dp)
-                                        .background(appColors.primary.copy(.5f))
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                TextButton(onClick = {
-                                    onSend(commentText)
-                                    commentText = ""
-                                }) {
-                                    Text(
-                                        "发送",
-                                        style = TextStyle(
-                                            fontWeight = FontWeight.Bold,
-                                            color = appColors.primary,
-                                            fontSize = 16.sp
-                                        )
-                                    )
-                                }
-                                Spacer(Modifier.width(10.dp))
-                            }
-                        },
-                        onValueChange = { commentText = it }
-                    )
-                }
+            if (articleType == ArticleType.DISCUSS) {
+                CommentInput(Modifier.align(Alignment.BottomCenter), onSend = onSend)
             }
         }
 
+    }
+}
+
+@Composable
+fun CommentInput(
+    modifier: Modifier,
+    onSend: (String) -> Unit
+) {
+    val systemPadding = WindowInsets.systemBars.asPaddingValues()
+    val imeInsets = WindowInsets.ime
+    val imeBottom = imeInsets.getBottom(LocalDensity.current)
+    val offsetValue = if (imeBottom > 0) {
+        (imeBottom - with(LocalDensity.current) {
+            systemPadding.calculateBottomPadding().toPx()
+        })
+    } else 0f
+    val animatedOffset by animateOffsetAsState(targetValue = Offset(0f, offsetValue))
+    var commentText by remember { mutableStateOf("") }
+    val appColors = AppColors.current
+    Box(modifier
+        .padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
+        .background(Color.Transparent)
+        .offset { IntOffset(x = 0, y = -animatedOffset.y.toInt()) }) {
+        CustomTextFiled(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(42.dp)
+                .clip(shape = CircleShape)
+                .background(appColors.greyLight)
+                .border(1.dp, appColors.primary, CircleShape),
+            text = commentText,
+            contentPaddingValues = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+            textColor = appColors.fontPrimary,
+            brushColors = appColors.primary,
+            rightSection = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(
+                        Modifier
+                            .width(2.dp)
+                            .clip(CircleShape)
+                            .height(16.dp)
+                            .background(appColors.primary.copy(.5f))
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    TextButton(onClick = {
+                        onSend(commentText)
+                        commentText = ""
+                    }) {
+                        Text(
+                            "发送",
+                            style = TextStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = appColors.primary,
+                                fontSize = 16.sp
+                            )
+                        )
+                    }
+                    Spacer(Modifier.width(5.dp))
+                }
+            },
+            onValueChange = { commentText = it }
+        )
     }
 }
 
@@ -242,18 +251,26 @@ fun ArticleBody(
 
     val appColors = AppColors.current
     val scrollState = rememberScrollState()
-    Column(modifier.fillMaxWidth().verticalScroll(scrollState)) {
-        Box(Modifier.height(320.dp)) {
-            val contentImageList =
-                if (!imageUrls.isNullOrEmpty()) imageUrls.filterNot { it.contains("banner") } else emptyList()
+    Column(
+        modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+    ) {
+        if (!imageUrls.isNullOrEmpty()) {
+            val contentImageList = imageUrls.filterNot { it.contains("banner") }
             if (contentImageList.isNotEmpty()) {
-                ImageHorizontalScroll(
-                    contentImageList
-                ) { index -> onImage(contentImageList, index) }
+                Box(Modifier.height(320.dp)) {
+                    ImageHorizontalScroll(
+                        contentImageList
+                    ) { index -> onImage(contentImageList, index) }
+                }
+            } else {
+                Spacer(Modifier.height(10.dp))
             }
         }
 
-        if (article?.title != null) {
+        if (article?.title != null && article.title.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
             Row(Modifier.padding(horizontal = 10.dp)) {
                 Text(
                     text = article.title,
@@ -268,7 +285,8 @@ fun ArticleBody(
             }
         }
 
-        if (article?.content != null) {
+        if (article?.content != null && article.content.isNotEmpty()) {
+            Spacer(Modifier.height(5.dp))
             Row(Modifier.padding(horizontal = 10.dp)) {
                 Text(
                     text = article.content,
@@ -282,13 +300,18 @@ fun ArticleBody(
             }
         }
 
+        if (article?.address?.isNotBlank() == true) {
+            Spacer(Modifier.height(5.dp))
+            Box(Modifier.padding(horizontal = 10.dp)) { LocationBox(article.address) }
+        }
+
         Spacer(
             Modifier
                 .height(1.dp)
                 .padding(horizontal = 10.dp)
                 .background(appColors.greyMedium)
         )
-        if (articleType == ArticleType.Discuss) {
+        if (articleType == ArticleType.DISCUSS) {
             Row(Modifier.padding(10.dp)) {
                 Text(
                     text = "共${commentDTOs.size}条评论",
@@ -317,30 +340,12 @@ fun ArticleTopBar(
     showDialog: (Boolean) -> Unit
 ) {
     val appColors = AppColors.current
-    Row(
-        modifier = Modifier
-            .height(46.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(Modifier.width(10.dp))
-            Icon(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable { onBack() },
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "返回",
-                tint = appColors.fontSecondary
-            )
-
+    CustomTopBar(
+        leftContent = {
             Spacer(Modifier.width(10.dp))
             Image(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(36.dp)
                     .clip(CircleShape),
                 painter = if (avatarUrl != null)
                     rememberAsyncImagePainter(getImagesUrl(avatarUrl)) else
@@ -348,22 +353,17 @@ fun ArticleTopBar(
                 contentDescription = "头像",
                 contentScale = ContentScale.Crop
             )
-            Column {
+            Column(Modifier.padding(start = 10.dp)) {
                 Text(
-                    modifier = Modifier
-                        .padding(start = 5.dp),
                     text = nickname ?: "",
                     style = TextStyle(
                         fontSize = 16.sp,
                         color = appColors.fontPrimary,
-                        fontWeight = FontWeight.Bold
                     )
                 )
                 Text(
-                    modifier = Modifier
-                        .padding(start = 5.dp),
                     text = if (createTime != null)
-                        TimeUtils.formatTimeDifference(createTime) else
+                        TimeUtils.formatTimeDifference(createTime.replace("+", " ")) else
                         "err",
                     style = TextStyle(
                         fontSize = 14.sp,
@@ -371,34 +371,12 @@ fun ArticleTopBar(
                     )
                 )
             }
-        }
-
-
-        if (isCanDelete)
-            Row(Modifier.padding(end = 10.dp)) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 5.dp)
-                        .shadow(3.dp, RoundedCornerShape(10.dp))
-                        .background(appColors.err)
-                        .clip(RoundedCornerShape(10.dp))
-                        .width(60.dp)
-                        .height(30.dp)
-                        .clickable {
-                            showDialog(true)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "删除",
-                        style = TextStyle(
-                            color = appColors.onButtonColor,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-            }
-    }
+        },
+        rightContent = {
+            if (isCanDelete) MyButton("删除", ButtonType.ERR) { showDialog(true) }
+        },
+        onBack = onBack
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -515,7 +493,7 @@ fun CommentCard(
                 }
             }
         }
-        Row{
+        Row {
             Spacer(
                 modifier = Modifier
                     .width(50.dp)

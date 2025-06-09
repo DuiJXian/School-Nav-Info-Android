@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
-import com.xz.schoolnavinfo.presentation.home.NavScreen
 import com.xz.schoolnavinfo.presentation.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import io.flutter.embedding.engine.FlutterEngine
@@ -26,8 +25,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
         initFlutterEngine()
+
         setContent {
             MaterialTheme(
                 colorScheme = lightColorScheme(
@@ -36,7 +35,8 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 AppTheme {
-                    NavScreen()
+//                    NavScreen()
+                    AppNavGraphProvider()
                 }
             }
 

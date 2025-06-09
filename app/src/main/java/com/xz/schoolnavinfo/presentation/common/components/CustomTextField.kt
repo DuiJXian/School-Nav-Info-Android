@@ -16,7 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,18 +29,19 @@ import com.xz.schoolnavinfo.presentation.theme.AppColors
 fun CustomTextFiled(
     modifier: Modifier = Modifier,
     text: String,
+    isPassword: Boolean = false,
     hintText: String = "",
     hintTextColor: Color = Color.Gray,
     textColor: Color = Color.Black,
     textSize: TextUnit = 16.sp,
+    brushColors: Color = Color.Black,
     contentPaddingValues: PaddingValues = PaddingValues(horizontal = 5.dp, vertical = 0.dp),
     leftSection: @Composable () -> Unit = {},
     rightSection: @Composable () -> Unit = {},
     onFocusChange: (Boolean) -> Unit = {},
     onValueChange: (text: String) -> Unit = {},
 ) {
-    val appColors = AppColors.current
-
+    var isFocus by remember { mutableStateOf(false) }
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -52,19 +56,21 @@ fun CustomTextFiled(
                 .weight(1f)
                 .padding(contentPaddingValues)
                 .onFocusChanged {
+                    isFocus = it.isFocused
                     onFocusChange(it.isFocused)
                 },
+            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
             textStyle = TextStyle(
                 fontSize = textSize,
                 color = textColor
             ),
             decorationBox = { innerTextField ->
-                if (text.isEmpty() && hintText.isNotEmpty()) {
+                if (text.isEmpty() && hintText.isNotEmpty() && !isFocus) {
                     Text(hintText, color = hintTextColor)
                 }
                 innerTextField()
             },
-            cursorBrush = SolidColor(appColors.primary),
+            cursorBrush = SolidColor(brushColors),
             singleLine = true
         )
         rightSection()

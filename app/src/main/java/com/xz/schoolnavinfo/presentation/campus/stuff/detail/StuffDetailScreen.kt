@@ -3,7 +3,6 @@ package com.xz.schoolnavinfo.presentation.campus.stuff.detail
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,9 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -58,12 +54,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.skydoves.landscapist.ImageOptions
+import com.skydoves.landscapist.glide.GlideImage
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.common.utils.DensityUtil
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.entity.Stuff
 import com.xz.schoolnavinfo.domain.data.entity.UserInfo
+import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.common.components.ButtonType
+import com.xz.schoolnavinfo.presentation.common.components.CustomTopBar
+import com.xz.schoolnavinfo.presentation.common.components.LocationBox
+import com.xz.schoolnavinfo.presentation.common.components.MyButton
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
@@ -79,6 +82,7 @@ fun StuffDetailScreen(
 ) {
     val stuffDTO by stuffDetailViewModel.stuffDTO.collectAsStateWithLifecycle()
     val userInfo by commonViewModel.userInfo.collectAsStateWithLifecycle()
+    val navigator = LocalAppNavigator.current
 
     LaunchedEffect(true) {
         stuffDetailViewModel.getStuffById(id)
@@ -88,10 +92,10 @@ fun StuffDetailScreen(
         stuff = stuffDTO?.stuff,
         stuffUserInfo = stuffDTO?.userInfo,
         myUserInfo = userInfo,
-        onBack = { commonViewModel.onNavEvent(NavEvent.BackPage) },
+        onBack = { navigator.popBack() },
         onDelete = {
             stuffDetailViewModel.deleteStuff(id)
-            commonViewModel.onNavEvent(NavEvent.BackPage)
+            navigator.popBack()
         },
         onUpdateStatus = {
             stuffDetailViewModel.updateStatus(id)
@@ -183,10 +187,17 @@ fun StuffDetailBody(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 300.dp)
                 .padding(10.dp),
             contentAlignment = Alignment.Center
         ) {
+            GlideImage(
+                imageModel = { stuff.imageUrl },
+                modifier = Modifier.fillMaxWidth(),
+                imageOptions = ImageOptions(
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.Center
+                )
+            )
             Image(
                 modifier = Modifier
                     .size(imageWidth.dp, imageHeight.dp)
@@ -198,12 +209,12 @@ fun StuffDetailBody(
                             onSuccess = { _, result ->
                                 val drawable = result.drawable
                                 val width = ceil(
-                                    DensityUtil.px2dip(
+                                    DensityUtil.pxToDip(
                                         context,
                                         drawable.intrinsicWidth.toFloat()
                                     ).value
                                 )
-                                val height = (DensityUtil.px2dip(
+                                val height = (DensityUtil.pxToDip(
                                     context,
                                     drawable.intrinsicHeight.toFloat()
                                 ).value)
@@ -217,36 +228,7 @@ fun StuffDetailBody(
             )
         }
         //地址
-        Row(
-            modifier = Modifier
-                .padding(start = 10.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(appColors.greyMedium.copy(.5f)),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                modifier = Modifier
-                    .padding(start = 5.dp)
-                    .size(20.dp),
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = null,
-                tint = appColors.fontSecondary
-            )
-            Row {
-                Text(
-                    modifier = Modifier
-                        .padding(vertical = 5.dp)
-                        .padding(end = 10.dp),
-                    text = stuff.address,
-                    maxLines = 1,
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = appColors.greyHeavy
-                    )
-                )
-            }
-        }
+        Box(Modifier.padding(horizontal = 10.dp)) { LocationBox(stuff.address) }
         //描述
         Spacer(Modifier.height(10.dp))
         Row(Modifier.padding(horizontal = 10.dp)) {
@@ -448,27 +430,12 @@ fun StuffDetailTopBar(
     onFinish: () -> Unit
 ) {
     val appColors = AppColors.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(start = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                modifier = Modifier.clip(CircleShape).clickable  { onBack() },
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = null,
-                tint = appColors.fontPrimary
-            )
+    CustomTopBar(
+        leftContent = {
+            Spacer(Modifier.width(10.dp))
             Image(
                 modifier = Modifier
-                    .padding(start = 10.dp)
-                    .size(40.dp)
+                    .size(36.dp)
                     .clip(CircleShape),
                 painter = if (avatarUrl.isBlank())
                     painterResource(R.drawable.heard_image) else
@@ -476,19 +443,15 @@ fun StuffDetailTopBar(
                 contentDescription = "头像",
                 contentScale = ContentScale.Crop
             )
-            Column {
+            Column(Modifier.padding(start = 10.dp)) {
                 Text(
-                    modifier = Modifier
-                        .padding(start = 5.dp),
                     text = nickname,
                     style = TextStyle(
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         color = appColors.fontPrimary,
-                        fontWeight = FontWeight.Bold
                     )
                 )
                 Text(
-                    modifier = Modifier.padding(start = 5.dp),
                     text = TimeUtils.formatTimeDifference(createTime!!),
                     style = TextStyle(
                         fontSize = 14.sp,
@@ -496,50 +459,18 @@ fun StuffDetailTopBar(
                     )
                 )
             }
-        }
-        if (isMy) {
-            Row(Modifier.padding(end = 10.dp)) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 5.dp)
-                        .shadow(3.dp, RoundedCornerShape(10.dp))
-                        .background(appColors.err)
-                        .clip(RoundedCornerShape(10.dp))
-                        .width(60.dp)
-                        .height(30.dp)
-                        .clickable { onDelete() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "删除",
-                        style = TextStyle(
-                            color = appColors.onButtonColor,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-                if (!status) {
-                    Box(
-                        modifier = Modifier
-                            .shadow(3.dp, RoundedCornerShape(10.dp))
-                            .background(appColors.primary)
-                            .clip(RoundedCornerShape(10.dp))
-                            .width(60.dp)
-                            .height(30.dp)
-                            .clickable { onFinish() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "完成",
-                            style = TextStyle(
-                                color = appColors.onButtonColor,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
+        },
+        rightContent = {
+            if (isMy) {
+                Row {
+                    MyButton("删除", type = ButtonType.ERR) { onDelete() }
+                    Spacer(Modifier.width(5.dp))
+                    if (!status) MyButton("完成") { onFinish() }
                 }
             }
         }
+    ) {
+        onBack()
     }
 }
 
@@ -567,9 +498,9 @@ fun DeleteDialog(
                     Text(
                         text = "提醒",
                         style = TextStyle(
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = appColors.primary
+                            color = appColors.fontPrimary
                         )
                     )
                     Spacer(Modifier.height(8.dp))
@@ -588,7 +519,7 @@ fun DeleteDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = {
-                            updateShow(true)
+                            updateShow(false)
                         }) {
                             Text(
                                 text = "取消",

@@ -1,19 +1,20 @@
 package com.xz.schoolnavinfo.presentation.campus.publish
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.baidu.mapapi.model.LatLng
 import com.esafirm.imagepicker.model.Image
-import com.google.gson.Gson
 import com.xz.schoolnavinfo.common.flow.GlobalFlow
 import com.xz.schoolnavinfo.common.net.NetExceptionManager
+import com.xz.schoolnavinfo.common.utils.JsonUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
 import com.xz.schoolnavinfo.domain.data.entity.Article
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.domain.use_case.ArticleUseCases
 import com.xz.schoolnavinfo.domain.use_case.FileUseCases
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
-import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationState
+import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -43,7 +44,6 @@ sealed interface PublishArticleUiState {
         override val location: LatLng?,
         override val images: List<Image> = emptyList(),
         override val isLoading: Boolean = false
-
     ) : PublishArticleUiState
 
     data class Activity(
@@ -62,6 +62,14 @@ inline fun <T> PublishArticleUiState.ifActivity(block: (PublishArticleUiState.Ac
     return if (this is PublishArticleUiState.Activity) block(this) else null
 }
 
+fun PublishArticleUiState.isAddBanner(): Boolean {
+    return if (this !is PublishArticleUiState.Activity) false else this.isAddBanner
+}
+
+fun PublishArticleUiState.isSelectedBanner(): Boolean {
+    return if (this !is PublishArticleUiState.Activity) false else this.banner != null
+}
+
 
 @HiltViewModel
 class PublishArticleViewModel @Inject constructor(
@@ -78,7 +86,7 @@ class PublishArticleViewModel @Inject constructor(
         PublishArticleUiState.Discuss(location = null)
     )
 
-    private val articleType: MutableStateFlow<ArticleType> = MutableStateFlow(ArticleType.Discuss)
+    private val articleType: MutableStateFlow<ArticleType> = MutableStateFlow(ArticleType.DISCUSS)
 
     private val _publishOver = MutableSharedFlow<Unit>()
     val publishOver = _publishOver.asSharedFlow()
@@ -87,8 +95,8 @@ class PublishArticleViewModel @Inject constructor(
     val uiState: StateFlow<PublishArticleUiState> = articleType
         .flatMapLatest {
             when (it) {
-                is ArticleType.Discuss -> discussUiState
-                is ArticleType.Activity -> activityUiState
+                ArticleType.ACTIVITY -> activityUiState
+                ArticleType.DISCUSS -> discussUiState
             }
         }
         .stateIn(
@@ -101,14 +109,13 @@ class PublishArticleViewModel @Inject constructor(
         articleType.update { newType }
     }
 
-
     private fun updateCurrentUiState(transform: (PublishArticleUiState) -> PublishArticleUiState) {
         when (articleType.value) {
-            ArticleType.Discuss -> discussUiState.update {
+            ArticleType.DISCUSS -> discussUiState.update {
                 transform(it) as PublishArticleUiState.Discuss
             }
 
-            ArticleType.Activity -> activityUiState.update {
+            ArticleType.ACTIVITY -> activityUiState.update {
                 transform(it) as PublishArticleUiState.Activity
             }
         }
@@ -132,37 +139,38 @@ class PublishArticleViewModel @Inject constructor(
         }
     }
 
-
-    fun setAddress(address: String) {
-        updateCurrentUiState { state ->
-            when (state) {
-                is PublishArticleUiState.Discuss -> state.copy(address = address)
-                is PublishArticleUiState.Activity -> state.copy(address = address)
-            }
-        }
-    }
-
-    fun setLocation(locationState: LocationState?) {
-        if (locationState == null) return
+    fun setLocation(locationInfo: LocationInfo?) {
+        if (locationInfo == null) return
         updateCurrentUiState { state ->
             when (state) {
                 is PublishArticleUiState.Discuss -> state.copy(
-                    location = locationState.location,
-                    address = locationState.address
+                    location = locationInfo.location,
+                    address = "${locationInfo.name}-${locationInfo.address}"
                 )
+
                 is PublishArticleUiState.Activity -> state.copy(
-                    location = locationState.location,
-                    address = locationState.address
+                    location = locationInfo.location,
+                    address = "${locationInfo.name}-${locationInfo.address}"
                 )
             }
         }
     }
 
-    fun setImageUrls(urls: List<Image>) {
+    fun setImages(images: List<Image>) {
+        if (uiState.value.images.size + images.size > 9) return
         updateCurrentUiState { state ->
             when (state) {
-                is PublishArticleUiState.Discuss -> state.copy(images = urls)
-                is PublishArticleUiState.Activity -> state.copy(images = urls)
+                is PublishArticleUiState.Discuss -> state.copy(images = state.images + images)
+                is PublishArticleUiState.Activity -> state.copy(images = state.images + images)
+            }
+        }
+    }
+
+    fun removeImage(image: Image) {
+        updateCurrentUiState { state ->
+            when (state) {
+                is PublishArticleUiState.Discuss -> state.copy(images = uiState.value.images.filterNot { it == image })
+                is PublishArticleUiState.Activity -> state.copy(images = uiState.value.images.filterNot { it == image })
             }
         }
     }
@@ -192,6 +200,16 @@ class PublishArticleViewModel @Inject constructor(
         }
     }
 
+    fun clearUiState() {
+        if (articleType.value == ArticleType.ACTIVITY) {
+            activityUiState.update {
+                PublishArticleUiState.Activity(banner = null, location = null)
+            }
+        } else {
+            discussUiState.update { PublishArticleUiState.Discuss(location = null) }
+        }
+    }
+
     fun publishArticle() {
         setLoading(true)
         viewModelScope.launch {
@@ -215,8 +233,8 @@ class PublishArticleViewModel @Inject constructor(
                 title = uiState.value.title,
                 content = uiState.value.content,
                 address = uiState.value.address,
-                location = gson.toJson(uiState.value.location),
-                banner = (uiState.value is PublishArticleUiState.Activity)
+                location = JsonUtils.toJson(uiState.value.location),
+                banner = (uiState.value.isAddBanner())
             )
 
             val articleDTO = ArticleDTO(
@@ -225,26 +243,21 @@ class PublishArticleViewModel @Inject constructor(
             )
 
             when (articleType.value) {
-                is ArticleType.Discuss -> {
+                ArticleType.DISCUSS -> {
                     netExceptionManager.safeApiCall {
                         val resp = articleUseCases.createDiscussArticle(articleDTO)
                         if (resp.code == "success") {
-                            activityUiState.update {
-                                PublishArticleUiState.Activity(
-                                    banner = null,
-                                    location = null
-                                )
-                            }
+                            clearUiState()
                             globalFlow.onRefreshDataEvent(CampusMenu.Discuss)
                         }
                     }
                 }
 
-                ArticleType.Activity -> {
+                ArticleType.ACTIVITY -> {
                     netExceptionManager.safeApiCall {
                         val resp = articleUseCases.createActivityArticle(articleDTO)
                         if (resp.code == "success") {
-                            discussUiState.update { PublishArticleUiState.Discuss(location = null) }
+                            clearUiState()
                             globalFlow.onRefreshDataEvent(CampusMenu.Activity)
                         }
                     }
@@ -254,8 +267,5 @@ class PublishArticleViewModel @Inject constructor(
             _publishOver.emit(Unit)
         }
     }
-
-    private val gson = Gson()
-
 
 }

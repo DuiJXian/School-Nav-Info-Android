@@ -6,6 +6,7 @@
     <style name="ImagePickerThemeLight" parent="ef_BaseTheme">
         <item name="colorPrimary">#FF0091EA</item>
     </style>
+
     <style name="ImagePickerThemeDark" parent="ef_BaseTheme">
         <item name="colorPrimary">#FF464646</item>
     </style>

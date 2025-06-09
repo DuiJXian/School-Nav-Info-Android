@@ -7,6 +7,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 import org.junit.Assert.*
+import kotlin.reflect.KClass
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -21,4 +22,12 @@ class ExampleInstrumentedTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("com.xz.schoolnavinfo", appContext.packageName)
     }
+
+    @Test
+    fun testApp(){
+
+    }
+
+
+
 }

@@ -3,6 +3,7 @@ package com.xz.schoolnavinfo.presentation.map.composable
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -26,18 +27,18 @@ fun ScrollMapIcon(
     val appColors = AppColors.current
     Box(
         modifier = modifier
-            .clip(CircleShape)
             .size(36.dp)
-            .background(appColors.bgPrimary, shape = CircleShape),
+            .background(appColors.bgPrimary, shape = CircleShape)
+            .border(1.dp, appColors.bgLight, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(R.drawable.position),
+            painter = painterResource(R.drawable.my_location),
             contentDescription = "移动到当前位置",
-            colorFilter = ColorFilter.tint(color = appColors.greyHeavy),
+            colorFilter = ColorFilter.tint(color = appColors.primary),
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(25.dp)
+                .size(28.dp)
         )
     }
 }

@@ -11,7 +11,7 @@ object DensityUtil {
         return (dpValue.value * scale + 0.5f).toInt()
     }
 
-    fun px2dip(context: Context, pxValue: Float): Dp {
+    fun pxToDip(context: Context, pxValue: Float): Dp {
         val scale = context.resources.displayMetrics.density
         return (pxValue / scale).dp
     }

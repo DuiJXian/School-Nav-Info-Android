@@ -1,7 +1,6 @@
 package com.xz.schoolnavinfo.presentation.my
 
 import android.app.Activity
-import android.util.Log
 import android.view.Gravity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,8 +59,9 @@ import com.esafirm.imagepicker.features.ImagePickerConfig
 import com.esafirm.imagepicker.features.createImagePickerIntent
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.getImagesUrl
+import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.Routes
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
@@ -84,6 +84,7 @@ fun MyScreen(
     val context = LocalContext.current
 
     var errMessage by remember { mutableStateOf("") }
+    val navigator = LocalAppNavigator.current
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -101,9 +102,8 @@ fun MyScreen(
             if (it.code == "success") {
                 showPwdDialog = false
                 myViewModel.onLogOut()
-                commonViewModel.onNavEvent(NavEvent.LoginOrRegister)
+                navigator.navigate(Routes.LoginRegister)
             } else {
-                Log.e("TAG", "LaunchedEffect: $errMessage")
                 errMessage = it.message
             }
         }
@@ -114,6 +114,7 @@ fun MyScreen(
             if (it.code == "success") {
                 commonViewModel.getUserInfo()
             }
+
             StyleableToast.Builder(context)
                 .text(it.message)
                 .textColor(Color.White.toArgb())
@@ -149,7 +150,7 @@ fun MyScreen(
         }) {
             showLogOutDialog = false
             myViewModel.onLogOut()
-            commonViewModel.onNavEvent(NavEvent.LoginOrRegister)
+            navigator.popBack()
         }
     }
 

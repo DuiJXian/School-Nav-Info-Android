@@ -1,66 +1,69 @@
 package com.xz.schoolnavinfo.presentation.campus
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.Routes
 import com.xz.schoolnavinfo.presentation.campus.activity.ActivityScreen
 import com.xz.schoolnavinfo.presentation.campus.discuss.DiscussScreen
 import com.xz.schoolnavinfo.presentation.campus.stuff.StuffScreen
+import com.xz.schoolnavinfo.presentation.common.components.CustomTabRow
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
-import kotlinx.coroutines.launch
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "WrongNavigateRouteType")
 @Composable
 fun CampusScreen(
     commonViewModel: CommonViewModel
 ) {
     val tabTitles = listOf(CampusMenu.Activity, CampusMenu.Discuss, CampusMenu.Stuff)
     val pagerState = rememberPagerState(initialPage = 1) { tabTitles.size }
-    val coroutineScope = rememberCoroutineScope()
     val appColors = AppColors.current
     val userInfo by commonViewModel.userInfo.collectAsState()
-
+    var currentPage by remember { mutableIntStateOf(0) }
+    val topPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
+    val navigator = LocalAppNavigator.current
     val lifecycle = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycle) {
@@ -88,10 +91,18 @@ fun CampusScreen(
                     modifier = Modifier
                         .size(46.dp),
                     onClick = {
-                        when(pagerState.currentPage){
-                            0 -> { commonViewModel.onNavEvent(NavEvent.PublishArticle(ArticleType.Activity)) }
-                            1 -> { commonViewModel.onNavEvent(NavEvent.PublishArticle(ArticleType.Discuss)) }
-                            2 -> { commonViewModel.onNavEvent(NavEvent.PublishStuff) }
+                        when (pagerState.currentPage) {
+                            0 -> {
+                                navigator.navigate(Routes.ArticlePublish(ArticleType.ACTIVITY))
+                            }
+
+                            1 -> {
+                                navigator.navigate(Routes.ArticlePublish(ArticleType.DISCUSS))
+                            }
+
+                            2 -> {
+                                navigator.navigate(Routes.StuffPublish)
+                            }
                         }
                     },
                     shape = CircleShape,
@@ -116,68 +127,45 @@ fun CampusScreen(
                 .widthIn(max = 540.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
-                modifier = Modifier
+            Spacer(
+                Modifier
+                    .fillMaxWidth()
+                    .height(topPadding)
                     .background(appColors.bgPrimary)
-                    .padding(top = 20.dp)
-                    .zIndex(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                TabRow(
-                    modifier = Modifier
-                        .width(200.dp),
-                    containerColor = appColors.bgPrimary,
-                    selectedTabIndex = pagerState.currentPage,
-                    indicator = { tabPositions ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(35.dp)
-                                    .height(3.dp)
-                                    .background(appColors.primary, shape = RoundedCornerShape(3.dp))
+            )
+            CustomTabRow(
+                tabWidth = 72.dp,
+                backgroundColor = appColors.bgPrimary,
+                startPage = pagerState.currentPage,
+                pagerState = pagerState,
+                tabs = tabTitles.mapIndexed { index, menu ->
+                    {
+                        Text(
+                            menu.title,
+                            style = if (index == currentPage) TextStyle(
+                                color = appColors.primary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            ) else TextStyle(
+                                color = appColors.fontPrimary,
+                                fontSize = 16.sp
                             )
-                        }
-
-                    },
-                    divider = {}
-
-                ) {
-                    tabTitles.forEachIndexed { index, menu ->
-                        var textColor = appColors.fontSecondary
-                        var fontWeight = FontWeight.Normal
-                        if (pagerState.currentPage == index) {
-                            textColor = appColors.primary
-                            fontWeight = FontWeight.Bold
-                        }
-                        Tab(
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                coroutineScope.launch { pagerState.animateScrollToPage(index) }
-                            },
-                            text = {
-                                Text(
-                                    modifier = Modifier
-                                        .offset(y = (10).dp),
-                                    text = menu.title,
-                                    style = TextStyle(
-                                        fontSize = 16.sp,
-                                        fontWeight = fontWeight,
-                                        color = textColor
-                                    )
-                                )
-                            }
                         )
                     }
+                },
+                indicator = {
+                    Box(
+                        Modifier
+                            .width(36.dp)
+                            .height(3.dp)
+                            .clip(CircleShape)
+                            .background(appColors.primary)
+                    )
+                },
+                onPageChange = {
+                    currentPage = it
                 }
-            }
-
-
+            )
             HorizontalPager(
                 modifier = Modifier
                     .fillMaxSize(),

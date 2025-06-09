@@ -1,5 +1,8 @@
 package com.xz.schoolnavinfo.domain.data.entity
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Article(
     val id: String? = null,
     val title: String? = null,

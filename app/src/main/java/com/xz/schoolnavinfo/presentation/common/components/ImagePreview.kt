@@ -33,32 +33,19 @@ import com.xz.schoolnavinfo.presentation.theme.AppColors
 fun ImagePreview(
     imageList: List<String>,
     startIndex: Int = 0,
-    displayMaxHeight: Dp = 300.dp, // 默认最大高度
 //    onBack: () -> Unit
 ) {
     val appColors = AppColors.current
     val pageState = rememberPagerState(initialPage = startIndex) { imageList.size }
-    val modifier = if (displayMaxHeight == 0.dp) {
-        Modifier
-            .fillMaxSize()
-            .background(appColors.bgPrimary)
-    } else {
-        Modifier
-            .heightIn(max = displayMaxHeight)
-            .background(appColors.bgPrimary)
-    }
 
-    Box(
-        modifier = modifier
-            .navigationBarsPadding()
-    ) {
+    Box(Modifier.navigationBarsPadding()) {
         HorizontalPager(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize(),
             state = pageState
         ) { index ->
             Image(
-                modifier = modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
                 painter = rememberAsyncImagePainter(
                     model = ImageRequest.Builder(LocalContext.current)

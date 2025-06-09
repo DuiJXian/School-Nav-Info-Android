@@ -2,6 +2,7 @@ package com.xz.schoolnavinfo.presentation.campus.publish
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import android.view.Gravity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,14 +14,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,9 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,13 +46,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -68,21 +63,26 @@ import com.esafirm.imagepicker.features.ImagePickerConfig
 import com.esafirm.imagepicker.features.createImagePickerIntent
 import com.esafirm.imagepicker.model.Image
 import com.xz.schoolnavinfo.R
+import com.xz.schoolnavinfo.common.utils.JsonUtils
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.common.components.ButtonType
 import com.xz.schoolnavinfo.presentation.common.components.CustomCheckbox
+import com.xz.schoolnavinfo.presentation.common.components.CustomTopBar
 import com.xz.schoolnavinfo.presentation.common.components.LoadingDialog
-import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
+import com.xz.schoolnavinfo.presentation.common.components.LocationBox
+import com.xz.schoolnavinfo.presentation.common.components.MyButton
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
+import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationInfo
 
 
 @Composable
-fun PublishDiscussScreen(
+fun DiscussPublishScreen(
     publishArticleViewModel: PublishArticleViewModel,
     articleType: ArticleType,
-    commonViewModel: CommonViewModel
 ) {
     publishArticleViewModel.switchArticleType(articleType)
 
@@ -90,17 +90,17 @@ fun PublishDiscussScreen(
     val scrollState = rememberScrollState()
 
 
+
+
     PublishArticleContent(
         articleType = articleType,
         scrollState = scrollState,
         viewModel = publishArticleViewModel,
-        commonViewModel = commonViewModel,
         uiState = uiState
     )
 
     RunCoroutine(
         viewModel = publishArticleViewModel,
-        commonViewModel = commonViewModel,
         scrollState = scrollState,
         imagesSize = uiState.images.size
     )
@@ -109,23 +109,24 @@ fun PublishDiscussScreen(
 @Composable
 fun RunCoroutine(
     viewModel: PublishArticleViewModel,
-    commonViewModel: CommonViewModel,
     scrollState: ScrollState,
     imagesSize: Int,
 ) {
+    val navigator = LocalAppNavigator.current
+    val locationData = navigator.getLocationData()
+    if (!locationData.isNullOrEmpty()) {
+        viewModel.setLocation(JsonUtils.fromJson(locationData))
+    }
     LaunchedEffect(imagesSize) {
         scrollState.animateScrollTo(scrollState.maxValue)
     }
     LaunchedEffect(Unit) {
         viewModel.publishOver.collectLatest {
-            commonViewModel.onNavEvent(NavEvent.BackPage)
+            navigator.popBack()
         }
     }
-    LaunchedEffect(Unit) {
-        commonViewModel.selectLocationFlow.collectLatest {
-            viewModel.setLocation(it)
-        }
-    }
+
+
 }
 
 @Composable
@@ -133,17 +134,15 @@ private fun PublishArticleContent(
     articleType: ArticleType,
     scrollState: ScrollState,
     viewModel: PublishArticleViewModel,
-    commonViewModel: CommonViewModel,
     uiState: PublishArticleUiState,
 ) {
 
     val appColors = AppColors.current
     val statusBarPadding = WindowInsets.systemBars.asPaddingValues()
     val isEmpty = uiState.title.isBlank() && uiState.content.isBlank() && uiState.images.isEmpty()
-    val isAddBanner =
-        articleType == ArticleType.Activity && (uiState as PublishArticleUiState.Activity).isAddBanner
     val imageSize by remember { mutableStateOf(76.dp) }
     val (selectType, updateSelectType) = rememberSaveable { mutableIntStateOf(0) }
+    val navigator = LocalAppNavigator.current
 
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -153,7 +152,7 @@ private fun PublishArticleContent(
             val data = ImagePicker.getImages(result.data)
             data?.let {
                 if (selectType == 0) {
-                    viewModel.setImageUrls(it)
+                    viewModel.setImages(it)
                 } else {
                     viewModel.setBanner(it[0])
                 }
@@ -177,18 +176,21 @@ private fun PublishArticleContent(
 
             PublishArticleTopBar(
                 articleType = articleType,
-                isEmpty = isEmpty,
-                isAddBanner = isAddBanner,
-                onBack = { commonViewModel.onNavEvent(NavEvent.BackPage) },
-                onClear = { },
-                onPublish = { }
+                isContentEmpty = isEmpty,
+                isAddBanner = uiState.isAddBanner(),
+                isSelectedBannerImage = uiState.isSelectedBanner(),
+                onBack = { navigator.popBack() },
+                onClear = {
+                    viewModel.clearUiState()
+                },
+                onPublish = { viewModel.publishArticle() }
             )
 
             PublishArticleBody(
                 articleType = articleType,
                 scrollState = scrollState,
                 updateSelectType = updateSelectType,
-                isAddBanner = isAddBanner,
+                isAddBanner = uiState.isAddBanner(),
                 updateIsAddBanner = { viewModel.setAddBanner(it) },
                 address = uiState.address,
                 images = uiState.images,
@@ -199,16 +201,20 @@ private fun PublishArticleContent(
                 imagePickerLauncher = imagePickerLauncher,
                 bannerSection = {
                     uiState.ifActivity { activityState ->
-                        BannerImageSection(
-                            banner = activityState.banner,
-                            imageSize = imageSize,
-                            imagePickerLauncher = imagePickerLauncher,
-                            updateSelectType = updateSelectType
-                        )
+                        if (activityState.isAddBanner) {
+                            BannerImageSection(
+                                banner = activityState.banner,
+                                imageSize = imageSize,
+                                imagePickerLauncher = imagePickerLauncher,
+                                updateSelectType = updateSelectType
+                            )
+                        }
                     }
                 },
-                onLocation = {},
-                onRemoveImage = { },
+                onLocation = {
+                    navigator.navigate(Routes.LocationSelect)
+                },
+                onRemoveImage = { viewModel.removeImage(it) },
             )
         }
     }
@@ -230,7 +236,7 @@ fun PublishArticleBody(
     imagePickerLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
     bannerSection: @Composable () -> Unit,
     onLocation: () -> Unit,
-    onRemoveImage: () -> Unit
+    onRemoveImage: (Image) -> Unit
 ) {
 
     val context = LocalContext.current
@@ -238,6 +244,7 @@ fun PublishArticleBody(
     val isSystemInDarkTheme = isSystemInDarkTheme()
     val appColors = AppColors.current
 
+    Spacer(Modifier.height(10.dp))
     //图片区域
     Row(
         modifier = Modifier
@@ -265,7 +272,7 @@ fun PublishArticleBody(
                         .align(Alignment.TopEnd)
                         .size(20.dp)
                         .clickable {
-                            onRemoveImage()
+                            onRemoveImage(image)
                         },
                     imageVector = Icons.Default.Clear,
                     tint = appColors.bgScreen,
@@ -317,7 +324,7 @@ fun PublishArticleBody(
     }
 
     //是否选择轮播图
-    if (articleType == ArticleType.Activity) {
+    if (articleType == ArticleType.ACTIVITY) {
         Row(
             modifier = Modifier
                 .padding(start = 10.dp, top = 5.dp),
@@ -330,8 +337,6 @@ fun PublishArticleBody(
                 checkedColor = appColors.fontPrimary
             ) {
                 updateIsAddBanner(it)
-//                isChecked ->
-//                viewModel.onEvent(PublishArticleEvent.AddBanner(isChecked))
             }
             Text(
                 modifier = Modifier
@@ -346,39 +351,9 @@ fun PublishArticleBody(
         }
     }
     //选择地址
-    Box(
-        modifier = Modifier
-            .padding(start = 10.dp, top = 5.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(appColors.greyMedium.copy(.5f))
-                .clickable {
-                    onLocation()
-//                    commonViewModel.onNavEvent(NavEvent.MapLocationSelect)
-                },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                modifier = Modifier
-                    .padding(start = 5.dp)
-                    .size(20.dp),
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = null,
-                tint = appColors.fontSecondary
-            )
-            Text(
-                modifier = Modifier
-                    .padding(vertical = 5.dp)
-                    .padding(end = 10.dp),
-                text = address.ifBlank { "选择地址.." },
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    color = appColors.greyHeavy
-                )
-            )
-        }
+    Spacer(Modifier.height(5.dp))
+    Box(Modifier.padding(horizontal = 10.dp)) {
+        LocationBox(address.ifBlank { "选择地址.." }) { onLocation() }
     }
 
     Box(
@@ -426,7 +401,7 @@ fun PublishArticleBody(
             .padding(horizontal = 5.dp)
             .fillMaxWidth()
             .height(1.dp)
-            .background(appColors.greyHeavy)
+            .background(appColors.greyLight)
     )
     Box(
         modifier = Modifier
@@ -445,7 +420,6 @@ fun PublishArticleBody(
             textStyle = TextStyle(
                 color = appColors.fontPrimary,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
             ),
             decorationBox = {
                 if (content.isBlank()) {
@@ -516,129 +490,46 @@ fun BannerImageSection(
 @Composable
 fun PublishArticleTopBar(
     articleType: ArticleType,
-    isEmpty: Boolean,
+    isContentEmpty: Boolean,
+    isSelectedBannerImage: Boolean,
     isAddBanner: Boolean,
     onBack: () -> Unit,
     onClear: () -> Unit,
     onPublish: () -> Unit
 ) {
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val appColors = AppColors.current
+
     val context = LocalContext.current
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(start = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxHeight(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                modifier = Modifier
-                    .clickable {
-                        keyboardController?.hide()
-                        onBack()
-//                        commonViewModel.onLocationSelectEvent(null)
-//                        commonViewModel.onNavEvent(NavEvent.BackPage)
-                    },
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = null
-            )
-            Text(
-                text = articleType.title,
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    color = appColors.fontPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-            )
-
-        }
-
-        Row(
-            modifier = Modifier
-                .padding(end = 10.dp)
-                .height(30.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(end = 5.dp)
-                    .shadow(3.dp, RoundedCornerShape(10.dp))
-                    .background(appColors.err)
-                    .clip(RoundedCornerShape(10.dp))
-                    .width(60.dp)
-                    .height(30.dp)
-                    .clickable {
-                        onClear()
-//                        publishArticleViewModel.onEvent(PublishArticleEvent.Clear(campusMenu))
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "清空",
-                    style = TextStyle(
-                        color = appColors.onButtonColor,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .shadow(3.dp, RoundedCornerShape(10.dp))
-                    .background(appColors.primary)
-                    .clip(RoundedCornerShape(10.dp))
-                    .width(60.dp)
-                    .height(30.dp)
-                    .clickable {
-
-                        if (isAddBanner) {
-                            //addBanner && bannerImage == null
+    CustomTopBar(
+        title = articleType.title,
+        rightContent = {
+            Row {
+                MyButton("清空", type = ButtonType.ERR) { onClear() }
+                Spacer(Modifier.width(5.dp))
+                MyButton("发布") {
+                    if (isAddBanner && !isSelectedBannerImage) {
+                        StyleableToast.Builder(context)
+                            .text("请选择轮播图")
+                            .textColor(Color.White.toArgb())
+                            .backgroundColor(Color(0xFF0091EA).toArgb())
+                            .cornerRadius(36)
+                            .gravity(Gravity.TOP)
+                            .show()
+                    } else {
+                        if (isContentEmpty) {
                             StyleableToast.Builder(context)
-                                .text("请选择轮播图")
+                                .text("标题、内容、图片不能全为空")
                                 .textColor(Color.White.toArgb())
                                 .backgroundColor(Color(0xFF0091EA).toArgb())
                                 .cornerRadius(36)
                                 .gravity(Gravity.TOP)
                                 .show()
                         } else {
-                            if (isEmpty) {
-                                //articleInfo.title.isBlank() && articleInfo.content.isBlank() && selectImageList.isEmpty()
-                                StyleableToast.Builder(context)
-                                    .text("标题、内容、图片不能全为空")
-                                    .textColor(Color.White.toArgb())
-                                    .backgroundColor(Color(0xFF0091EA).toArgb())
-                                    .cornerRadius(36)
-                                    .gravity(Gravity.TOP)
-                                    .show()
-                            } else {
-                                onPublish()
-//                                publishArticleViewModel.onEvent(
-//                                    PublishArticleEvent.PublishArticle(
-//                                        if (campusMenu == CampusMenu.Discuss) ArticleType.Discuss else ArticleType.Activity,
-//                                        addBanner
-//                                    )
-//                                )
-//                                commonViewModel.onLocationSelectEvent(null)
-                            }
+                            onPublish()
                         }
-
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "发布",
-                    style = TextStyle(
-                        color = appColors.onButtonColor,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
+                    }
+                }
             }
-        }
-    }
+        },
+        onBack = onBack
+    )
 }

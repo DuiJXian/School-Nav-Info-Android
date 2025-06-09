@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -47,16 +48,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
-import com.xz.schoolnavinfo.domain.data.type.ArticleType
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextOverflow
+import com.xz.schoolnavinfo.common.utils.TimeUtils
+import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.common.components.ImageGrid
+import com.xz.schoolnavinfo.presentation.common.components.LocationBox
 
 @Composable
 fun ActivityScreen(
@@ -66,24 +72,20 @@ fun ActivityScreen(
 
     val uiState by activityViewModel.uiState.collectAsStateWithLifecycle()
     val lazyColumnState = rememberLazyListState()
-
+    val navigator = LocalAppNavigator.current
     ActivityContent(
         uiState = uiState,
         onRefreshData = { activityViewModel.refreshData() },
         lazyColumnState = lazyColumnState,
         onNavDetail = {
-            commonViewModel.onNavEvent(
-                NavEvent.ArticleDetail(
-                    articleDTO = it,
-                    articleType = ArticleType.Activity
-                )
-            )
+            navigator.navigate(Routes.ArticleDetail(it))
         },
         onNavImageFull = { urls, startIndex ->
-            commonViewModel.onLoadImageUrlEvent(
-                urls.map { url -> getImagesUrl(url) },
-                startIndex,
-                0.dp
+            navigator.navigate(
+                Routes.ImagePreview(
+                    urls.map { url -> getImagesUrl(url) },
+                    startIndex
+                )
             )
         },
         onLocation = {
@@ -114,6 +116,8 @@ private fun ActivityContent(
     val banners = uiState.banners
     val refreshState = rememberPullToRefreshState()
     val appColors = AppColors.current
+    val configuration = LocalConfiguration.current
+    val isPad = configuration.smallestScreenWidthDp >= 600
     PullToRefreshBox(
         state = refreshState,
         isRefreshing = uiState.isRefreshing,
@@ -146,8 +150,8 @@ private fun ActivityContent(
                             modifier = Modifier
                                 .padding(bottom = 10.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .height(300.dp),
-                            articleDTOList = banners.reversed()
+                                .height(if (isPad) 300.dp else 200.dp),
+                            bannerArticleDTOs = banners.reversed()
                         ) { index ->
                             onNavDetail(banners.reversed()[index])
                         }
@@ -183,40 +187,37 @@ private fun ActivityContent(
 
 @Composable
 private fun ActivityBanner(
-    articleDTOList: List<ArticleDTO>,
+    bannerArticleDTOs: List<ArticleDTO>,
     modifier: Modifier = Modifier,
     autoScrollInterval: Long = 3000L,
     onImageClick: (index: Int) -> Unit = {}
 ) {
-    val pagerState = rememberPagerState { articleDTOList.size }
+    val pagerState = rememberPagerState { bannerArticleDTOs.size }
     val appColor = AppColors.current
     val scope = rememberCoroutineScope()
-
     // 自动滚动
     LaunchedEffect(pagerState.currentPage) {
-        if (articleDTOList.size <= 1) return@LaunchedEffect
+        if (bannerArticleDTOs.size <= 1) return@LaunchedEffect
         delay(autoScrollInterval)
-        val nextPage = (pagerState.currentPage + 1) % articleDTOList.size
+        val nextPage = (pagerState.currentPage + 1) % bannerArticleDTOs.size
         scope.launch {
             pagerState.animateScrollToPage(nextPage, animationSpec = tween(durationMillis = 1000))
         }
     }
 
 
-    val imageList = articleDTOList.flatMap { e ->
+    val bannerUrls = bannerArticleDTOs.flatMap { e ->
         e.imageList?.filter { v -> v.contains("banner") } ?: listOf()
     }
-    if (imageList.isNotEmpty()) {
-        Box(
-            modifier = modifier
-        ) {
+    if (bannerUrls.isNotEmpty()) {
+        Box(modifier) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
                     .fillMaxSize()
             ) { page ->
                 Image(
-                    painter = rememberAsyncImagePainter(getImagesUrl(imageList[page])),
+                    painter = rememberAsyncImagePainter(getImagesUrl(bannerUrls[page])),
                     contentDescription = "banner-$page",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -245,10 +246,12 @@ private fun ActivityBanner(
                     .padding(bottom = 10.dp, start = 10.dp)
                     .align(Alignment.BottomStart)
             ) {
-                val article = articleDTOList[pagerState.currentPage]
+                val article = bannerArticleDTOs[pagerState.currentPage]
                 article.article?.title?.let {
                     Text(
                         text = it,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         style = TextStyle(
                             color = Color.White,
                             fontSize = 18.sp,
@@ -263,7 +266,7 @@ private fun ActivityBanner(
                     .align(Alignment.BottomEnd),
                 horizontalArrangement = Arrangement.Center,
             ) {
-                repeat(imageList.size) { index ->
+                repeat(bannerUrls.size) { index ->
                     val isSelected = pagerState.currentPage == index
                     Box(
                         modifier = Modifier
@@ -278,6 +281,7 @@ private fun ActivityBanner(
     }
 }
 
+
 @Composable
 private fun RunCoroutine(
     refreshFlow: SharedFlow<CampusMenu>,
@@ -285,7 +289,7 @@ private fun RunCoroutine(
     lazyColumnState: LazyListState,
     getMoreArticles: () -> Unit,
 ) {
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         refreshFlow.collectLatest {
             if (it == CampusMenu.Activity) {
                 refreshData()
@@ -303,6 +307,77 @@ private fun RunCoroutine(
             if (lastVisibleItem == totalItems - 1) {
                 getMoreArticles()
             }
+        }
+    }
+}
+
+@Composable
+fun ActivityCard(
+    modifier: Modifier = Modifier,
+    articleDTO: ArticleDTO,
+    onImageClick: (String) -> Unit,
+    onLocation: (String) -> Unit,
+) {
+    val appColors = AppColors.current
+    val article = articleDTO.article
+    val imageList = articleDTO.imageList
+    Column(
+        modifier = modifier
+            .background(appColors.bgPrimary)
+            .fillMaxWidth()
+            .padding(10.dp),
+    ) {
+        //标题
+        if (article?.title?.isNotBlank() == true) {
+            Spacer(Modifier.height(5.dp))
+            Text(
+                text = article.title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(
+                    color = appColors.fontPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+            )
+
+        }
+        //正文
+        if (article?.content?.isNotBlank() == true) {
+            Spacer(Modifier.height(5.dp))
+            Text(
+                text = article.content,
+                maxLines = 5,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(
+                    color = appColors.fontPrimary,
+                    fontSize = 16.sp,
+                )
+            )
+        }
+        //图片区域
+        if (!imageList.isNullOrEmpty()) {
+            Spacer(Modifier.height(3.dp))
+            ImageGrid(imageList = imageList) { onImageClick(it) }
+        }
+        //位置区域
+        if (article?.address?.isNotBlank() == true) {
+            Spacer(Modifier.height(5.dp))
+            LocationBox(article.address) { article.location?.let { onLocation(it) } }
+        }
+
+        Spacer(Modifier.height(5.dp))
+        Row {
+            Text(
+                "${articleDTO.userInfo?.nickname}",
+                style = TextStyle(color = appColors.greyMedium)
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "${article?.createTime?.let { TimeUtils.formatTimeDifference(it) }}",
+                style = TextStyle(color = appColors.greyMedium)
+            )
         }
     }
 }

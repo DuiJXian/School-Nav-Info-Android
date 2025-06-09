@@ -5,11 +5,15 @@ data class BaseResponse<T>(
     val code: String,
     val message: String,
     val data: T
-){
+) {
     companion object {
-        fun <T> fail(code: String = "fail", message: String = "请求失败"): BaseResponse<Nothing?> {
+        fun fail(code: String = "fail", message: String = "请求失败"): BaseResponse<Nothing?> {
             return BaseResponse(code, message, null)
         }
+    }
+
+    fun <T> ifSuccess(block: () -> T): T? {
+        return if (code == "success") block() else null
     }
 }
 
@@ -20,3 +24,4 @@ data class PageResponse<T>(
     val pageSize: Int,
     val total: Int
 )
+
