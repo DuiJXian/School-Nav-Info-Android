@@ -43,8 +43,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.campus.activity.ActivityScreen
 import com.xz.schoolnavinfo.presentation.campus.discuss.DiscussScreen
 import com.xz.schoolnavinfo.presentation.campus.stuff.StuffScreen
@@ -63,7 +63,7 @@ fun CampusScreen(
     val userInfo by commonViewModel.userInfo.collectAsState()
     var currentPage by remember { mutableIntStateOf(0) }
     val topPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
-    val navigator = LocalAppNavigator.current
+    val navcontroller = LocalNavController.current
     val lifecycle = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycle) {
@@ -93,15 +93,15 @@ fun CampusScreen(
                     onClick = {
                         when (pagerState.currentPage) {
                             0 -> {
-                                navigator.navigate(Routes.ArticlePublish(ArticleType.ACTIVITY))
+                                navcontroller.navigate(MyRoutes.ArticlePublish(ArticleType.ACTIVITY))
                             }
 
                             1 -> {
-                                navigator.navigate(Routes.ArticlePublish(ArticleType.DISCUSS))
+                                navcontroller.navigate(MyRoutes.ArticlePublish(ArticleType.DISCUSS))
                             }
 
                             2 -> {
-                                navigator.navigate(Routes.StuffPublish)
+                                navcontroller.navigate(MyRoutes.StuffPublish)
                             }
                         }
                     },

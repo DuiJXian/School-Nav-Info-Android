@@ -1,6 +1,8 @@
 package com.xz.schoolnavinfo.presentation
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.ContextWrapper
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +15,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
+
 
 
 @AndroidEntryPoint
@@ -36,7 +39,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 AppTheme {
 //                    NavScreen()
-                    AppNavGraphProvider()
+                    AppNavGraph()
                 }
             }
 

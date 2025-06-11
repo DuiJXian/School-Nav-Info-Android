@@ -49,8 +49,8 @@ import coil.compose.rememberAsyncImagePainter
 import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.StuffDTO
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.components.ChangeHeightBar
 import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
@@ -70,7 +70,7 @@ fun StuffScreen(
     val gridState = rememberLazyGridState()
     val topHeight = 52.dp
     var searchText by remember { mutableStateOf("") }
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
 
     ChangeHeightBar(
         scrollableState = gridState,
@@ -122,7 +122,7 @@ fun StuffScreen(
                         stuffDTO = item,
                         onClick = {
                             if (item.stuff.id != null) {
-                                navigator.navigate(Routes.StuffDetail(item.stuff.id))
+                                navigator.navigate(MyRoutes.StuffDetail(item.stuff.id))
                             }
                         }
                     ) {

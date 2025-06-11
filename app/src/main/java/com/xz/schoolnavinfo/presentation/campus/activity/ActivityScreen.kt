@@ -59,8 +59,8 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import com.xz.schoolnavinfo.common.utils.TimeUtils
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.common.components.ImageGrid
 import com.xz.schoolnavinfo.presentation.common.components.LocationBox
 
@@ -72,17 +72,17 @@ fun ActivityScreen(
 
     val uiState by activityViewModel.uiState.collectAsStateWithLifecycle()
     val lazyColumnState = rememberLazyListState()
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
     ActivityContent(
         uiState = uiState,
         onRefreshData = { activityViewModel.refreshData() },
         lazyColumnState = lazyColumnState,
         onNavDetail = {
-            navigator.navigate(Routes.ArticleDetail(it))
+            navigator.navigate(MyRoutes.ArticleDetail(it))
         },
         onNavImageFull = { urls, startIndex ->
             navigator.navigate(
-                Routes.ImagePreview(
+                MyRoutes.ImagePreview(
                     urls.map { url -> getImagesUrl(url) },
                     startIndex
                 )

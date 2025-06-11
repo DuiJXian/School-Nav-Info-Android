@@ -10,7 +10,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.xz.schoolnavinfo.R
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.common.exception.NetExceptionEvent
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.campus.CampusScreen
 import com.xz.schoolnavinfo.presentation.common.components.BottomNavigationBar
 import com.xz.schoolnavinfo.presentation.common.components.TitleIcon
@@ -38,10 +40,18 @@ fun HomeScreen(
     val pagerState = rememberPagerState(initialPage = 0) { menus.size }
     val appColors = AppColors.current
     val coroutineScope = rememberCoroutineScope()
-
+    val navigator = LocalNavController.current
     LaunchedEffect(Unit) {
         commonViewModel.homePageChange.collectLatest {
             pagerState.scrollToPage(it)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        commonViewModel.globalFlow.netErrFlow.collectLatest {
+            if (it == NetExceptionEvent.Code401){
+                navigator.navigate(MyRoutes.LoginRegister)
+            }
         }
     }
 

@@ -1,6 +1,5 @@
 package com.xz.schoolnavinfo.presentation.common.baidu.select
 
-import android.util.Log
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,14 +52,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import com.baidu.mapapi.map.MapView
 import com.baidu.mapapi.search.core.PoiInfo
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.DensityUtil
 import com.xz.schoolnavinfo.common.utils.JsonUtils
 import com.xz.schoolnavinfo.common.utils.UnitCovertUtils
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.LocalNavController
 import com.xz.schoolnavinfo.presentation.common.baidu.map.MapViewScreen
 import com.xz.schoolnavinfo.presentation.common.components.ButtonType
 import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
@@ -73,7 +71,7 @@ import com.xz.schoolnavinfo.presentation.theme.AppColors
 fun LocationSelectScreen(
     locationSelectViewModel: LocationSelectViewModel = hiltViewModel(),
 ) {
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
     val uiState by locationSelectViewModel.uiState.collectAsStateWithLifecycle()
     val isDark = isSystemInDarkTheme()
     if (uiState.centerLocation == null) return
@@ -93,7 +91,7 @@ fun LocationSelectScreen(
         onSearchTextChange = { locationSelectViewModel.setSearchText(it) },
         onConfirm = {
             if (uiState.selectedPoiInfo?.location != null) {
-                navigator.saveLocationData(
+                navigator.saveData(
                     JsonUtils.toJson(
                         LocationInfo(
                             name = uiState.selectedPoiInfo!!.name,

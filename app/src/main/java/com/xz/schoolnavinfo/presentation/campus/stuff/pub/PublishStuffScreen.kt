@@ -1,7 +1,9 @@
 package com.xz.schoolnavinfo.presentation.campus.stuff.pub
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import android.view.Gravity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -53,6 +55,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,8 +79,8 @@ import com.esafirm.imagepicker.features.createImagePickerIntent
 import com.esafirm.imagepicker.model.Image
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.JsonUtils
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.common.components.CustomTopBar
 import com.xz.schoolnavinfo.presentation.common.components.LoadingDialog
 import com.xz.schoolnavinfo.presentation.common.components.LocationBox
@@ -85,26 +88,36 @@ import com.xz.schoolnavinfo.presentation.common.components.MyButton
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Calendar
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun StuffPublishScreen(
     publishStuffViewModel: PublishStuffViewModel = hiltViewModel()
 ) {
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
     PublishStuffContent(
         publishStuffViewModel = publishStuffViewModel,
     )
     LaunchedEffect(Unit) {
+
         publishStuffViewModel.netOver.collectLatest {
             navigator.popBack()
         }
     }
-    val locationData = navigator.getLocationData()
-    if (!locationData.isNullOrEmpty()) {
-        publishStuffViewModel.setLocation(JsonUtils.fromJson(locationData))
+
+    val locationData = navigator.getSaveData()
+    val scopeCoroutine = rememberCoroutineScope()
+    if (locationData!=null) {
+        scopeCoroutine.launch {
+            locationData.collectLatest { data->
+                data?.let { publishStuffViewModel.setLocation(JsonUtils.fromJson(it)) }
+            }
+        }
+
     }
 }
 
@@ -112,7 +125,7 @@ fun StuffPublishScreen(
 fun PublishStuffContent(
     publishStuffViewModel: PublishStuffViewModel,
 ) {
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
     val appColors = AppColors.current
     val statusBarPadding = WindowInsets.systemBars.asPaddingValues()
     val (showDateDialog, setShowDateDialog) = rememberSaveable { mutableStateOf(false) }
@@ -156,7 +169,7 @@ fun PublishStuffContent(
                 imagePickerLauncher = imagePickerLauncher,
                 onDescChange = { publishStuffViewModel.setDesc(it) },
                 onTypeChange = { publishStuffViewModel.setType(it) },
-                onLocationSelect = { navigator.navigate(Routes.LocationSelect) },
+                onLocationSelect = { navigator.navigate(MyRoutes.LocationSelect) },
                 onDateDialog = { setShowDateDialog(true) },
                 onDateSelected = { publishStuffViewModel.setHappenTime(it) }
             )

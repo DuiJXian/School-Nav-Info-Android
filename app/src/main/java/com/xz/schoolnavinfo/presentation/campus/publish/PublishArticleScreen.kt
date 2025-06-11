@@ -1,8 +1,8 @@
 package com.xz.schoolnavinfo.presentation.campus.publish
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.util.Log
 import android.view.Gravity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +66,8 @@ import com.esafirm.imagepicker.model.Image
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.utils.JsonUtils
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.common.components.ButtonType
 import com.xz.schoolnavinfo.presentation.common.components.CustomCheckbox
 import com.xz.schoolnavinfo.presentation.common.components.CustomTopBar
@@ -74,10 +77,7 @@ import com.xz.schoolnavinfo.presentation.common.components.MyButton
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import io.github.muddz.styleabletoast.StyleableToast
 import kotlinx.coroutines.flow.collectLatest
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
-import com.xz.schoolnavinfo.presentation.common.baidu.select.LocationInfo
-
+import kotlinx.coroutines.launch
 
 @Composable
 fun DiscussPublishScreen(
@@ -106,16 +106,23 @@ fun DiscussPublishScreen(
     )
 }
 
+@SuppressLint("StateFlowValueCalledInComposition", "CoroutineCreationDuringComposition")
 @Composable
 fun RunCoroutine(
     viewModel: PublishArticleViewModel,
     scrollState: ScrollState,
     imagesSize: Int,
 ) {
-    val navigator = LocalAppNavigator.current
-    val locationData = navigator.getLocationData()
-    if (!locationData.isNullOrEmpty()) {
-        viewModel.setLocation(JsonUtils.fromJson(locationData))
+    val navigator = LocalNavController.current
+    val locationData = navigator.getSaveData()
+    val scopeCoroutine = rememberCoroutineScope()
+    if (locationData!=null) {
+        scopeCoroutine.launch {
+            locationData.collectLatest { data->
+                data?.let { viewModel.setLocation(JsonUtils.fromJson(it)) }
+            }
+        }
+
     }
     LaunchedEffect(imagesSize) {
         scrollState.animateScrollTo(scrollState.maxValue)
@@ -142,7 +149,7 @@ private fun PublishArticleContent(
     val isEmpty = uiState.title.isBlank() && uiState.content.isBlank() && uiState.images.isEmpty()
     val imageSize by remember { mutableStateOf(76.dp) }
     val (selectType, updateSelectType) = rememberSaveable { mutableIntStateOf(0) }
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
 
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -179,7 +186,9 @@ private fun PublishArticleContent(
                 isContentEmpty = isEmpty,
                 isAddBanner = uiState.isAddBanner(),
                 isSelectedBannerImage = uiState.isSelectedBanner(),
-                onBack = { navigator.popBack() },
+                onBack = {
+                        navigator.popBack()
+                     },
                 onClear = {
                     viewModel.clearUiState()
                 },
@@ -212,7 +221,7 @@ private fun PublishArticleContent(
                     }
                 },
                 onLocation = {
-                    navigator.navigate(Routes.LocationSelect)
+                    navigator.navigate(MyRoutes.LocationSelect)
                 },
                 onRemoveImage = { viewModel.removeImage(it) },
             )

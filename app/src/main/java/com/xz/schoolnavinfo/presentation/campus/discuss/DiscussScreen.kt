@@ -49,9 +49,8 @@ import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.getImagesUrl
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.dto.ArticleDTO
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
-import com.xz.schoolnavinfo.presentation.TestActivity
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
 import com.xz.schoolnavinfo.presentation.common.components.ChangeHeightBar
@@ -68,7 +67,7 @@ fun DiscussScreen(
 ) {
 
     val discussArticles by discussViewModel.discussArticles.collectAsStateWithLifecycle()
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
     val lazyListState = rememberLazyListState()
     val appColors = AppColors.current
     val barHeight = 52.dp
@@ -112,10 +111,10 @@ fun DiscussScreen(
             lazyListState = lazyListState,
             discussArticles = discussArticles,
             onDetail = {
-                navigator.navigate(Routes.ArticleDetail(it))
+                navigator.navigate(MyRoutes.ArticleDetail(it))
             },
             onImage = { urls, index ->
-                navigator.navigate(Routes.ImagePreview(urls = urls, startIndex = index))
+                navigator.navigate(MyRoutes.ImagePreview(urls = urls, startIndex = index))
             },
             onRoute = {
                 commonViewModel.onRoutePlan(it)

@@ -43,8 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
 import com.xz.schoolnavinfo.presentation.common.components.MyButton
 import com.xz.schoolnavinfo.presentation.common.components.SliderButton
@@ -55,21 +55,16 @@ import kotlinx.coroutines.flow.collectLatest
 
 private val titles = listOf("登陆", "注册")
 
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun LoginRegisterScreen(
-    userViewModel: UserViewModel = hiltViewModel(),
-) {
-
+fun LoginRegisterScreen(userViewModel: UserViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val uiSate by userViewModel.uiSate.collectAsStateWithLifecycle()
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
     LaunchedEffect(uiSate.isSuccess) {
         if (uiSate.isSuccess) {
-            navigator.navigateAndPopUp(
-                Routes.Home::class.simpleName!!,
-                Routes.LoginRegister::class.simpleName!!
-            )
+            navigator.navigate(MyRoutes.Home, MyRoutes.LoginRegister)
         }
     }
 

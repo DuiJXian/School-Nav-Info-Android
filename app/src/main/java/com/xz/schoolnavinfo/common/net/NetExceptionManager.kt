@@ -9,7 +9,6 @@ import java.io.IOException
 class NetExceptionManager(
     private val globalFlow: GlobalFlow
 ) {
-
     // 在这里捕获网络异常并发送错误消息
     suspend fun <T> safeApiCall(apiCall: suspend () -> T) : T?{
         return try {

@@ -59,8 +59,8 @@ import com.esafirm.imagepicker.features.ImagePickerConfig
 import com.esafirm.imagepicker.features.createImagePickerIntent
 import com.xz.schoolnavinfo.R
 import com.xz.schoolnavinfo.common.net.getImagesUrl
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.LocalNavController
+import com.xz.schoolnavinfo.presentation.MyRoutes
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import io.github.muddz.styleabletoast.StyleableToast
@@ -84,7 +84,7 @@ fun MyScreen(
     val context = LocalContext.current
 
     var errMessage by remember { mutableStateOf("") }
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -102,7 +102,7 @@ fun MyScreen(
             if (it.code == "success") {
                 showPwdDialog = false
                 myViewModel.onLogOut()
-                navigator.navigate(Routes.LoginRegister)
+                navigator.navigate(MyRoutes.LoginRegister)
             } else {
                 errMessage = it.message
             }

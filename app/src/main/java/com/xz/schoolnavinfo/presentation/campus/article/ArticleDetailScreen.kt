@@ -64,8 +64,7 @@ import com.xz.schoolnavinfo.domain.data.dto.CommentDTO
 import com.xz.schoolnavinfo.domain.data.entity.Article
 import com.xz.schoolnavinfo.domain.data.entity.UserInfo
 import com.xz.schoolnavinfo.domain.data.type.ArticleType
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
-import com.xz.schoolnavinfo.presentation.Routes
+import com.xz.schoolnavinfo.presentation.LocalNavController
 import com.xz.schoolnavinfo.presentation.campus.CampusMenu
 import com.xz.schoolnavinfo.presentation.common.components.ButtonType
 import com.xz.schoolnavinfo.presentation.common.components.CustomTextFiled
@@ -90,7 +89,7 @@ fun ArticleDetailScreen(
     val commentDTOS by articleDetailViewModel.commentDTOs.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     var (showDialog, updateShowDialog) = rememberSaveable { mutableStateOf(false) }
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
     val articleType = ArticleType.getType(articleDTO.article!!.type!!)
     LaunchedEffect(Unit) {
         article?.id?.let { articleDetailViewModel.onGetComments(it) }

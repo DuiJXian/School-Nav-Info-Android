@@ -1,5 +1,6 @@
 package com.xz.schoolnavinfo.presentation.common.baidu.map
 
+import android.view.ViewGroup
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -21,6 +22,7 @@ fun MapViewScreen(
         modifier = modifier
             .fillMaxSize(),
         factory = {
+            (mapView.parent as? ViewGroup)?.removeView(mapView)
             mapView
         }
     )

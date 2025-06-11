@@ -62,13 +62,12 @@ import com.xz.schoolnavinfo.common.utils.DensityUtil
 import com.xz.schoolnavinfo.common.utils.TimeUtils
 import com.xz.schoolnavinfo.domain.data.entity.Stuff
 import com.xz.schoolnavinfo.domain.data.entity.UserInfo
-import com.xz.schoolnavinfo.presentation.LocalAppNavigator
+import com.xz.schoolnavinfo.presentation.LocalNavController
 import com.xz.schoolnavinfo.presentation.common.components.ButtonType
 import com.xz.schoolnavinfo.presentation.common.components.CustomTopBar
 import com.xz.schoolnavinfo.presentation.common.components.LocationBox
 import com.xz.schoolnavinfo.presentation.common.components.MyButton
 import com.xz.schoolnavinfo.presentation.common.viewmodel.CommonViewModel
-import com.xz.schoolnavinfo.presentation.common.viewmodel.NavEvent
 import com.xz.schoolnavinfo.presentation.theme.AppColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -82,7 +81,7 @@ fun StuffDetailScreen(
 ) {
     val stuffDTO by stuffDetailViewModel.stuffDTO.collectAsStateWithLifecycle()
     val userInfo by commonViewModel.userInfo.collectAsStateWithLifecycle()
-    val navigator = LocalAppNavigator.current
+    val navigator = LocalNavController.current
 
     LaunchedEffect(true) {
         stuffDetailViewModel.getStuffById(id)

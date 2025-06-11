@@ -2,7 +2,6 @@ package com.xz.schoolnavinfo.presentation.common.baidu.select
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
 import android.graphics.Point
 import android.util.Log
 import android.view.MotionEvent
@@ -26,7 +25,6 @@ import com.xz.schoolnavinfo.common.utils.LocationUtils
 import com.xz.schoolnavinfo.presentation.common.baidu.map.scrollMapView
 import com.xz.schoolnavinfo.presentation.common.baidu.map.setStyle
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -192,7 +190,7 @@ class LocationSelectViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        Log.e("TAG", "onCleared: ", )
+        Log.e("TAG", "onCleared: ")
         mapView.onDestroy()
     }
 }

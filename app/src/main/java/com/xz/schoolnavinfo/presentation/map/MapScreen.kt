@@ -2,6 +2,7 @@ package com.xz.schoolnavinfo.presentation.map
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -59,10 +60,11 @@ import kotlinx.coroutines.flow.collectLatest
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MapScreen(
+    mapViewModel: MapViewModel = hiltViewModel(),
     locateViewModel: LocateViewModel = hiltViewModel(),
     commonViewModel: CommonViewModel,
-    mapViewModel: MapViewModel = hiltViewModel(),
 ) {
+//    val locateViewModel = LocateViewModel(context as Application)
 
     val deviceState by locateViewModel.deviceState.collectAsStateWithLifecycle()
     val dataState by mapViewModel.dataState.collectAsStateWithLifecycle()
